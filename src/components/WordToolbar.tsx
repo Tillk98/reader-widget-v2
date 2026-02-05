@@ -340,7 +340,6 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         if (isExpanded) {
           const toolbarTop = popupBottom + gapToolbar;
           const panelTop = toolbarTop + toolbarHeight + gapPanel;
-          const panelBottom = panelTop + panelHeight;
           const panelSpaceBelow = window.innerHeight - panelTop - edge;
           setToolbarPosition({ top: toolbarTop, bottom: undefined, left });
           setPanelPosition({
