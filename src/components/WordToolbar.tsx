@@ -40,10 +40,14 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   invalidSelectionText,
   wordLevel,
   onClose,
+  onMarkAsKnown,
+  onIgnore,
 }) => {
-  const toolbarRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{
+  const panelMeasureRef = useRef<HTMLDivElement>(null);
+  const popupWidthRef = useRef(340);
+  const [popupPosition, setPopupPosition] = useState<{
     top?: number;
     bottom?: number;
     left: number;
@@ -244,26 +248,29 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     setIsExpanded(true);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const updatePosition = () => {
       const element = wordElement || document.getElementById(wordId);
-      if (!element || !toolbarRef.current) return;
+      if (!element || !popupRef.current) return;
 
       const rect = anchorRect ?? element.getBoundingClientRect();
-      const toolbarHeight = toolbarRef.current.offsetHeight || 0;
       const maxToolbarWidth = 340;
-      const toolbarWidth = Math.min(toolbarRef.current.offsetWidth || 0, maxToolbarWidth);
-      const panelHeight = panelRef.current?.offsetHeight || toolbarHeight;
+      const popupHeight = popupRef.current.offsetHeight || 0;
+      const popupWidth = Math.min(popupRef.current.offsetWidth || 0, maxToolbarWidth);
+      popupWidthRef.current = popupWidth;
+      const panelHeight =
+        panelRef.current?.offsetHeight || panelMeasureRef.current?.offsetHeight || 0;
       const measuredPanelWidth = Math.min(
-        panelRef.current?.offsetWidth || toolbarWidth,
-        toolbarWidth
+        panelRef.current?.offsetWidth || panelMeasureRef.current?.offsetWidth || popupWidth,
+        maxToolbarWidth
       );
-      const gap = 6;
+      const gapWord = 6;
+      const gapPanel = 8;
       const edge = 8;
 
-      const spaceAbove = rect.top - gap - edge;
-      const spaceBelow = window.innerHeight - rect.bottom - gap - edge;
-      const contentHeight = isExpanded ? panelHeight : toolbarHeight;
+      const spaceAbove = rect.top - gapWord - edge;
+      const spaceBelow = window.innerHeight - rect.bottom - gapWord - edge;
+      const contentHeight = popupHeight + (isExpanded ? gapPanel + panelHeight : 0);
       const fitsAbove = spaceAbove >= contentHeight;
       const fitsBelow = spaceBelow >= contentHeight;
       let nextPlacement: 'above' | 'below';
@@ -279,29 +286,33 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
       }
 
       let left = rect.left;
-      const maxLeft = Math.max(edge, window.innerWidth - toolbarWidth - edge);
+      const maxLeft = Math.max(edge, window.innerWidth - maxToolbarWidth - edge);
       left = Math.min(Math.max(left, edge), maxLeft);
 
       if (nextPlacement === 'below') {
-        const top = rect.bottom + gap;
-        setPosition({ top, bottom: undefined, left, maxHeight: Math.max(0, spaceBelow) });
+        const top = rect.bottom + gapWord;
+        setPopupPosition({ top, bottom: undefined, left, maxHeight: Math.max(0, spaceBelow) });
       } else {
         const maxHeight = Math.max(0, spaceAbove);
-        const bottom = window.innerHeight - rect.top + gap;
-        setPosition({ top: undefined, bottom, left, maxHeight });
+        const bottom = window.innerHeight - rect.top + gapWord;
+        setPopupPosition({ top: undefined, bottom, left, maxHeight });
       }
       setPlacement(nextPlacement);
 
-      if (isExpanded) {
-        const panelMaxLeft = Math.max(edge, window.innerWidth - measuredPanelWidth - edge);
-        const panelLeft = Math.min(Math.max(left, edge), panelMaxLeft);
-        const toolbarTop =
-          nextPlacement === 'below'
-            ? rect.bottom + gap
-            : rect.top - gap - toolbarHeight;
+      if (!showActions) {
+        setPanelPosition(null);
+        setPanelWidth(null);
+        return;
+      }
 
-        if (nextPlacement === 'below') {
-          const panelTop = toolbarTop + toolbarHeight + gap;
+      const maxStackWidth = Math.max(popupWidth, measuredPanelWidth);
+      const panelMaxLeft = Math.max(edge, window.innerWidth - maxStackWidth - edge);
+      const panelLeft = Math.min(Math.max(left, edge), panelMaxLeft);
+
+      if (nextPlacement === 'below') {
+        const popupTop = rect.bottom + gapWord;
+        if (isExpanded) {
+          const panelTop = popupTop + popupHeight + gapPanel;
           const panelSpaceBelow = window.innerHeight - panelTop - edge;
           setPanelPosition({
             top: panelTop,
@@ -309,20 +320,28 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
             left: panelLeft,
             maxHeight: Math.max(0, panelSpaceBelow),
           });
+          setPanelWidth(measuredPanelWidth);
         } else {
-          const panelBottom = window.innerHeight - (toolbarTop - gap);
-          const panelSpaceAbove = toolbarTop - gap - edge;
+          setPanelPosition(null);
+          setPanelWidth(null);
+        }
+      } else {
+        const popupTop = rect.top - gapWord - popupHeight;
+        if (isExpanded) {
+          const panelBottom = popupTop - gapPanel;
+          const panelTop = panelBottom - panelHeight;
+          const panelSpaceAbove = popupTop - gapPanel - edge;
           setPanelPosition({
-            top: undefined,
-            bottom: panelBottom,
+            top: panelTop,
+            bottom: undefined,
             left: panelLeft,
             maxHeight: Math.max(0, panelSpaceAbove),
           });
+          setPanelWidth(measuredPanelWidth);
+        } else {
+          setPanelPosition(null);
+          setPanelWidth(null);
         }
-        setPanelWidth(measuredPanelWidth);
-      } else {
-        setPanelPosition(null);
-        setPanelWidth(null);
       }
     };
 
@@ -342,6 +361,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     translation,
     invalidSelectionText,
     isExpanded,
+    isHovered,
     activeTab,
     selectedMeaning,
     sortedMeanings.length,
@@ -350,8 +370,8 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        toolbarRef.current &&
-        !toolbarRef.current.contains(event.target as Node) &&
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node) &&
         !(panelRef.current && panelRef.current.contains(event.target as Node)) &&
         wordElement &&
         !wordElement.contains(event.target as Node)
@@ -368,17 +388,6 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
 
   const actionsInner = (
     <div className="meaning-popup-actions-inner">
-      <button
-        className={`meaning-popup-action meaning-popup-status meaning-popup-tooltip${
-          isExpanded && activeTab === 'status' ? ' active' : ''
-        }`}
-        type="button"
-        aria-label={`LingQ status ${wordLevel}`}
-        data-tooltip="LingQ Status"
-        onClick={() => handleExpand('status')}
-      >
-        <span className="meaning-popup-status-circle">{wordLevel}</span>
-      </button>
       <button
         className={`meaning-popup-action meaning-popup-tooltip${
           isExpanded && activeTab === 'sentence' ? ' active' : ''
@@ -411,6 +420,37 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         onClick={() => handleExpand('explain')}
       >
         <img src={lynxIconGrey} alt="" className="meaning-popup-lynx" />
+      </button>
+      <div className="meaning-popup-toolbar-divider" />
+      <button
+        className={`meaning-popup-action meaning-popup-status meaning-popup-tooltip${
+          isExpanded && activeTab === 'status' ? ' active' : ''
+        }`}
+        type="button"
+        aria-label={`LingQ status ${wordLevel}`}
+        data-tooltip="LingQ Status"
+        onClick={() => handleExpand('status')}
+      >
+        <span className="meaning-popup-status-circle">{wordLevel}</span>
+      </button>
+      <div className="meaning-popup-toolbar-divider" />
+      <button
+        className="meaning-popup-action meaning-popup-tooltip known"
+        type="button"
+        aria-label="Mark as known"
+        data-tooltip="Known"
+        onClick={() => onMarkAsKnown(wordId)}
+      >
+        <Check size={18} />
+      </button>
+      <button
+        className="meaning-popup-action meaning-popup-tooltip ignore"
+        type="button"
+        aria-label="Ignore"
+        data-tooltip="Ignore"
+        onClick={() => onIgnore(wordId)}
+      >
+        <EyeOff size={18} />
       </button>
     </div>
   );
@@ -665,20 +705,31 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
       {panelContent}
     </div>
   ) : null;
+  const measuredPanel = isExpanded ? (
+    <div
+      ref={panelMeasureRef}
+      className="meaning-popup-panel-measure"
+      aria-hidden="true"
+      style={{ width: `${popupWidthRef.current}px` }}
+    >
+      {panelContent}
+    </div>
+  ) : null;
 
   return (
     <>
       <div
-        ref={toolbarRef}
+        ref={popupRef}
         className={`meaning-popup placement-${placement}${isHovered ? ' is-hovered' : ''}${
           isExpanded ? ' is-expanded' : ''
         }`}
         style={{
           position: 'fixed',
-          left: `${position.left}px`,
-          top: position.top !== undefined ? `${position.top}px` : undefined,
-          bottom: position.bottom !== undefined ? `${position.bottom}px` : undefined,
-          maxHeight: position.maxHeight !== undefined ? `${position.maxHeight}px` : undefined,
+          left: `${popupPosition.left}px`,
+          top: popupPosition.top !== undefined ? `${popupPosition.top}px` : undefined,
+          bottom: popupPosition.bottom !== undefined ? `${popupPosition.bottom}px` : undefined,
+          maxHeight:
+            popupPosition.maxHeight !== undefined ? `${popupPosition.maxHeight}px` : undefined,
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -705,6 +756,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         )}
       </div>
       {expandedPanel}
+      {measuredPanel}
     </>
   );
 };
