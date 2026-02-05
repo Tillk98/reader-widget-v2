@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   BookA,
   Check,
+  ChevronRight,
   Copy,
   EyeOff,
   LetterText,
@@ -40,10 +41,13 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   invalidSelectionText,
   wordLevel,
   onClose,
+  onMarkAsKnown,
+  onIgnore,
 }) => {
+  const popupRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{
+  const [popupPosition, setPopupPosition] = useState<{
     top?: number;
     bottom?: number;
     left: number;
@@ -52,12 +56,25 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     top: 0,
     left: 0,
   });
+  const [toolbarPosition, setToolbarPosition] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+  } | null>(null);
   const [panelPosition, setPanelPosition] = useState<{
     top?: number;
     bottom?: number;
     left: number;
     maxHeight?: number;
   } | null>(null);
+  const [hoverBridgePositions, setHoverBridgePositions] = useState<
+    Array<{
+      top: number;
+      left: number;
+      width: number;
+      height: number;
+    }>
+  >([]);
   const [panelWidth, setPanelWidth] = useState<number | null>(null);
   const [placement, setPlacement] = useState<'above' | 'below'>('above');
   const [isHovered, setIsHovered] = useState(false);
@@ -247,23 +264,33 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   useEffect(() => {
     const updatePosition = () => {
       const element = wordElement || document.getElementById(wordId);
-      if (!element || !toolbarRef.current) return;
+      if (!element || !popupRef.current) return;
 
       const rect = anchorRect ?? element.getBoundingClientRect();
-      const toolbarHeight = toolbarRef.current.offsetHeight || 0;
       const maxToolbarWidth = 340;
-      const toolbarWidth = Math.min(toolbarRef.current.offsetWidth || 0, maxToolbarWidth);
-      const panelHeight = panelRef.current?.offsetHeight || toolbarHeight;
+      const popupHeight = popupRef.current.offsetHeight || 0;
+      const popupWidth = Math.min(popupRef.current.offsetWidth || 0, maxToolbarWidth);
+      const toolbarHeight = toolbarRef.current?.offsetHeight || 0;
+      const toolbarWidth = Math.min(toolbarRef.current?.offsetWidth || 0, maxToolbarWidth);
+      const panelHeight = panelRef.current?.offsetHeight || 0;
       const measuredPanelWidth = Math.min(
-        panelRef.current?.offsetWidth || toolbarWidth,
-        toolbarWidth
+        panelRef.current?.offsetWidth || popupWidth,
+        maxToolbarWidth
       );
-      const gap = 6;
+      const gapWord = 6;
+      const gapToolbar = 8;
+      const gapPanel = 8;
       const edge = 8;
 
-      const spaceAbove = rect.top - gap - edge;
-      const spaceBelow = window.innerHeight - rect.bottom - gap - edge;
-      const contentHeight = isExpanded ? panelHeight : toolbarHeight;
+      const spaceAbove = rect.top - gapWord - edge;
+      const spaceBelow = window.innerHeight - rect.bottom - gapWord - edge;
+      const contentHeight =
+        popupHeight +
+        (showActions
+          ? isExpanded
+            ? gapPanel + panelHeight + gapPanel + toolbarHeight
+            : gapToolbar + toolbarHeight
+          : 0);
       const fitsAbove = spaceAbove >= contentHeight;
       const fitsBelow = spaceBelow >= contentHeight;
       let nextPlacement: 'above' | 'below';
@@ -279,51 +306,124 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
       }
 
       let left = rect.left;
-      const maxLeft = Math.max(edge, window.innerWidth - toolbarWidth - edge);
+      const maxLeft = Math.max(edge, window.innerWidth - maxToolbarWidth - edge);
       left = Math.min(Math.max(left, edge), maxLeft);
 
       if (nextPlacement === 'below') {
-        const top = rect.bottom + gap;
-        setPosition({ top, bottom: undefined, left, maxHeight: Math.max(0, spaceBelow) });
+        const top = rect.bottom + gapWord;
+        setPopupPosition({ top, bottom: undefined, left, maxHeight: Math.max(0, spaceBelow) });
       } else {
         const maxHeight = Math.max(0, spaceAbove);
-        const bottom = window.innerHeight - rect.top + gap;
-        setPosition({ top: undefined, bottom, left, maxHeight });
+        const bottom = window.innerHeight - rect.top + gapWord;
+        setPopupPosition({ top: undefined, bottom, left, maxHeight });
       }
       setPlacement(nextPlacement);
 
-      if (isExpanded) {
-        const panelMaxLeft = Math.max(edge, window.innerWidth - measuredPanelWidth - edge);
-        const panelLeft = Math.min(Math.max(left, edge), panelMaxLeft);
-        const toolbarTop =
-          nextPlacement === 'below'
-            ? rect.bottom + gap
-            : rect.top - gap - toolbarHeight;
+      if (!showActions) {
+        setToolbarPosition(null);
+        setPanelPosition(null);
+        setPanelWidth(null);
+        setHoverBridgePositions([]);
+        return;
+      }
 
-        if (nextPlacement === 'below') {
-          const panelTop = toolbarTop + toolbarHeight + gap;
+      const maxStackWidth = Math.max(popupWidth, measuredPanelWidth, toolbarWidth);
+      const panelMaxLeft = Math.max(edge, window.innerWidth - maxStackWidth - edge);
+      const panelLeft = Math.min(Math.max(left, edge), panelMaxLeft);
+      const bridgeWidth = Math.min(maxStackWidth, window.innerWidth - edge * 2);
+      const bridgeLeft = Math.min(Math.max(left, edge), window.innerWidth - bridgeWidth - edge);
+      const bridges: Array<{ top: number; left: number; width: number; height: number }> = [];
+
+      if (nextPlacement === 'below') {
+        const popupTop = rect.bottom + gapWord;
+        const popupBottom = popupTop + popupHeight;
+        if (isExpanded) {
+          const toolbarTop = popupBottom + gapToolbar;
+          const panelTop = toolbarTop + toolbarHeight + gapPanel;
+          const panelBottom = panelTop + panelHeight;
           const panelSpaceBelow = window.innerHeight - panelTop - edge;
+          setToolbarPosition({ top: toolbarTop, bottom: undefined, left });
           setPanelPosition({
             top: panelTop,
             bottom: undefined,
             left: panelLeft,
             maxHeight: Math.max(0, panelSpaceBelow),
           });
+          setPanelWidth(measuredPanelWidth);
+          bridges.push({
+            top: popupBottom,
+            left: bridgeLeft,
+            width: bridgeWidth,
+            height: gapToolbar,
+          });
+          bridges.push({
+            top: toolbarTop + toolbarHeight,
+            left: bridgeLeft,
+            width: bridgeWidth,
+            height: gapPanel,
+          });
         } else {
-          const panelBottom = window.innerHeight - (toolbarTop - gap);
-          const panelSpaceAbove = toolbarTop - gap - edge;
-          setPanelPosition({
+          setPanelPosition(null);
+          setPanelWidth(null);
+          const toolbarTop = popupTop + popupHeight + gapToolbar;
+          setToolbarPosition({ top: toolbarTop, bottom: undefined, left });
+          bridges.push({
+            top: popupBottom,
+            left: bridgeLeft,
+            width: bridgeWidth,
+            height: gapToolbar,
+          });
+        }
+      } else {
+        const popupBottom = rect.top - gapWord;
+        const popupTop = popupBottom - popupHeight;
+        if (isExpanded) {
+          const toolbarBottom = popupTop - gapToolbar;
+          const panelBottom = toolbarBottom - gapPanel;
+          const panelTop = panelBottom - panelHeight;
+          const panelSpaceAbove = popupTop - gapToolbar - gapPanel - edge;
+          setToolbarPosition({
             top: undefined,
-            bottom: panelBottom,
+            bottom: window.innerHeight - toolbarBottom,
+            left,
+          });
+          setPanelPosition({
+            top: panelTop,
+            bottom: undefined,
             left: panelLeft,
             maxHeight: Math.max(0, panelSpaceAbove),
           });
+          setPanelWidth(measuredPanelWidth);
+          bridges.push({
+            top: toolbarBottom,
+            left: bridgeLeft,
+            width: bridgeWidth,
+            height: gapToolbar,
+          });
+          bridges.push({
+            top: panelBottom,
+            left: bridgeLeft,
+            width: bridgeWidth,
+            height: gapPanel,
+          });
+        } else {
+          setPanelPosition(null);
+          setPanelWidth(null);
+          const toolbarBottom = popupTop - gapToolbar;
+          setToolbarPosition({
+            top: undefined,
+            bottom: window.innerHeight - toolbarBottom,
+            left,
+          });
+          bridges.push({
+            top: toolbarBottom,
+            left: bridgeLeft,
+            width: bridgeWidth,
+            height: gapToolbar,
+          });
         }
-        setPanelWidth(measuredPanelWidth);
-      } else {
-        setPanelPosition(null);
-        setPanelWidth(null);
       }
+      setHoverBridgePositions(bridges);
     };
 
     const raf = requestAnimationFrame(updatePosition);
@@ -342,6 +442,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     translation,
     invalidSelectionText,
     isExpanded,
+    isHovered,
     activeTab,
     selectedMeaning,
     sortedMeanings.length,
@@ -350,8 +451,9 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        toolbarRef.current &&
-        !toolbarRef.current.contains(event.target as Node) &&
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node) &&
+        !(toolbarRef.current && toolbarRef.current.contains(event.target as Node)) &&
         !(panelRef.current && panelRef.current.contains(event.target as Node)) &&
         wordElement &&
         !wordElement.contains(event.target as Node)
@@ -366,19 +468,52 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     };
   }, [onClose, wordElement]);
 
-  const actionsInner = (
-    <div className="meaning-popup-actions-inner">
+  const statusLabels: Record<number, string> = {
+    1: 'New',
+    2: 'Recognized',
+    3: 'Familiar',
+    4: 'Learned',
+  };
+
+  const statusToolbar = (
+    <div className="meaning-popup-actions-inner meaning-popup-status-toolbar">
+      {[1, 2, 3, 4].map(level => (
+        <button
+          key={level}
+          className={`meaning-popup-action meaning-popup-tooltip meaning-popup-status-level${
+            level === wordLevel ? ' active' : ''
+          }${level === 1 ? ' status-1' : ''}`}
+          type="button"
+          aria-label={`Set LingQ status ${statusLabels[level]}`}
+          data-tooltip={statusLabels[level]}
+        >
+          <span className="meaning-popup-status-circle">{level}</span>
+        </button>
+      ))}
+      <div className="meaning-popup-toolbar-divider" />
       <button
-        className={`meaning-popup-action meaning-popup-status meaning-popup-tooltip${
-          isExpanded && activeTab === 'status' ? ' active' : ''
-        }`}
+        className="meaning-popup-action meaning-popup-tooltip known"
         type="button"
-        aria-label={`LingQ status ${wordLevel}`}
-        data-tooltip="LingQ Status"
-        onClick={() => handleExpand('status')}
+        aria-label="Mark as known"
+        data-tooltip="Known"
+        onClick={() => onMarkAsKnown(wordId)}
       >
-        <span className="meaning-popup-status-circle">{wordLevel}</span>
+        <Check size={18} />
       </button>
+      <button
+        className="meaning-popup-action meaning-popup-tooltip ignore"
+        type="button"
+        aria-label="Ignore"
+        data-tooltip="Ignore"
+        onClick={() => onIgnore(wordId)}
+      >
+        <EyeOff size={18} />
+      </button>
+    </div>
+  );
+
+  const iconActions = (
+    <div className="meaning-popup-actions-inner meaning-popup-icon-actions">
       <button
         className={`meaning-popup-action meaning-popup-tooltip${
           isExpanded && activeTab === 'sentence' ? ' active' : ''
@@ -416,8 +551,8 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   );
 
   const actions = (
-    <div className="meaning-popup-actions" aria-hidden={!showActions}>
-      {actionsInner}
+    <div className="meaning-popup-toolbar-actions">
+      {isExpanded ? null : statusToolbar}
     </div>
   );
 
@@ -436,8 +571,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         setCanShowMeaningTooltip(true);
       }}
     >
-      <span ref={headerMeaningRef} className="meaning-popup-header-meaning-text">
-        {selectedMeaning}
+      <span className="meaning-popup-header-meaning-content">
+        <span ref={headerMeaningRef} className="meaning-popup-header-meaning-text">
+          {selectedMeaning}
+        </span>
+        <ChevronRight className="meaning-popup-header-meaning-chevron" size={16} />
       </span>
     </button>
   );
@@ -666,22 +804,40 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     </div>
   ) : null;
 
+  const handleHoverLeave = (event: React.MouseEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget as Node | null;
+    const isBridgeTarget =
+      nextTarget instanceof HTMLElement &&
+      nextTarget.classList.contains('meaning-popup-hover-bridge');
+    if (
+      nextTarget &&
+      (popupRef.current?.contains(nextTarget) ||
+        toolbarRef.current?.contains(nextTarget) ||
+        panelRef.current?.contains(nextTarget) ||
+        isBridgeTarget)
+    ) {
+      return;
+    }
+    setIsHovered(false);
+  };
+
   return (
     <>
       <div
-        ref={toolbarRef}
+        ref={popupRef}
         className={`meaning-popup placement-${placement}${isHovered ? ' is-hovered' : ''}${
           isExpanded ? ' is-expanded' : ''
         }`}
         style={{
           position: 'fixed',
-          left: `${position.left}px`,
-          top: position.top !== undefined ? `${position.top}px` : undefined,
-          bottom: position.bottom !== undefined ? `${position.bottom}px` : undefined,
-          maxHeight: position.maxHeight !== undefined ? `${position.maxHeight}px` : undefined,
+          left: `${popupPosition.left}px`,
+          top: popupPosition.top !== undefined ? `${popupPosition.top}px` : undefined,
+          bottom: popupPosition.bottom !== undefined ? `${popupPosition.bottom}px` : undefined,
+          maxHeight:
+            popupPosition.maxHeight !== undefined ? `${popupPosition.maxHeight}px` : undefined,
         }}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseLeave={handleHoverLeave}
       >
         {invalidSelectionText ? (
           <div className="meaning-popup-invalid">{invalidSelectionText}</div>
@@ -689,7 +845,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           <div className={`meaning-popup-header${isExpanded ? ' is-expanded' : ''}`}>
             <div className="meaning-popup-header-row">
               {headerMeaning}
-              {actions}
+              {isExpanded ? iconActions : null}
               {isExpanded && isHeaderMeaningTruncated && (
                 <div
                   className={`meaning-popup-header-meaning-tooltip${
@@ -704,6 +860,40 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           </div>
         )}
       </div>
+      {showActions &&
+        hoverBridgePositions.map((bridge, index) => (
+          <div
+            key={`bridge-${index}`}
+            className="meaning-popup-hover-bridge"
+            style={{
+              position: 'fixed',
+              left: `${bridge.left}px`,
+              top: `${bridge.top}px`,
+              width: `${bridge.width}px`,
+              height: `${bridge.height}px`,
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={handleHoverLeave}
+          />
+        ))}
+      {showActions && !isExpanded && toolbarPosition && (
+        <div
+          ref={toolbarRef}
+          className={`meaning-popup-toolbar placement-${placement}${
+            showActions ? ' is-visible' : ''
+          }${isExpanded ? ' is-expanded' : ''}`}
+          style={{
+            position: 'fixed',
+            left: `${toolbarPosition.left}px`,
+            top: toolbarPosition.top !== undefined ? `${toolbarPosition.top}px` : undefined,
+            bottom: toolbarPosition.bottom !== undefined ? `${toolbarPosition.bottom}px` : undefined,
+          }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={handleHoverLeave}
+        >
+          {actions}
+        </div>
+      )}
       {expandedPanel}
     </>
   );
