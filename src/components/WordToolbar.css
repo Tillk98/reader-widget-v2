@@ -35,7 +35,7 @@
 }
 
 .meaning-popup-toolbar {
-  z-index: 1002;
+  z-index: 1004;
   pointer-events: none;
   opacity: 0;
   display: inline-flex;
@@ -103,7 +103,11 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
+  width: fit-content;
+  min-width: fit-content;
 }
+
 
 .meaning-popup-hover-bridge {
   z-index: 1001;
@@ -137,9 +141,9 @@
 }
 
 .meaning-popup.is-expanded .meaning-popup-header-row {
-  gap: 16px;
-  width: 100%;
-  justify-content: space-between;
+  gap: 8px;
+  width: fit-content;
+  justify-content: flex-start;
 }
 
 .meaning-popup-actions-row {
@@ -319,7 +323,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.1s ease;
-  z-index: 1003;
+  z-index: 1010;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
@@ -334,7 +338,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.1s ease;
-  z-index: 1003;
+  z-index: 1010;
 }
 
 .meaning-popup-tooltip:hover::after,
@@ -756,6 +760,28 @@
   background: #f4f7fb;
 }
 
+.meaning-popup-header-meaning.editing {
+  background: #fff;
+  border-color: #d1d6d9;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.meaning-popup-header-meaning-input {
+  width: 100%;
+  min-height: 20px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 18px;
+  overflow: hidden;
+}
+
 .meaning-popup-header-meaning-text {
   display: block;
   font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
@@ -777,12 +803,20 @@
 .meaning-popup-header-meaning-chevron {
   color: #6d7680;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, width 0.15s ease;
   flex-shrink: 0;
 }
 
 .meaning-popup.is-hovered .meaning-popup-header-meaning-chevron {
   opacity: 1;
+  width: 16px;
+}
+
+.meaning-popup.is-expanded .meaning-popup-header-meaning-chevron {
+  opacity: 0;
+  width: 0;
 }
 
 .meaning-popup-header-meaning.flash {

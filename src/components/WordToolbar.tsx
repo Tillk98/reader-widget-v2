@@ -7,7 +7,6 @@ import {
   EyeOff,
   LetterText,
   MessageSquare,
-  NotebookPen,
   Plus,
   RefreshCw,
   CircleCheck,
@@ -101,6 +100,9 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   const [canShowMeaningTooltip, setCanShowMeaningTooltip] = useState(false);
   const [isMeaningHovered, setIsMeaningHovered] = useState(false);
   const [isSelectedMeaningWrapped, setIsSelectedMeaningWrapped] = useState(false);
+  const [isEditingMeaning, setIsEditingMeaning] = useState(false);
+  const [draftMeaning, setDraftMeaning] = useState('');
+  const meaningInputRef = useRef<HTMLTextAreaElement>(null);
   const showActions = isExpanded || isHovered;
   const [meaningOptions, setMeaningOptions] = useState([
     { text: 'monetize', count: '2.5k' },
@@ -140,7 +142,15 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
 
   useEffect(() => {
     setSelectedMeaning(translation);
+    setIsEditingMeaning(false);
+    setDraftMeaning('');
   }, [translation, wordId]);
+
+  useEffect(() => {
+    if (isEditingMeaning) {
+      requestAnimationFrame(resizeMeaningInput);
+    }
+  }, [isEditingMeaning, draftMeaning]);
 
   useEffect(() => {
     return () => {
@@ -259,6 +269,31 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   ) => {
     setActiveTab(tab);
     setIsExpanded(true);
+  };
+
+  const handleMeaningEditStart = () => {
+    if (!isExpanded) return;
+    setDraftMeaning(selectedMeaning);
+    setIsEditingMeaning(true);
+  };
+
+  const handleMeaningEditCancel = () => {
+    setDraftMeaning(selectedMeaning);
+    setIsEditingMeaning(false);
+  };
+
+  const handleMeaningEditSave = () => {
+    const nextMeaning = draftMeaning.trim();
+    if (nextMeaning.length > 0) {
+      setSelectedMeaning(nextMeaning);
+    }
+    setIsEditingMeaning(false);
+  };
+
+  const resizeMeaningInput = () => {
+    if (!meaningInputRef.current) return;
+    meaningInputRef.current.style.height = 'auto';
+    meaningInputRef.current.style.height = `${meaningInputRef.current.scrollHeight}px`;
   };
 
   useEffect(() => {
@@ -467,6 +502,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     };
   }, [onClose, wordElement]);
 
+
   const statusLabels: Record<number, string> = {
     1: 'New',
     2: 'Recognized',
@@ -485,6 +521,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           type="button"
           aria-label={`Set LingQ status ${statusLabels[level]}`}
           data-tooltip={statusLabels[level]}
+          onMouseEnter={() => {}}
         >
           <span className="meaning-popup-status-circle">{level}</span>
         </button>
@@ -523,17 +560,6 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         onClick={() => handleExpand('sentence')}
       >
         <LetterText size={18} />
-      </button>
-      <button
-        className={`meaning-popup-action meaning-popup-tooltip${
-          isExpanded && activeTab === 'notes' ? ' active' : ''
-        }`}
-        type="button"
-        aria-label="Notes"
-        data-tooltip="Notes"
-        onClick={() => handleExpand('notes')}
-      >
-        <NotebookPen size={18} />
       </button>
       <button
         className={`meaning-popup-action lynx meaning-popup-tooltip${
@@ -579,10 +605,46 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     </button>
   );
 
+  const panelMeaning = isEditingMeaning ? (
+    <div className="meaning-popup-header-meaning editing">
+      <textarea
+        className="meaning-popup-header-meaning-input"
+        ref={meaningInputRef}
+        value={draftMeaning}
+        onChange={event => setDraftMeaning(event.target.value)}
+        onKeyDown={event => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            handleMeaningEditSave();
+          } else if (event.key === 'Escape') {
+            event.preventDefault();
+            handleMeaningEditCancel();
+          }
+        }}
+        onInput={resizeMeaningInput}
+        autoFocus
+        rows={1}
+      />
+    </div>
+  ) : (
+    <button
+      className={`meaning-popup-meaning-option meaning-popup-header-meaning${
+        isMeaningFlash ? ' flash' : ''
+      }`}
+      type="button"
+      onClick={handleMeaningEditStart}
+    >
+      <span className="meaning-popup-header-meaning-content">
+        <span className="meaning-popup-header-meaning-text">{selectedMeaning}</span>
+      </span>
+    </button>
+  );
+
   const panelContent = (
     <div className="meaning-popup-panel">
       {activeTab === 'meaning' ? (
         <>
+          {panelMeaning}
           <div className="meaning-popup-search">
             <input
               className="meaning-popup-search-input"
@@ -720,9 +782,6 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
                 <button type="button" aria-label="Regenerate explanation">
                   <RefreshCw size={18} />
                 </button>
-                <button type="button" aria-label="Add as note">
-                  <NotebookPen size={18} />
-                </button>
                 <button type="button" aria-label="Copy explanation" className="copy">
                   <Copy size={18} />
                 </button>
@@ -843,7 +902,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         ) : (
           <div className={`meaning-popup-header${isExpanded ? ' is-expanded' : ''}`}>
             <div className="meaning-popup-header-row">
-              {headerMeaning}
+              {!isExpanded ? headerMeaning : null}
               {isExpanded ? iconActions : null}
               {isExpanded && isHeaderMeaningTruncated && (
                 <div
