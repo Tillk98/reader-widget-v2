@@ -7,9 +7,6 @@ interface WordProps {
   isClicked: boolean;
   isLingQ: boolean;
   onClick: (wordId: string) => void;
-  onPointerDown: (wordId: string) => void;
-  onPointerEnter: (wordId: string) => void;
-  onPointerUp: () => void;
   isKnown: boolean;
   isIgnored: boolean;
 }
@@ -19,24 +16,17 @@ export const Word: React.FC<WordProps> = ({
   isClicked,
   isLingQ,
   onClick,
-  onPointerDown,
-  onPointerEnter,
-  onPointerUp,
   isKnown,
   isIgnored,
 }) => {
   const handleClick = () => {
-    // Don't allow interaction with known or ignored words
-    if (isKnown || isIgnored) {
-      return;
-    }
+    if (isKnown || isIgnored) return;
     onClick(word.id);
   };
 
-  // Determine the class name based on word state
   const getClassName = () => {
     if (isKnown || isIgnored) {
-      return 'sentence-item'; // No highlighting for known/ignored words
+      return 'sentence-item';
     }
     return `sentence-item ${isClicked || isLingQ ? 'yellow-word' : 'blue-word'}`;
   };
@@ -45,19 +35,6 @@ export const Word: React.FC<WordProps> = ({
     <span
       id={word.id}
       className={getClassName()}
-      onMouseDown={event => {
-        if (isKnown || isIgnored) return;
-        event.preventDefault();
-        onPointerDown(word.id);
-      }}
-      onMouseEnter={() => {
-        if (isKnown || isIgnored) return;
-        onPointerEnter(word.id);
-      }}
-      onMouseUp={() => {
-        if (isKnown || isIgnored) return;
-        onPointerUp();
-      }}
       onClick={handleClick}
       style={{ cursor: isKnown || isIgnored ? 'default' : 'pointer' }}
     >

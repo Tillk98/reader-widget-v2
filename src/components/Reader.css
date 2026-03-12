@@ -85,8 +85,10 @@
   overflow: hidden;
   width: 100%;
   margin-top: 40px; /* Space for fixed progress bar */
+  padding-bottom: 80px; /* Space for bottom bar + safe area */
   transition: margin-right 0.25s ease;
   margin-right: 0;
+  touch-action: pan-y; /* allow vertical scroll, we handle horizontal swipe */
 }
 
 .reader-content.panel-open {
@@ -119,32 +121,4 @@
   height: 100vh;
   font-family: Lora, serif;
   font-size: 18px;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .nav-chevron {
-    width: 40px;
-    height: 40px;
-  }
-
-  .nav-chevron-left {
-    left: 10px;
-  }
-
-  .nav-chevron-right {
-    right: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .nav-chevron {
-    width: 36px;
-    height: 36px;
-  }
-
-  .nav-chevron svg {
-    width: 20px;
-    height: 20px;
-  }
 }

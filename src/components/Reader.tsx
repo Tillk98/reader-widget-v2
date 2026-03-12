@@ -2,9 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { lesson } from '../data/lesson';
 import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
-import { NavigationChevrons } from './NavigationChevrons';
-import { WordToolbar } from './WordToolbar';
+import { ReaderPopUp } from './ReaderPopUp';
+import { ReaderBottomBar } from './ReaderBottomBar';
+import { AudioModeDrawer } from './AudioModeDrawer';
 import './Reader.css';
+
+const DRAG_THRESHOLD_PX = 10;
+const SWIPE_THRESHOLD_RATIO = 0.15;
 
 interface Page {
   words: Word[];
@@ -14,26 +18,20 @@ export const Reader: React.FC = () => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [pages, setPages] = useState<Page[]>([]);
   const [clickedWords, setClickedWords] = useState<Set<string>>(new Set());
-  const [knownWords, setKnownWords] = useState<Set<string>>(new Set());
-  const [ignoredWords, setIgnoredWords] = useState<Set<string>>(new Set());
-  const [wordLevels, setWordLevels] = useState<Map<string, number>>(new Map());
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
   const [lingqWords, setLingqWords] = useState<Set<string>>(new Set());
-  const [phraseSelection, setPhraseSelection] = useState<{
-    sentenceIndex: number;
-    startIdx: number;
-    endIdx: number;
-  } | null>(null);
-  const [invalidSelection, setInvalidSelection] = useState<{
-    wordIds: string[];
-    text: string;
-  } | null>(null);
-  const [isSelectingPhrase, setIsSelectingPhrase] = useState(false);
-  const [didDragSelection, setDidDragSelection] = useState(false);
-  const selectionAnchorRef = useRef<{ sentenceIndex: number; wordIndex: number; wordId: string } | null>(null);
-  const [chevronVisible, setChevronVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mouseActivityTimeoutRef = useRef<number | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const dragStartX = useRef<number>(0);
+  const dragOffsetPx = useRef<number>(0);
+  const ignoreNextWordClick = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<'audio' | 'video'>('audio');
+
+  const knownWords = React.useMemo(() => new Set<string>(), []);
+  const ignoredWords = React.useMemo(() => new Set<string>(), []);
 
   // Get all words from the lesson
   const allWords = React.useMemo(() => {
@@ -44,28 +42,6 @@ export const Reader: React.FC = () => {
       });
     });
     return words;
-  }, []);
-
-  const wordOrder = React.useMemo(() => allWords.map(word => word.id), [allWords]);
-  const wordIndexMap = React.useMemo(() => {
-    const map = new Map<string, number>();
-    wordOrder.forEach((id, index) => map.set(id, index));
-    return map;
-  }, [wordOrder]);
-  const wordTextMap = React.useMemo(() => {
-    const map = new Map<string, string>();
-    allWords.forEach(word => map.set(word.id, word.text));
-    return map;
-  }, [allWords]);
-
-  const wordMeta = React.useMemo(() => {
-    const map = new Map<string, { sentenceIndex: number; wordIndex: number }>();
-    lesson.sentences.forEach((sentence, sentenceIndex) => {
-      sentence.words.forEach((word, wordIndex) => {
-        map.set(word.id, { sentenceIndex, wordIndex });
-      });
-    });
-    return map;
   }, []);
 
   // Calculate pages based on container dimensions
@@ -212,44 +188,63 @@ export const Reader: React.FC = () => {
     };
   }, [calculatePages]);
 
-  // Handle mouse activity for chevron visibility
-  const handleMouseMove = useCallback(() => {
-    setChevronVisible(true);
-    
-    if (mouseActivityTimeoutRef.current) {
-      clearTimeout(mouseActivityTimeoutRef.current);
-    }
-    
-    mouseActivityTimeoutRef.current = window.setTimeout(() => {
-      setChevronVisible(false);
-    }, 2500);
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragStartX.current = e.clientX;
+    dragOffsetPx.current = 0;
   }, []);
 
-  useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (mouseActivityTimeoutRef.current) {
-        clearTimeout(mouseActivityTimeoutRef.current);
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!contentRef.current || pages.length === 0) return;
+    /* On desktop, only treat as drag when the mouse button is pressed (avoid hover triggering) */
+    if (e.pointerType === 'mouse' && e.buttons === 0) return;
+    const dx = e.clientX - dragStartX.current;
+    if (!isDragging) {
+      if (Math.abs(dx) >= DRAG_THRESHOLD_PX) {
+        setIsDragging(true);
+        dragOffsetPx.current = dx;
+        setDragOffset(dx);
       }
-    };
-  }, [handleMouseMove]);
-
-  const handleWordClick = useCallback((wordId: string) => {
-    if (didDragSelection) {
-      setDidDragSelection(false);
       return;
     }
-    // If word is known or ignored, don't show toolbar
+    dragOffsetPx.current = dx;
+    setDragOffset(dx);
+  }, [isDragging, pages.length]);
+
+  const handlePointerUp = useCallback((e?: React.PointerEvent) => {
+    if (e?.target) (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    if (!isDragging) return;
+    ignoreNextWordClick.current = true;
+    const contentEl = contentRef.current;
+    const width = contentEl ? contentEl.clientWidth : 1;
+    const ratio = dragOffsetPx.current / width;
+    if (ratio < -SWIPE_THRESHOLD_RATIO && currentPageIndex < pages.length - 1) {
+      setCurrentPageIndex(prev => Math.min(pages.length - 1, prev + 1));
+    } else if (ratio > SWIPE_THRESHOLD_RATIO && currentPageIndex > 0) {
+      setCurrentPageIndex(prev => Math.max(0, prev - 1));
+    }
+    setIsDragging(false);
+    setDragOffset(0);
+    dragOffsetPx.current = 0;
+  }, [isDragging, currentPageIndex, pages.length]);
+
+  const handlePointerCancel = useCallback((e: React.PointerEvent) => {
+    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    setIsDragging(false);
+    setDragOffset(0);
+    dragOffsetPx.current = 0;
+  }, []);
+
+  const handleWordClick = useCallback((wordId: string) => {
+    if (ignoreNextWordClick.current) {
+      ignoreNextWordClick.current = false;
+      return;
+    }
     if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
       return;
     }
-    
-    // Toggle selection - if already selected, close toolbar; otherwise open it
     if (selectedWordId === wordId) {
       setSelectedWordId(null);
-      setPhraseSelection(null);
-      setInvalidSelection(null);
       setClickedWords(prev => {
         const newSet = new Set(prev);
         newSet.delete(wordId);
@@ -257,189 +252,15 @@ export const Reader: React.FC = () => {
       });
     } else {
       setSelectedWordId(wordId);
-      setPhraseSelection(null);
-      setInvalidSelection(null);
       setLingqWords(prev => new Set(prev).add(wordId));
-      // Also mark as clicked for highlighting
       setClickedWords(prev => {
         const newSet = new Set(prev);
-        if (!newSet.has(wordId)) {
-          newSet.add(wordId);
-        }
+        if (!newSet.has(wordId)) newSet.add(wordId);
         return newSet;
       });
     }
-  }, [selectedWordId, knownWords, ignoredWords, didDragSelection]);
+  }, [selectedWordId, knownWords, ignoredWords]);
 
-  const updatePhraseSelection = useCallback(
-    (anchor: { sentenceIndex: number; wordIndex: number }, currentIndex: number) => {
-      const sentenceWords = lesson.sentences[anchor.sentenceIndex].words;
-      const maxSpan = 9;
-      let start = Math.min(anchor.wordIndex, currentIndex);
-      let end = Math.max(anchor.wordIndex, currentIndex);
-      const span = end - start + 1;
-      if (span > maxSpan) {
-        const selectedIds = sentenceWords.slice(start, end + 1).map(word => word.id);
-        setClickedWords(new Set(selectedIds));
-        setPhraseSelection(null);
-        setInvalidSelection({
-          wordIds: selectedIds,
-          text: sentenceWords
-            .slice(start, end + 1)
-            .map(word => word.text)
-            .join(' '),
-        });
-        setDidDragSelection(true);
-        return;
-      }
-
-      setInvalidSelection(null);
-      setPhraseSelection({ sentenceIndex: anchor.sentenceIndex, startIdx: start, endIdx: end });
-      const selectedIds = sentenceWords.slice(start, end + 1).map(word => word.id);
-      setClickedWords(new Set(selectedIds));
-      if (selectedIds.length > 1) {
-        setDidDragSelection(true);
-      }
-    },
-    [lesson.sentences]
-  );
-
-  const handleWordPointerDown = useCallback(
-    (wordId: string) => {
-      if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
-        return;
-      }
-      const meta = wordMeta.get(wordId);
-      if (!meta) return;
-      selectionAnchorRef.current = { sentenceIndex: meta.sentenceIndex, wordIndex: meta.wordIndex, wordId };
-      setIsSelectingPhrase(true);
-      setDidDragSelection(false);
-      setInvalidSelection(null);
-      updatePhraseSelection(meta, meta.wordIndex);
-    },
-    [knownWords, ignoredWords, wordMeta, updatePhraseSelection]
-  );
-
-  const handleWordPointerEnter = useCallback(
-    (wordId: string) => {
-      if (!isSelectingPhrase || !selectionAnchorRef.current) return;
-      const anchor = selectionAnchorRef.current;
-      const meta = wordMeta.get(wordId);
-      if (!meta) return;
-      if (meta.sentenceIndex !== anchor.sentenceIndex) {
-        const anchorIndex = wordIndexMap.get(anchor.wordId);
-        const currentIndex = wordIndexMap.get(wordId);
-        if (anchorIndex === undefined || currentIndex === undefined) return;
-        const start = Math.min(anchorIndex, currentIndex);
-        const end = Math.max(anchorIndex, currentIndex);
-        const selectedIds = wordOrder.slice(start, end + 1);
-        const text = selectedIds
-          .map(id => wordTextMap.get(id))
-          .filter((value): value is string => Boolean(value))
-          .join(' ');
-        setPhraseSelection(null);
-        setInvalidSelection({ wordIds: selectedIds, text });
-        setClickedWords(new Set(selectedIds));
-        setDidDragSelection(true);
-        return;
-      }
-      updatePhraseSelection(anchor, meta.wordIndex);
-    },
-    [isSelectingPhrase, wordMeta, wordIndexMap, wordOrder, wordTextMap, updatePhraseSelection]
-  );
-
-  const handleWordPointerUp = useCallback(() => {
-    setIsSelectingPhrase(false);
-    if (phraseSelection && selectionAnchorRef.current) {
-      const span = phraseSelection.endIdx - phraseSelection.startIdx + 1;
-      const sentenceWords = lesson.sentences[phraseSelection.sentenceIndex].words;
-      const selectedIds = sentenceWords
-        .slice(phraseSelection.startIdx, phraseSelection.endIdx + 1)
-        .map(word => word.id);
-      setLingqWords(prev => {
-        const next = new Set(prev);
-        selectedIds.forEach(id => next.add(id));
-        return next;
-      });
-      if (span > 1) {
-        setSelectedWordId(selectionAnchorRef.current.wordId);
-      }
-    }
-    if (invalidSelection && selectionAnchorRef.current) {
-      setSelectedWordId(selectionAnchorRef.current.wordId);
-    }
-    selectionAnchorRef.current = null;
-  }, [phraseSelection, invalidSelection, lesson.sentences]);
-
-  useEffect(() => {
-    const handleWindowUp = () => {
-      if (isSelectingPhrase) {
-        handleWordPointerUp();
-      }
-    };
-    window.addEventListener('mouseup', handleWindowUp);
-    return () => window.removeEventListener('mouseup', handleWindowUp);
-  }, [isSelectingPhrase, handleWordPointerUp]);
-
-  const handleMarkAsKnown = useCallback((wordId: string) => {
-    setKnownWords(prev => new Set(prev).add(wordId));
-    setLingqWords(prev => {
-      const next = new Set(prev);
-      next.delete(wordId);
-      return next;
-    });
-    setClickedWords(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(wordId);
-      return newSet;
-    });
-  }, []);
-
-  const handleIgnore = useCallback((wordId: string) => {
-    setIgnoredWords(prev => new Set(prev).add(wordId));
-    setLingqWords(prev => {
-      const next = new Set(prev);
-      next.delete(wordId);
-      return next;
-    });
-    setClickedWords(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(wordId);
-      return newSet;
-    });
-  }, []);
-
-  const getWordLevel = useCallback((wordId: string) => {
-    return wordLevels.get(wordId) ?? 1;
-  }, [wordLevels]);
-
-  const handleSetWordLevel = useCallback((wordId: string, level: number) => {
-    setWordLevels(prev => {
-      const next = new Map(prev);
-      const nextLevel = Math.max(1, Math.min(4, level));
-      next.set(wordId, nextLevel);
-      return next;
-    });
-  }, []);
-
-  const handleOpenAIChat = useCallback((wordText: string) => {
-    // TODO: Implement AI chat functionality
-    console.log('Open AI chat for word:', wordText);
-    // This would open a chat interface with Lynx AI
-  }, []);
-
-  const handleInspectSentence = useCallback((wordId: string) => {
-    // Find the sentence containing this word
-    for (const sentence of lesson.sentences) {
-      if (sentence.words.some(w => w.id === wordId)) {
-        console.log('Inspect sentence:', sentence.words.map(w => w.text).join(' '));
-        // TODO: Implement sentence inspection UI
-        break;
-      }
-    }
-  }, []);
-
-  // Find word by ID
   const getWordById = useCallback((wordId: string): Word | undefined => {
     for (const sentence of lesson.sentences) {
       const word = sentence.words.find(w => w.id === wordId);
@@ -453,13 +274,38 @@ export const Reader: React.FC = () => {
     return document.getElementById(wordId);
   }, []);
 
-  const handlePrevious = useCallback(() => {
-    setCurrentPageIndex(prev => Math.max(0, prev - 1));
-  }, []);
+  // Close the popup
+  const handleClosePopup = useCallback(() => {
+    if (selectedWordId) {
+      setClickedWords(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(selectedWordId);
+        return newSet;
+      });
+    }
+    setSelectedWordId(null);
+  }, [selectedWordId]);
 
-  const handleNext = useCallback(() => {
-    setCurrentPageIndex(prev => Math.min(pages.length - 1, prev + 1));
-  }, [pages.length]);
+  // Data for the selected word (for popup position + meaning)
+  const selectedWordData = React.useMemo(() => {
+    if (!selectedWordId) return null;
+
+    const word = getWordById(selectedWordId);
+    if (!word) return null;
+
+    let wordEl: HTMLElement | null = null;
+    if (isDrawerOpen) {
+      const drawer = document.querySelector('.audio-mode-drawer-root.open');
+      wordEl = drawer?.querySelector(`[id="${CSS.escape(selectedWordId)}"]`) as HTMLElement | null ?? null;
+    }
+    if (!wordEl) {
+      wordEl = getWordElement(selectedWordId);
+    }
+    const anchorRect = wordEl?.getBoundingClientRect();
+    if (!anchorRect) return null;
+
+    return { word, anchorRect };
+  }, [selectedWordId, getWordById, getWordElement, isDrawerOpen]);
 
   const [hoveredPageIndex, setHoveredPageIndex] = React.useState<number | null>(null);
 
@@ -488,6 +334,10 @@ export const Reader: React.FC = () => {
   const handleProgressBarMouseLeave = useCallback(() => {
     setHoveredPageIndex(null);
   }, []);
+
+  const contentWidth = contentRef.current?.clientWidth ?? 1;
+  const dragOffsetPercent = contentWidth > 0 ? (dragOffset / contentWidth) * 100 : 0;
+  const pageTransform = -currentPageIndex * 100 + dragOffsetPercent;
 
   // Calculate progress: position thumb at the end of the fill progress
   const fillProgress = pages.length > 0 ? Math.min(100, ((currentPageIndex + 1) / pages.length) * 100) : 0;
@@ -524,12 +374,20 @@ export const Reader: React.FC = () => {
               )}
             </div>
           </div>
-          <div className="reader-content">
-            <div 
-              className="pages-container"
+          <div
+            className="reader-content"
+            ref={contentRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={e => handlePointerUp(e)}
+            onPointerLeave={() => handlePointerUp()}
+            onPointerCancel={handlePointerCancel}
+          >
+            <div
+              className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
               style={{
-                transform: `translateX(-${currentPageIndex * 100}%)`,
-                transition: 'transform 0.3s ease-in-out'
+                transform: `translateX(${pageTransform}%)`,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
               }}
             >
               {pages.map((page, index) => (
@@ -539,85 +397,54 @@ export const Reader: React.FC = () => {
                     clickedWords={clickedWords}
                     lingqWords={lingqWords}
                     onWordClick={handleWordClick}
-                    onWordPointerDown={handleWordPointerDown}
-                    onWordPointerEnter={handleWordPointerEnter}
-                    onWordPointerUp={handleWordPointerUp}
                     knownWords={knownWords}
                     ignoredWords={ignoredWords}
                   />
                 </div>
               ))}
             </div>
-            <NavigationChevrons
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              canGoPrevious={currentPageIndex > 0}
-              canGoNext={currentPageIndex < pages.length - 1}
-              visible={chevronVisible}
-            />
           </div>
-          {selectedWordId && (() => {
-            const selectionWords = phraseSelection
-              ? lesson.sentences[phraseSelection.sentenceIndex].words.slice(
-                  phraseSelection.startIdx,
-                  phraseSelection.endIdx + 1
-                )
-              : (() => {
-                  const word = getWordById(selectedWordId);
-                  return word ? [word] : [];
-                })();
-
-            if (selectionWords.length === 0) return null;
-            const anchorId = selectionWords[0]?.id ?? selectedWordId;
-            const anchorRect = (() => {
-              if (selectionWords.length === 1) return undefined;
-              const firstEl = getWordElement(selectionWords[0].id);
-              const lastEl = getWordElement(selectionWords[selectionWords.length - 1].id);
-              if (!firstEl || !lastEl) return undefined;
-              const firstRect = firstEl.getBoundingClientRect();
-              const lastRect = lastEl.getBoundingClientRect();
-              const left = Math.min(firstRect.left, lastRect.left);
-              const right = Math.max(firstRect.right, lastRect.right);
-              const top = Math.min(firstRect.top, lastRect.top);
-              const bottom = Math.max(firstRect.bottom, lastRect.bottom);
-              return new DOMRect(left, top, right - left, bottom - top);
-            })();
-
-            const phraseText = selectionWords.map(word => word.text).join(' ');
-            const phraseTranslation = selectionWords
-              .map(word => word.translation || word.text)
-              .join(' ');
-            const invalidText = invalidSelection?.text
-              ? (() => {
-                  const words = invalidSelection.text.trim().split(/\s+/);
-                  if (words.length <= 9) return invalidSelection.text;
-                  return `${words.slice(0, 9).join(' ')}…`;
-                })()
-              : undefined;
-
-            return (
-              <WordToolbar
-                wordId={anchorId}
-                wordText={phraseText}
-                wordTranslation={phraseTranslation}
-                wordElement={getWordElement(anchorId)}
-                wordLevel={getWordLevel(anchorId)}
-                anchorRect={anchorRect}
-                invalidSelectionText={invalidText}
-                onSetWordLevel={handleSetWordLevel}
-                onClose={() => {
-                  setSelectedWordId(null);
-                  setPhraseSelection(null);
-                  setInvalidSelection(null);
-                  setClickedWords(new Set());
-                }}
-                onMarkAsKnown={handleMarkAsKnown}
-                onIgnore={handleIgnore}
-                onOpenAIChat={handleOpenAIChat}
-                onInspectSentence={handleInspectSentence}
-              />
-            );
-          })()}
+          {selectedWordId && selectedWordData && (
+            <ReaderPopUp
+              key={selectedWordId}
+              wordId={selectedWordId}
+              wordText={selectedWordData.word.text}
+              wordTranslation={selectedWordData.word.translation}
+              anchorRect={selectedWordData.anchorRect}
+              onClose={handleClosePopup}
+            />
+          )}
+          <AudioModeDrawer
+            open={isDrawerOpen}
+            onClose={() => setIsDrawerOpen(false)}
+            showPlayer={drawerMode === 'audio'}
+            lessonTitle={lesson.title}
+            lessonSource={lesson.source ?? ''}
+            sentences={lesson.sentences}
+            videoUrl={lesson.videoUrl}
+            clickedWords={clickedWords}
+            lingqWords={lingqWords}
+            knownWords={knownWords}
+            ignoredWords={ignoredWords}
+            onWordClick={handleWordClick}
+          />
+          <ReaderBottomBar
+            onPlay={() => {
+              setDrawerMode('audio');
+              setIsDrawerOpen(true);
+            }}
+            onLessonImageClick={() => {
+              setDrawerMode('audio');
+              setIsDrawerOpen(true);
+            }}
+            hasVideo={lesson.hasVideo ?? false}
+            onVideoMode={() => {
+              setDrawerMode('video');
+              setIsDrawerOpen(true);
+            }}
+            lessonTitle={lesson.title}
+            lessonSource={lesson.source ?? ''}
+          />
         </>
       )}
     </div>

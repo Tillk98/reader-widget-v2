@@ -10,7 +10,10 @@ export interface Sentence {
 
 export interface Lesson {
   title: string;
+  source?: string;
   sentences: Sentence[];
+  hasVideo?: boolean;
+  videoUrl?: string;
 }
 
 // Translation map for French words to English
@@ -476,4 +479,8 @@ function parseLesson(text: string): Lesson {
   };
 }
 
-export const lesson: Lesson = parseLesson(lessonText);
+export const lesson: Lesson = {
+  ...parseLesson(lessonText),
+  source: 'La statistique expliquée à mon chat',
+  hasVideo: true,
+};
