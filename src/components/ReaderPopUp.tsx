@@ -53,16 +53,21 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   }, [calculatePosition]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        const wordEl = document.getElementById(wordId);
-        if (wordEl && wordEl.contains(e.target as Node)) return;
-        onClose();
-      }
+    const isOutside = (target: EventTarget | null) =>
+      popupRef.current && target instanceof Node && !popupRef.current.contains(target);
+    const handleMouseOutside = (e: MouseEvent) => {
+      if (isOutside(e.target)) onClose();
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose, wordId]);
+    const handleTouchOutside = (e: TouchEvent) => {
+      if (e.changedTouches.length > 0 && isOutside(e.changedTouches[0].target)) onClose();
+    };
+    document.addEventListener('mousedown', handleMouseOutside);
+    document.addEventListener('touchstart', handleTouchOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleMouseOutside);
+      document.removeEventListener('touchstart', handleTouchOutside);
+    };
+  }, [onClose]);
 
   return (
     <div ref={popupRef} className="reader-popup-widget" role="tooltip">
