@@ -24,7 +24,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
   width: 100%;
   max-width: 600px;
   pointer-events: auto;
@@ -204,6 +204,13 @@
   letter-spacing: 0;
   color: #6d7680;
   white-space: nowrap;
+}
+
+/* Medium width: 3 columns (8 items = 3+3+2) */
+@media (max-width: 480px) {
+  .reader-bottom-bar-expanded-grid {
+    grid-template-columns: repeat(3, 50px);
+  }
 }
 
 /* Play area: when not playing, flex row with play pill + optional video pill; when playing, expanded mini player */
@@ -588,7 +595,7 @@
   display: block;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 385px) {
   .reader-bottom-bar {
     padding: 8px 16px;
     padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));

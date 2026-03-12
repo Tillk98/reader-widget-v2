@@ -49,6 +49,49 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   const [selectedSentenceIndex, setSelectedSentenceIndex] = React.useState<number | null>(null);
   const sentenceToolbarRef = useRef<HTMLDivElement | null>(null);
   const handleDragStartYRef = useRef<number | null>(null);
+  const handleRef = useRef<HTMLDivElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const el = handleRef.current;
+    if (!el) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (handleDragStartYRef.current === null) return;
+      e.preventDefault();
+      if (e.touches.length > 0) {
+        const deltaY = e.touches[0].clientY - handleDragStartYRef.current;
+        if (deltaY >= HANDLE_DRAG_CLOSE_THRESHOLD_PX) {
+          handleDragStartYRef.current = null;
+          onCloseRef.current();
+          document.removeEventListener('touchmove', onTouchMove, { capture: true });
+          document.removeEventListener('touchend', onTouchEnd, { capture: true });
+          document.removeEventListener('touchcancel', onTouchEnd, { capture: true });
+        }
+      }
+    };
+    const onTouchEnd = () => {
+      handleDragStartYRef.current = null;
+      document.removeEventListener('touchmove', onTouchMove, { capture: true });
+      document.removeEventListener('touchend', onTouchEnd, { capture: true });
+      document.removeEventListener('touchcancel', onTouchEnd, { capture: true });
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.changedTouches.length > 0) {
+        handleDragStartYRef.current = e.changedTouches[0].clientY;
+        document.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+        document.addEventListener('touchend', onTouchEnd, { capture: true });
+        document.addEventListener('touchcancel', onTouchEnd, { capture: true });
+      }
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove, { capture: true });
+      document.removeEventListener('touchend', onTouchEnd, { capture: true });
+      document.removeEventListener('touchcancel', onTouchEnd, { capture: true });
+    };
+  }, []);
 
   const handleHandlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
@@ -88,6 +131,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   }, []);
 
   const handleSentenceBlockClick = useCallback((e: React.MouseEvent, sentenceIndex: number) => {
+    if ((e.target as HTMLElement).closest('.sentence-item')) return;
     e.stopPropagation();
     setSelectedSentenceIndex(prev => (prev === sentenceIndex ? null : sentenceIndex));
   }, []);
@@ -112,6 +156,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
       <div className="audio-mode-drawer-panel">
         <header className={`audio-mode-drawer-top-bar ${!showPlayer ? 'audio-mode-drawer-top-bar-video-mode' : ''}`}>
           <div
+            ref={handleRef}
             className="audio-mode-drawer-handle"
             aria-hidden
             role="button"

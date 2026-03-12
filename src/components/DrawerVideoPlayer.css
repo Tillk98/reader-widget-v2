@@ -1,7 +1,7 @@
 .drawer-video-player {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 8.1; /* 10% shorter than 16/9 */
   border-radius: 4px;
   overflow: hidden;
   background: #e3e5e7;
