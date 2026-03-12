@@ -11,7 +11,6 @@ interface ReaderPopUpProps {
 }
 
 export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
-  wordId,
   wordTranslation,
   anchorRect,
   onClose,
