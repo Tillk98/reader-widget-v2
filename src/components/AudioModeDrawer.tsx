@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import { Pause, Play, Languages } from 'lucide-react';
+import { Pause, Play, Languages, X } from 'lucide-react';
 import type { Sentence as SentenceType } from '../data/lesson';
 import { Word } from './Word';
 import { DrawerVideoPlayer } from './DrawerVideoPlayer';
@@ -14,6 +14,7 @@ import lynxIcon from '../assets/lynx-icon.png';
 import './AudioModeDrawer.css';
 
 const HANDLE_DRAG_CLOSE_THRESHOLD_PX = 40;
+const LONG_PRESS_MS = 450;
 
 export interface AudioModeDrawerProps {
   open: boolean;
@@ -52,6 +53,8 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   const handleRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressSentenceRef = useRef<number | null>(null);
 
   useEffect(() => {
     const el = handleRef.current;
@@ -71,6 +74,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
       }
     };
     const onTouchEnd = () => {
+      if (handleDragStartYRef.current !== null) onCloseRef.current(); /* tap on handle closes */
       handleDragStartYRef.current = null;
       document.removeEventListener('touchmove', onTouchMove, { capture: true });
       document.removeEventListener('touchend', onTouchEnd, { capture: true });
@@ -117,6 +121,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
     if (handleDragStartYRef.current === null) return;
     const deltaY = e.clientY - handleDragStartYRef.current;
     if (deltaY >= HANDLE_DRAG_CLOSE_THRESHOLD_PX) onClose();
+    else onClose(); /* tap on handle also closes */
     handleDragStartYRef.current = null;
     (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
   }, [onClose]);
@@ -130,11 +135,42 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
     setSelectedSentenceIndex(null);
   }, []);
 
-  const handleSentenceBlockClick = useCallback((e: React.MouseEvent, sentenceIndex: number) => {
-    if ((e.target as HTMLElement).closest('.sentence-item')) return;
-    e.stopPropagation();
-    setSelectedSentenceIndex(prev => (prev === sentenceIndex ? null : sentenceIndex));
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressSentenceRef.current = null;
   }, []);
+
+  const handleSentenceBlockPointerDown = useCallback((e: React.PointerEvent, sentenceIndex: number) => {
+    if ((e.target as HTMLElement).closest('.sentence-item')) return;
+    e.preventDefault();
+    clearLongPressTimer();
+    longPressSentenceRef.current = sentenceIndex;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      const idx = longPressSentenceRef.current;
+      longPressSentenceRef.current = null;
+      if (idx !== null) setSelectedSentenceIndex(idx);
+    }, LONG_PRESS_MS);
+  }, [clearLongPressTimer]);
+
+  const handleSentenceBlockPointerUp = useCallback(() => {
+    clearLongPressTimer();
+  }, [clearLongPressTimer]);
+
+  const handleSentenceBlockPointerCancel = useCallback(() => {
+    clearLongPressTimer();
+  }, [clearLongPressTimer]);
+
+  const handleToolbarClose = useCallback(() => {
+    setSelectedSentenceIndex(null);
+  }, []);
+
+  const handleSentenceBlockClick = useCallback((e: React.MouseEvent, sentenceIndex: number) => {
+    if (selectedSentenceIndex === sentenceIndex && !(e.target as HTMLElement).closest('.sentence-item')) e.stopPropagation();
+  }, [selectedSentenceIndex]);
 
   useEffect(() => {
     if (selectedSentenceIndex !== null && selectedSentenceIndex >= sentences.length) {
@@ -145,6 +181,10 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   useEffect(() => {
     if (!open) setSelectedSentenceIndex(null);
   }, [open]);
+
+  useEffect(() => {
+    return () => clearLongPressTimer();
+  }, [clearLongPressTimer]);
 
   return (
     <div
@@ -195,6 +235,9 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 tabIndex={0}
                 className={`audio-mode-drawer-sentence-block ${selectedSentenceIndex === sentenceIndex ? 'audio-mode-drawer-sentence-block-selected' : ''}`}
                 onClick={e => handleSentenceBlockClick(e, sentenceIndex)}
+                onPointerDown={e => handleSentenceBlockPointerDown(e, sentenceIndex)}
+                onPointerUp={handleSentenceBlockPointerUp}
+                onPointerCancel={handleSentenceBlockPointerCancel}
               >
                 <p className="audio-mode-drawer-sentence">
                   {sentence.words.map((word, wordIndex) => (
@@ -225,46 +268,29 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 role="toolbar"
                 aria-label="Sentence actions"
               >
-                <button
-                  type="button"
-                  className="audio-mode-drawer-sentence-toolbar-btn"
-                  aria-label="Play from sentence"
-                  onClick={() => {}}
-                >
-                  <Play size={24} />
-                </button>
-                <button
-                  type="button"
-                  className="audio-mode-drawer-sentence-toolbar-btn"
-                  aria-label="Generate translation"
-                  onClick={() => {}}
-                >
-                  <Languages size={24} />
-                </button>
-                <button
-                  type="button"
-                  className="audio-mode-drawer-sentence-toolbar-btn"
-                  aria-label="Sentence mode"
-                  onClick={() => onSentence?.()}
-                >
-                  <img src={sentenceIcon} alt="" />
-                </button>
-                <button
-                  type="button"
-                  className="audio-mode-drawer-sentence-toolbar-btn"
-                  aria-label="Review sentence"
-                  onClick={() => {}}
-                >
-                  <img src={reviewIcon} alt="" />
-                </button>
-                <button
-                  type="button"
-                  className="audio-mode-drawer-sentence-toolbar-btn"
-                  aria-label="Lynx"
-                  onClick={() => {}}
-                >
-                  <img src={lynxIcon} alt="" />
-                </button>
+                <div className="audio-mode-drawer-sentence-toolbar-actions">
+                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
+                    <Play size={24} />
+                  </button>
+                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
+                    <Languages size={24} />
+                  </button>
+                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
+                    <img src={sentenceIcon} alt="" />
+                  </button>
+                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
+                    <img src={reviewIcon} alt="" />
+                  </button>
+                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
+                    <img src={lynxIcon} alt="" />
+                  </button>
+                </div>
+                <div className="audio-mode-drawer-sentence-toolbar-close-wrap">
+                  <div className="audio-mode-drawer-sentence-toolbar-divider" aria-hidden />
+                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn audio-mode-drawer-sentence-toolbar-close" aria-label="Close" onClick={handleToolbarClose}>
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
             )}
             {showPlayer && (
@@ -361,6 +387,9 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                   tabIndex={0}
                   className={`audio-mode-drawer-sentence-block ${selectedSentenceIndex === sentenceIndex ? 'audio-mode-drawer-sentence-block-selected' : ''}`}
                   onClick={e => handleSentenceBlockClick(e, sentenceIndex)}
+                  onPointerDown={e => handleSentenceBlockPointerDown(e, sentenceIndex)}
+                  onPointerUp={handleSentenceBlockPointerUp}
+                  onPointerCancel={handleSentenceBlockPointerCancel}
                 >
                   <p className="audio-mode-drawer-sentence">
                     {sentence.words.map((word, wordIndex) => (
@@ -390,46 +419,29 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
               role="toolbar"
               aria-label="Sentence actions"
             >
-              <button
-                type="button"
-                className="audio-mode-drawer-sentence-toolbar-btn"
-                aria-label="Play from sentence"
-                onClick={() => {}}
-              >
-                <Play size={24} />
-              </button>
-              <button
-                type="button"
-                className="audio-mode-drawer-sentence-toolbar-btn"
-                aria-label="Generate translation"
-                onClick={() => {}}
-              >
-                <Languages size={24} />
-              </button>
-              <button
-                type="button"
-                className="audio-mode-drawer-sentence-toolbar-btn"
-                aria-label="Sentence mode"
-                onClick={() => onSentence?.()}
-              >
-                <img src={sentenceIcon} alt="" />
-              </button>
-              <button
-                type="button"
-                className="audio-mode-drawer-sentence-toolbar-btn"
-                aria-label="Review sentence"
-                onClick={() => {}}
-              >
-                <img src={reviewIcon} alt="" />
-              </button>
-              <button
-                type="button"
-                className="audio-mode-drawer-sentence-toolbar-btn"
-                aria-label="Lynx"
-                onClick={() => {}}
-              >
-                <img src={lynxIcon} alt="" />
-              </button>
+              <div className="audio-mode-drawer-sentence-toolbar-actions">
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
+                  <Play size={24} />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
+                  <Languages size={24} />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
+                  <img src={sentenceIcon} alt="" />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
+                  <img src={reviewIcon} alt="" />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
+                  <img src={lynxIcon} alt="" />
+                </button>
+              </div>
+              <div className="audio-mode-drawer-sentence-toolbar-close-wrap">
+                <div className="audio-mode-drawer-sentence-toolbar-divider" aria-hidden />
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn audio-mode-drawer-sentence-toolbar-close" aria-label="Close" onClick={handleToolbarClose}>
+                  <X size={24} />
+                </button>
+              </div>
             </div>
           </div>
         )}
