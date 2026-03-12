@@ -85,7 +85,9 @@ export const Reader: React.FC = () => {
     let currentPage: Word[] = [];
     const pagePadding = 16; // 8px top + 8px bottom
     const titleHeight = 80; // Approximate title height
-    const availableHeight = containerHeight - pagePadding - titleHeight;
+    const topReserved = 40; // Progress bar (matches .reader-content margin-top)
+    const bottomReserved = 80; // Bottom bar + breathing room (matches .reader-content padding-bottom)
+    const availableHeight = containerHeight - topReserved - bottomReserved - pagePadding - titleHeight;
 
     // Build pages by measuring accumulated height with actual word spans
     for (let i = 0; i < allWords.length; i++) {

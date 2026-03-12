@@ -46,11 +46,12 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   onWordClick,
   videoUrl,
 }) => {
-  const [selectedSentenceIndex, setSelectedSentenceIndex] = React.useState<number>(0);
+  const [selectedSentenceIndex, setSelectedSentenceIndex] = React.useState<number | null>(null);
   const sentenceToolbarRef = useRef<HTMLDivElement | null>(null);
   const handleDragStartYRef = useRef<number | null>(null);
 
   const handleHandlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
     handleDragStartYRef.current = e.clientY;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
@@ -58,6 +59,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   const handleHandlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (handleDragStartYRef.current === null) return;
+      e.preventDefault(); /* prevent pull-to-refresh while dragging handle */
       const deltaY = e.clientY - handleDragStartYRef.current;
       if (deltaY >= HANDLE_DRAG_CLOSE_THRESHOLD_PX) {
         handleDragStartYRef.current = null;
@@ -82,18 +84,23 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
 
   const handleContentClick = useCallback((e: React.MouseEvent) => {
     if (sentenceToolbarRef.current?.contains(e.target as Node)) return;
+    setSelectedSentenceIndex(null);
   }, []);
 
   const handleSentenceBlockClick = useCallback((e: React.MouseEvent, sentenceIndex: number) => {
     e.stopPropagation();
-    setSelectedSentenceIndex(sentenceIndex);
+    setSelectedSentenceIndex(prev => (prev === sentenceIndex ? null : sentenceIndex));
   }, []);
 
   useEffect(() => {
-    if (sentences.length > 0 && selectedSentenceIndex >= sentences.length) {
-      setSelectedSentenceIndex(0);
+    if (selectedSentenceIndex !== null && selectedSentenceIndex >= sentences.length) {
+      setSelectedSentenceIndex(null);
     }
   }, [sentences.length, selectedSentenceIndex]);
+
+  useEffect(() => {
+    if (!open) setSelectedSentenceIndex(null);
+  }, [open]);
 
   return (
     <div
@@ -166,7 +173,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
 
         <div className="audio-mode-drawer-player-wrap">
           <>
-            {sentences.length > 0 && selectedSentenceIndex < sentences.length && (
+            {selectedSentenceIndex !== null && selectedSentenceIndex < sentences.length && (
               <div
                 ref={sentenceToolbarRef}
                 className="audio-mode-drawer-sentence-toolbar"
@@ -179,7 +186,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                   aria-label="Play from sentence"
                   onClick={() => {}}
                 >
-                  <Play size={18} />
+                  <Play size={24} />
                 </button>
                 <button
                   type="button"
@@ -187,7 +194,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                   aria-label="Generate translation"
                   onClick={() => {}}
                 >
-                  <Languages size={18} />
+                  <Languages size={24} />
                 </button>
                 <button
                   type="button"
@@ -330,7 +337,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
             </div>
           </main>
         </div>
-        {sentences.length > 0 && selectedSentenceIndex < sentences.length && (
+        {selectedSentenceIndex !== null && selectedSentenceIndex < sentences.length && (
           <div className="audio-mode-drawer-video-toolbar-wrap">
             <div
               ref={sentenceToolbarRef}
@@ -344,7 +351,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 aria-label="Play from sentence"
                 onClick={() => {}}
               >
-                <Play size={18} />
+                <Play size={24} />
               </button>
               <button
                 type="button"
@@ -352,7 +359,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 aria-label="Generate translation"
                 onClick={() => {}}
               >
-                <Languages size={18} />
+                <Languages size={24} />
               </button>
               <button
                 type="button"
