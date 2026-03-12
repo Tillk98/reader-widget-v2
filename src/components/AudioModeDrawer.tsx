@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import { Pause, Play, Languages, X } from 'lucide-react';
+import { Pause, Play, Languages } from 'lucide-react';
 import type { Sentence as SentenceType } from '../data/lesson';
 import { Word } from './Word';
 import { DrawerVideoPlayer } from './DrawerVideoPlayer';
@@ -164,10 +164,6 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
     clearLongPressTimer();
   }, [clearLongPressTimer]);
 
-  const handleToolbarClose = useCallback(() => {
-    setSelectedSentenceIndex(null);
-  }, []);
-
   const handleSentenceBlockClick = useCallback((e: React.MouseEvent, sentenceIndex: number) => {
     if (selectedSentenceIndex === sentenceIndex && !(e.target as HTMLElement).closest('.sentence-item')) e.stopPropagation();
   }, [selectedSentenceIndex]);
@@ -268,29 +264,21 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 role="toolbar"
                 aria-label="Sentence actions"
               >
-                <div className="audio-mode-drawer-sentence-toolbar-actions">
-                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
-                    <Play size={24} />
-                  </button>
-                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
-                    <Languages size={24} />
-                  </button>
-                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
-                    <img src={sentenceIcon} alt="" />
-                  </button>
-                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
-                    <img src={reviewIcon} alt="" />
-                  </button>
-                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
-                    <img src={lynxIcon} alt="" />
-                  </button>
-                </div>
-                <div className="audio-mode-drawer-sentence-toolbar-close-wrap">
-                  <div className="audio-mode-drawer-sentence-toolbar-divider" aria-hidden />
-                  <button type="button" className="audio-mode-drawer-sentence-toolbar-btn audio-mode-drawer-sentence-toolbar-close" aria-label="Close" onClick={handleToolbarClose}>
-                    <X size={24} />
-                  </button>
-                </div>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
+                  <Play size={24} />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
+                  <Languages size={24} />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
+                  <img src={sentenceIcon} alt="" />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
+                  <img src={reviewIcon} alt="" />
+                </button>
+                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
+                  <img src={lynxIcon} alt="" />
+                </button>
               </div>
             )}
             {showPlayer && (
@@ -419,29 +407,21 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
               role="toolbar"
               aria-label="Sentence actions"
             >
-              <div className="audio-mode-drawer-sentence-toolbar-actions">
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
-                  <Play size={24} />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
-                  <Languages size={24} />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
-                  <img src={sentenceIcon} alt="" />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
-                  <img src={reviewIcon} alt="" />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
-                  <img src={lynxIcon} alt="" />
-                </button>
-              </div>
-              <div className="audio-mode-drawer-sentence-toolbar-close-wrap">
-                <div className="audio-mode-drawer-sentence-toolbar-divider" aria-hidden />
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn audio-mode-drawer-sentence-toolbar-close" aria-label="Close" onClick={handleToolbarClose}>
-                  <X size={24} />
-                </button>
-              </div>
+              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
+                <Play size={24} />
+              </button>
+              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
+                <Languages size={24} />
+              </button>
+              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
+                <img src={sentenceIcon} alt="" />
+              </button>
+              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
+                <img src={reviewIcon} alt="" />
+              </button>
+              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
+                <img src={lynxIcon} alt="" />
+              </button>
             </div>
           </div>
         )}

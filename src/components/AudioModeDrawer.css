@@ -245,17 +245,16 @@
 
 .audio-mode-drawer-sentence-toolbar {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
   bottom: 100%;
   margin-bottom: 12px;
+  transform: translateX(-50%);
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: 40px;
-  width: 100%;
-  padding: 4px 4px 4px 4px;
+  width: fit-content;
+  padding: 4px;
   border: none;
   border-radius: 999px;
   overflow: hidden;
@@ -266,35 +265,13 @@
   box-sizing: border-box;
 }
 
-.audio-mode-drawer-sentence-toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  flex: 0 0 auto;
-}
-
-.audio-mode-drawer-sentence-toolbar-close-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  flex-shrink: 0;
-}
-
-.audio-mode-drawer-sentence-toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
-  margin: 0 4px;
-}
-
 .audio-mode-drawer-sentence-toolbar-video-mode {
   position: relative;
   bottom: auto;
   left: auto;
-  right: auto;
   margin-bottom: 0;
   transform: none;
+  width: fit-content;
 }
 
 .audio-mode-drawer-sentence-toolbar-btn {
