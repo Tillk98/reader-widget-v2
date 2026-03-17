@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import { Pause, Play, Languages } from 'lucide-react';
+import { Pause } from 'lucide-react';
 import type { Sentence as SentenceType } from '../data/lesson';
 import type { LingQStatusType } from './LingQStatusBar';
 import { Word } from './Word';
@@ -8,15 +8,11 @@ import { DrawerVideoPlayer } from './DrawerVideoPlayer';
 import playerBack from '../assets/player-back.png';
 import playerForward from '../assets/player-forward.png';
 import playerRepeat from '../assets/player-repeat.png';
-import sentenceIcon from '../assets/sentence-icon.png';
 import lessonImage from '../assets/lesson-image.png';
 import videoThumbnail from '../assets/video-thumbnail.png';
-import reviewIcon from '../assets/review-icon.png';
-import lynxIcon from '../assets/lynx-icon.png';
 import './AudioModeDrawer.css';
 
 const HANDLE_DRAG_CLOSE_THRESHOLD_PX = 40;
-const LONG_PRESS_MS = 450;
 
 export interface AudioModeDrawerProps {
   open: boolean;
@@ -46,7 +42,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   open,
   onClose,
   showPlayer = true,
-  onSentence,
+  onSentence: _onSentence,
   lessonTitle,
   lessonSource,
   sentences,
@@ -65,14 +61,10 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   onNextWord,
 }) => {
   const showActiveBar = open && selectedWordId != null && onSelectedWordStatusChange != null;
-  const [selectedSentenceIndex, setSelectedSentenceIndex] = React.useState<number | null>(null);
-  const sentenceToolbarRef = useRef<HTMLDivElement | null>(null);
   const handleDragStartYRef = useRef<number | null>(null);
   const handleRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressSentenceRef = useRef<number | null>(null);
 
   useEffect(() => {
     const el = handleRef.current;
@@ -151,58 +143,6 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
     handleDragStartYRef.current = null;
   }, []);
 
-  const handleContentClick = useCallback((e: React.MouseEvent) => {
-    if (sentenceToolbarRef.current?.contains(e.target as Node)) return;
-    setSelectedSentenceIndex(null);
-  }, []);
-
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    longPressSentenceRef.current = null;
-  }, []);
-
-  const handleSentenceBlockPointerDown = useCallback((e: React.PointerEvent, sentenceIndex: number) => {
-    if ((e.target as HTMLElement).closest('.sentence-item')) return;
-    e.preventDefault();
-    clearLongPressTimer();
-    longPressSentenceRef.current = sentenceIndex;
-    longPressTimerRef.current = setTimeout(() => {
-      longPressTimerRef.current = null;
-      const idx = longPressSentenceRef.current;
-      longPressSentenceRef.current = null;
-      if (idx !== null) setSelectedSentenceIndex(idx);
-    }, LONG_PRESS_MS);
-  }, [clearLongPressTimer]);
-
-  const handleSentenceBlockPointerUp = useCallback(() => {
-    clearLongPressTimer();
-  }, [clearLongPressTimer]);
-
-  const handleSentenceBlockPointerCancel = useCallback(() => {
-    clearLongPressTimer();
-  }, [clearLongPressTimer]);
-
-  const handleSentenceBlockClick = useCallback((e: React.MouseEvent, sentenceIndex: number) => {
-    if (selectedSentenceIndex === sentenceIndex && !(e.target as HTMLElement).closest('.sentence-item')) e.stopPropagation();
-  }, [selectedSentenceIndex]);
-
-  useEffect(() => {
-    if (selectedSentenceIndex !== null && selectedSentenceIndex >= sentences.length) {
-      setSelectedSentenceIndex(null);
-    }
-  }, [sentences.length, selectedSentenceIndex]);
-
-  useEffect(() => {
-    if (!open) setSelectedSentenceIndex(null);
-  }, [open]);
-
-  useEffect(() => {
-    return () => clearLongPressTimer();
-  }, [clearLongPressTimer]);
-
   return (
     <div
       className={`audio-mode-drawer-root ${open ? 'open' : ''}`}
@@ -243,19 +183,10 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
 
         {showPlayer ? (
         <>
-        <main className="audio-mode-drawer-main" onClick={handleContentClick}>
+        <main className="audio-mode-drawer-main">
           <div className="audio-mode-drawer-content">
             {sentences.map((sentence, sentenceIndex) => (
-              <div
-                key={sentenceIndex}
-                role="button"
-                tabIndex={0}
-                className={`audio-mode-drawer-sentence-block ${selectedSentenceIndex === sentenceIndex ? 'audio-mode-drawer-sentence-block-selected' : ''}`}
-                onClick={e => handleSentenceBlockClick(e, sentenceIndex)}
-                onPointerDown={e => handleSentenceBlockPointerDown(e, sentenceIndex)}
-                onPointerUp={handleSentenceBlockPointerUp}
-                onPointerCancel={handleSentenceBlockPointerCancel}
-              >
+              <div key={sentenceIndex} className="audio-mode-drawer-sentence-block">
                 <p className="audio-mode-drawer-sentence">
                   {sentence.words.map((word, wordIndex) => (
                     <React.Fragment key={word.id}>
@@ -294,30 +225,6 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
           )}
           <div className="audio-mode-drawer-player-wrap">
           <>
-            {selectedSentenceIndex !== null && selectedSentenceIndex < sentences.length && (
-              <div
-                ref={sentenceToolbarRef}
-                className="audio-mode-drawer-sentence-toolbar"
-                role="toolbar"
-                aria-label="Sentence actions"
-              >
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
-                  <Play size={24} />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
-                  <Languages size={24} />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
-                  <img src={sentenceIcon} alt="" />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
-                  <img src={reviewIcon} alt="" />
-                </button>
-                <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
-                  <img src={lynxIcon} alt="" />
-                </button>
-              </div>
-            )}
             {showPlayer && (
               <div className="audio-mode-drawer-player">
           <div className="audio-mode-drawer-player-inner">
@@ -395,7 +302,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
               onClose={onClose}
             />
           </div>
-          <main className="audio-mode-drawer-main audio-mode-drawer-main-video-mode" onClick={handleContentClick}>
+          <main className="audio-mode-drawer-main audio-mode-drawer-main-video-mode">
             <div className="audio-mode-drawer-content">
               <div className="audio-mode-drawer-lesson-details audio-mode-drawer-lesson-details-in-content">
                 <div className="audio-mode-drawer-lesson-image-wrap">
@@ -407,16 +314,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 </div>
               </div>
               {sentences.map((sentence, sentenceIndex) => (
-                <div
-                  key={sentenceIndex}
-                  role="button"
-                  tabIndex={0}
-                  className={`audio-mode-drawer-sentence-block ${selectedSentenceIndex === sentenceIndex ? 'audio-mode-drawer-sentence-block-selected' : ''}`}
-                  onClick={e => handleSentenceBlockClick(e, sentenceIndex)}
-                  onPointerDown={e => handleSentenceBlockPointerDown(e, sentenceIndex)}
-                  onPointerUp={handleSentenceBlockPointerUp}
-                  onPointerCancel={handleSentenceBlockPointerCancel}
-                >
+                <div key={sentenceIndex} className="audio-mode-drawer-sentence-block">
                   <p className="audio-mode-drawer-sentence">
                     {sentence.words.map((word, wordIndex) => (
                       <React.Fragment key={word.id}>
@@ -452,32 +350,6 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 />
               </div>
             </div>
-          )}
-          {selectedSentenceIndex !== null && selectedSentenceIndex < sentences.length && (
-          <div className="audio-mode-drawer-video-toolbar-wrap">
-            <div
-              ref={sentenceToolbarRef}
-              className="audio-mode-drawer-sentence-toolbar audio-mode-drawer-sentence-toolbar-video-mode"
-              role="toolbar"
-              aria-label="Sentence actions"
-            >
-              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Play from sentence" onClick={() => {}}>
-                <Play size={24} />
-              </button>
-              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Generate translation" onClick={() => {}}>
-                <Languages size={24} />
-              </button>
-              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Sentence mode" onClick={() => onSentence?.()}>
-                <img src={sentenceIcon} alt="" />
-              </button>
-              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Review sentence" onClick={() => {}}>
-                <img src={reviewIcon} alt="" />
-              </button>
-              <button type="button" className="audio-mode-drawer-sentence-toolbar-btn" aria-label="Lynx" onClick={() => {}}>
-                <img src={lynxIcon} alt="" />
-              </button>
-            </div>
-          </div>
           )}
         </div>
         </>
