@@ -1,0 +1,415 @@
+/*
+ * Word detail bottom sheet – slides up from bottom (Figma 2069:2527).
+ * Uses project design tokens; no Tailwind.
+ */
+
+.word-detail-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.3);
+  visibility: visible;
+  transition: background 0.3s ease;
+}
+
+.word-detail-sheet-panel {
+  position: absolute;
+  inset: 0;
+  background: var(--backgrounds-page, #ffffff);
+  border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+  box-shadow: 0px -1px 4px 0px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+
+.word-detail-sheet-root.is-open .word-detail-sheet-panel {
+  transform: translateY(0);
+}
+
+.word-detail-sheet-handle {
+  width: 100%;
+  min-width: 80px;
+  padding: max(env(safe-area-inset-top, 0px), 48px) 24px 20px;
+  box-sizing: border-box;
+  border: none;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.word-detail-sheet-handle::after {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.word-detail-sheet-handle:active {
+  cursor: grabbing;
+}
+
+.word-detail-sheet-header {
+  flex-shrink: 0;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-grey-100, #f1f3f4);
+}
+
+.word-detail-sheet-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.word-detail-sheet-phrase {
+  flex: 1;
+  min-width: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.word-detail-sheet-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--surfaces-default, #f8f9fa);
+  border: none;
+  border-radius: 50px;
+  color: var(--typography-default, #000000);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.word-detail-sheet-icon-btn:focus-visible {
+  outline: 2px solid var(--typography-action-secondary, #2e75cd);
+  outline-offset: 2px;
+}
+
+.word-detail-sheet-edit-btn {
+  background: var(--color-blue-100, #e9f7fc);
+  color: var(--typography-action-secondary, #2e75cd);
+}
+
+.word-detail-sheet-meaning-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--typography-action-secondary, #2e75cd);
+  border-radius: var(--radius-2xs, 4px);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+  background: var(--backgrounds-page, #ffffff);
+  box-sizing: border-box;
+}
+
+.word-detail-sheet-meaning-input::placeholder {
+  color: var(--typography-muted, #6d7680);
+}
+
+.word-detail-sheet-meaning-input:focus {
+  outline: none;
+  border-color: var(--typography-action-secondary, #2e75cd);
+}
+
+.word-detail-sheet-tags {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-ocean-50, #f4f7fb);
+  border-bottom: 1px solid var(--color-grey-100, #f1f3f4);
+}
+
+.word-detail-sheet-tags-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.word-detail-sheet-tag-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.word-detail-sheet-tag-add-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.word-detail-sheet-tag-chip {
+  padding: 4px 8px;
+  background: rgba(109, 118, 128, 0.1);
+  border-radius: var(--radius-2xs, 4px);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--typography-muted, #6d7680);
+}
+
+.word-detail-sheet-tags-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.word-detail-sheet-tag-count {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--typography-muted, #6d7680);
+}
+
+.word-detail-sheet-coin {
+  color: #f0ad00;
+  flex-shrink: 0;
+}
+
+.word-detail-sheet-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+  text-align: left;
+}
+
+.word-detail-sheet-section {
+  padding: 16px;
+  background: var(--backgrounds-page, #ffffff);
+}
+
+.word-detail-sheet-section + .word-detail-sheet-section {
+  border-top: 1px solid var(--color-grey-100, #f1f3f4);
+}
+
+.word-detail-sheet-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  text-align: left;
+  color: var(--typography-muted, #6d7680);
+}
+
+.word-detail-sheet-section-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.word-detail-sheet-section-header span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: inherit;
+  letter-spacing: 0;
+}
+
+.word-detail-sheet-sentence {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.word-detail-sheet-sentence-original {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+}
+
+.word-detail-sheet-sentence-translation {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--typography-muted, #6d7680);
+}
+
+.word-detail-sheet-explain-text {
+  margin-bottom: 12px;
+}
+
+.word-detail-sheet-explain-text p {
+  margin: 0 0 0.5em;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--typography-default, #000000);
+  white-space: pre-wrap;
+}
+
+.word-detail-sheet-explain-text p:last-child {
+  margin-bottom: 0;
+}
+
+.word-detail-sheet-explain-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.word-detail-sheet-notes-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-grey-200, #e3e5e7);
+  border-radius: var(--radius-2xs, 4px);
+  background: var(--backgrounds-page, #ffffff);
+  box-sizing: border-box;
+}
+
+.word-detail-sheet-notes-placeholder {
+  flex: 1;
+  min-width: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--typography-muted, #6d7680);
+  text-align: left;
+}
+
+/* Edit content: suggested meanings + dictionaries */
+.word-detail-sheet-edit-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.word-detail-sheet-suggested-meanings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.word-detail-sheet-suggested-meaning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--backgrounds-accent, #f4f7fb);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.word-detail-sheet-suggested-meaning:focus-visible {
+  outline: 2px solid var(--typography-action-secondary, #2e75cd);
+  outline-offset: 2px;
+}
+
+.word-detail-sheet-suggested-meaning-text {
+  flex: 1;
+  min-width: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--typography-default, #1a1a1a);
+}
+
+.word-detail-sheet-suggested-meaning svg {
+  flex-shrink: 0;
+  color: var(--typography-action-secondary, #2e75cd);
+}
+
+.word-detail-sheet-dictionaries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.word-detail-sheet-dictionary-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 80px;
+  padding: 6px;
+  background: var(--backgrounds-accent, #f4f7fb);
+  border-radius: var(--radius-2xs, 4px);
+  flex-shrink: 0;
+}
+
+.word-detail-sheet-dictionary-chip__icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.word-detail-sheet-dictionary-chip__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.word-detail-sheet-dictionary-chip__label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  line-height: 12px;
+  color: var(--typography-muted, #6d7680);
+  text-align: center;
+  white-space: normal;
+}
+
+.word-detail-sheet-footer {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--color-ocean-50, #f4f7fb);
+  border-top: 1px solid var(--color-grey-100, #f1f3f4);
+}
+
+.word-detail-sheet-footer .lingq-status-bar {
+  width: 100%;
+}
