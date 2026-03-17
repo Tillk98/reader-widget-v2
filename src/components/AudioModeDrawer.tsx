@@ -18,7 +18,6 @@ export interface AudioModeDrawerProps {
   open: boolean;
   onClose: () => void;
   showPlayer?: boolean;
-  onSentence?: () => void;
   lessonTitle: string;
   lessonSource: string;
   sentences: SentenceType[];
@@ -42,7 +41,6 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   open,
   onClose,
   showPlayer = true,
-  onSentence: _onSentence,
   lessonTitle,
   lessonSource,
   sentences,
@@ -186,7 +184,10 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
         <main className="audio-mode-drawer-main">
           <div className="audio-mode-drawer-content">
             {sentences.map((sentence, sentenceIndex) => (
-              <div key={sentenceIndex} className="audio-mode-drawer-sentence-block">
+              <div
+                key={sentenceIndex}
+                className="audio-mode-drawer-sentence-block"
+              >
                 <p className="audio-mode-drawer-sentence">
                   {sentence.words.map((word, wordIndex) => (
                     <React.Fragment key={word.id}>
@@ -314,7 +315,10 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
                 </div>
               </div>
               {sentences.map((sentence, sentenceIndex) => (
-                <div key={sentenceIndex} className="audio-mode-drawer-sentence-block">
+                <div
+                  key={sentenceIndex}
+                  className="audio-mode-drawer-sentence-block"
+                >
                   <p className="audio-mode-drawer-sentence">
                     {sentence.words.map((word, wordIndex) => (
                       <React.Fragment key={word.id}>

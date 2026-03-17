@@ -213,10 +213,6 @@
   margin-bottom: 0;
 }
 
-.audio-mode-drawer-sentence-block-selected {
-  background: #f4fcef;
-}
-
 /* Wrapper for player + floating active bar (audio mode) */
 .audio-mode-drawer-player-section {
   position: relative;
@@ -238,7 +234,7 @@
   box-sizing: border-box;
 }
 
-/* Video mode: bottom strip (active bar + sentence toolbar) – above scrolling text */
+/* Video mode: bottom strip – above scrolling text */
 .audio-mode-drawer-video-bottom {
   position: absolute;
   bottom: 0;
@@ -270,10 +266,6 @@
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
-.audio-mode-drawer-video-bottom .audio-mode-drawer-active-bar-row + .audio-mode-drawer-video-toolbar-wrap {
-  padding-top: 0;
-}
-
 /* Inner wrapper for active bar (centering, max-width to match main bottom bar). Full width so bar can use space; parent provides side padding. */
 .audio-mode-drawer-active-bar-inner {
   width: 100%;
@@ -289,90 +281,6 @@
   position: relative;
   padding: 0 16px 8px;
   box-sizing: border-box;
-}
-
-.audio-mode-drawer-video-toolbar-wrap {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 16px;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-  pointer-events: none;
-  z-index: 10;
-}
-
-.audio-mode-drawer-video-bottom .audio-mode-drawer-video-toolbar-wrap {
-  position: relative;
-  bottom: auto;
-  flex-shrink: 0;
-}
-
-.audio-mode-drawer-video-toolbar-wrap .audio-mode-drawer-sentence-toolbar {
-  pointer-events: auto;
-}
-
-.audio-mode-drawer-sentence-toolbar {
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  margin-bottom: 12px;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  height: 40px;
-  width: fit-content;
-  padding: 4px;
-  border: none;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0px 1px 4px 0px #e3e5e7;
-  box-sizing: border-box;
-}
-
-.audio-mode-drawer-sentence-toolbar-video-mode {
-  position: relative;
-  bottom: auto;
-  left: auto;
-  margin-bottom: 0;
-  transform: none;
-  width: fit-content;
-}
-
-.audio-mode-drawer-sentence-toolbar-btn {
-  width: 64px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  border-radius: 999px;
-  cursor: pointer;
-  padding: 0;
-  color: #1a1a1a;
-  transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.audio-mode-drawer-sentence-toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.audio-mode-drawer-sentence-toolbar-btn:active {
-  transform: scale(0.98);
-}
-
-.audio-mode-drawer-sentence-toolbar-btn img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
 }
 
 .audio-mode-drawer-player {
