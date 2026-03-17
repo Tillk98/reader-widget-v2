@@ -36,7 +36,7 @@
 .word-detail-sheet-handle {
   width: 100%;
   min-width: 80px;
-  padding: 12px 24px;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 24px 20px;
   box-sizing: border-box;
   border: none;
   flex-shrink: 0;
