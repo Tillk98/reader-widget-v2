@@ -31,11 +31,14 @@ const LEARNING_NUMBERS: Record<LingQStatusType, string> = {
 interface LingQStatusBarProps {
   status: LingQStatusType;
   onStatusChange: (status: LingQStatusType) => void;
+  /** When true, only the learning statuses (1–4) are shown; Ignored and Known are hidden. Used in bottom bar expanded state. */
+  learningOnly?: boolean;
 }
 
 export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
   status,
   onStatusChange,
+  learningOnly = false,
 }) => {
   const isKnown = status === 'Known';
   const isIgnored = status === 'Ignored';
@@ -63,32 +66,34 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
           );
         })}
       </div>
-      <div className="lingq-status-bar__inactive-group">
-        <button
-          type="button"
-          className={`lingq-status-chip lingq-status-chip--ignored ${isIgnored ? 'lingq-status-chip--active' : ''}`}
-          onClick={() => onStatusChange('Ignored')}
-          aria-pressed={isIgnored}
-          aria-label="Ignored"
-        >
-          <EyeOff size={14} aria-hidden />
-          {isIgnored && (
-            <span className="lingq-status-chip__label">Ignored</span>
-          )}
-        </button>
-        <button
-          type="button"
-          className={`lingq-status-chip lingq-status-chip--known ${isKnown ? 'lingq-status-chip--active' : ''}`}
-          onClick={() => onStatusChange('Known')}
-          aria-pressed={isKnown}
-          aria-label="Known"
-        >
-          <Check size={14} aria-hidden />
-          {isKnown && (
-            <span className="lingq-status-chip__label">Known</span>
-          )}
-        </button>
-      </div>
+      {!learningOnly && (
+        <div className="lingq-status-bar__inactive-group">
+          <button
+            type="button"
+            className={`lingq-status-chip lingq-status-chip--ignored ${isIgnored ? 'lingq-status-chip--active' : ''}`}
+            onClick={() => onStatusChange('Ignored')}
+            aria-pressed={isIgnored}
+            aria-label="Ignored"
+          >
+            <EyeOff size={14} aria-hidden />
+            {isIgnored && (
+              <span className="lingq-status-chip__label">Ignored</span>
+            )}
+          </button>
+          <button
+            type="button"
+            className={`lingq-status-chip lingq-status-chip--known ${isKnown ? 'lingq-status-chip--active' : ''}`}
+            onClick={() => onStatusChange('Known')}
+            aria-pressed={isKnown}
+            aria-label="Known"
+          >
+            <Check size={14} aria-hidden />
+            {isKnown && (
+              <span className="lingq-status-chip__label">Known</span>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

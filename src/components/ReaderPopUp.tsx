@@ -88,8 +88,13 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   }, [calculatePosition]);
 
   useEffect(() => {
-    const isOutside = (target: EventTarget | null) =>
-      popupRef.current && target instanceof Node && !popupRef.current.contains(target);
+    const isOutside = (target: EventTarget | null) => {
+      if (!popupRef.current || !(target instanceof Node)) return false;
+      if (popupRef.current.contains(target)) return false;
+      const bar = document.querySelector('.reader-bottom-bar');
+      if (bar && bar.contains(target)) return false;
+      return true;
+    };
     const handleMouseOutside = (e: MouseEvent) => {
       if (isOutside(e.target)) onClose();
     };

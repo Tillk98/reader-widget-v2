@@ -310,6 +310,36 @@ export const Reader: React.FC = () => {
     setSelectedWordId(null);
   }, [selectedWordId]);
 
+  const selectedWordIndex = React.useMemo(() => {
+    if (!selectedWordId) return -1;
+    const i = allWords.findIndex(w => w.id === selectedWordId);
+    return i >= 0 ? i : -1;
+  }, [selectedWordId, allWords]);
+
+  const handlePrevWord = useCallback(() => {
+    if (selectedWordIndex <= 0) return;
+    const prevWord = allWords[selectedWordIndex - 1];
+    setSelectedWordId(prevWord.id);
+    setWordStatusMap(prev => ({ ...prev, [prevWord.id]: prev[prevWord.id] ?? 'New' }));
+    setClickedWords(prev => {
+      const newSet = new Set(prev);
+      newSet.add(prevWord.id);
+      return newSet;
+    });
+  }, [selectedWordIndex, allWords]);
+
+  const handleNextWord = useCallback(() => {
+    if (selectedWordIndex < 0 || selectedWordIndex >= allWords.length - 1) return;
+    const nextWord = allWords[selectedWordIndex + 1];
+    setSelectedWordId(nextWord.id);
+    setWordStatusMap(prev => ({ ...prev, [nextWord.id]: prev[nextWord.id] ?? 'New' }));
+    setClickedWords(prev => {
+      const newSet = new Set(prev);
+      newSet.add(nextWord.id);
+      return newSet;
+    });
+  }, [selectedWordIndex, allWords]);
+
   // Data for the selected word (for popup position + meaning)
   const selectedWordData = React.useMemo(() => {
     if (!selectedWordId) return null;
@@ -457,6 +487,17 @@ export const Reader: React.FC = () => {
             onWordClick={handleWordClick}
           />
           <ReaderBottomBar
+            selectedWordId={selectedWordId}
+            selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
+            onSelectedWordStatusChange={
+              selectedWordId
+                ? (status) => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
+                : undefined
+            }
+            canGoPrev={selectedWordIndex > 0}
+            canGoNext={selectedWordIndex >= 0 && selectedWordIndex < allWords.length - 1}
+            onPrevWord={handlePrevWord}
+            onNextWord={handleNextWord}
             onPlay={() => {
               setDrawerMode('audio');
               setIsDrawerOpen(true);
