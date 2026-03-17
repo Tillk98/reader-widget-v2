@@ -1,0 +1,76 @@
+/* LingQStatusBar – mutually exclusive word status chips (Figma 2031:5089) */
+.lingq-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.lingq-status-bar__active-group,
+.lingq-status-bar__inactive-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lingq-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 24px;
+  padding: 4px 12px;
+  border: 0.5px solid var(--color-grey-200, #e3e5e7);
+  border-radius: 999px;
+  background: rgba(109, 118, 128, 0.1);
+  color: var(--typography-muted, #6d7680);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.lingq-status-chip:focus-visible {
+  outline: 2px solid var(--typography-action-secondary, #2e75cd);
+  outline-offset: 2px;
+}
+
+/* Learning stages (1–4): active = blue */
+.lingq-status-chip--learning.lingq-status-chip--active {
+  background: rgba(46, 117, 205, 0.1);
+  border-color: var(--typography-action-secondary, #2e75cd);
+  color: var(--typography-action-secondary, #2e75cd);
+}
+
+/* Known: active = green */
+.lingq-status-chip--known.lingq-status-chip--active {
+  background: rgba(66, 165, 100, 0.1);
+  border-color: transparent;
+  color: var(--typography-action-primary, #42a564);
+}
+
+.lingq-status-chip--known svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Ignored: active = red */
+.lingq-status-chip--ignored.lingq-status-chip--active {
+  background: rgba(221, 37, 37, 0.1);
+  border-color: transparent;
+  color: var(--typography-destructive, #dd2525);
+}
+
+.lingq-status-chip--ignored svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.lingq-status-chip__number,
+.lingq-status-chip__label {
+  line-height: 16px;
+}

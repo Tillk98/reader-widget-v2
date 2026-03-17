@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { lesson } from '../data/lesson';
 import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
+import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
 import { ReaderBottomBar } from './ReaderBottomBar';
 import { AudioModeDrawer } from './AudioModeDrawer';
@@ -19,7 +20,7 @@ export const Reader: React.FC = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [clickedWords, setClickedWords] = useState<Set<string>>(new Set());
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
-  const [lingqWords, setLingqWords] = useState<Set<string>>(new Set());
+  const [wordStatusMap, setWordStatusMap] = useState<Record<string, LingQStatusType>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef<number>(0);
@@ -30,8 +31,29 @@ export const Reader: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'audio' | 'video'>('audio');
 
-  const knownWords = React.useMemo(() => new Set<string>(), []);
-  const ignoredWords = React.useMemo(() => new Set<string>(), []);
+  const knownWords = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const [id, status] of Object.entries(wordStatusMap)) {
+      if (status === 'Known') s.add(id);
+    }
+    return s;
+  }, [wordStatusMap]);
+
+  const ignoredWords = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const [id, status] of Object.entries(wordStatusMap)) {
+      if (status === 'Ignored') s.add(id);
+    }
+    return s;
+  }, [wordStatusMap]);
+
+  const lingqWords = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const [id, status] of Object.entries(wordStatusMap)) {
+      if (['New', 'Recognized', 'Familiar', 'Learned'].includes(status)) s.add(id);
+    }
+    return s;
+  }, [wordStatusMap]);
 
   // Get all words from the lesson
   const allWords = React.useMemo(() => {
@@ -254,7 +276,7 @@ export const Reader: React.FC = () => {
       });
     } else {
       setSelectedWordId(wordId);
-      setLingqWords(prev => new Set(prev).add(wordId));
+      setWordStatusMap(prev => ({ ...prev, [wordId]: prev[wordId] ?? 'New' }));
       setClickedWords(prev => {
         const newSet = new Set(prev);
         if (!newSet.has(wordId)) newSet.add(wordId);
@@ -413,6 +435,10 @@ export const Reader: React.FC = () => {
               wordText={selectedWordData.word.text}
               wordTranslation={selectedWordData.word.translation}
               anchorRect={selectedWordData.anchorRect}
+              wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
+              onWordStatusChange={(status) =>
+                setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
+              }
               onClose={handleClosePopup}
             />
           )}
