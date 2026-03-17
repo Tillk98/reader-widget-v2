@@ -6,8 +6,6 @@ import {
   Youtube,
   FileText,
   ChevronsUpDown,
-  ChevronLeft,
-  ChevronRight,
   Bot,
   Maximize2,
   Type,
@@ -15,24 +13,16 @@ import {
   Info,
   RefreshCw,
   Settings,
-  Check,
-  EyeOff,
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
-import { LingQStatusBar } from './LingQStatusBar';
+import { ActiveSelectionBar } from './ActiveSelectionBar';
 import sentenceIcon from '../assets/sentence-icon.png';
 import reviewIcon from '../assets/review-icon.png';
 import lessonImage from '../assets/lesson-image.png';
 import './ReaderBottomBar.css';
 
-const LEARNING_NUMBERS: Record<string, string> = {
-  New: '1',
-  Recognized: '2',
-  Familiar: '3',
-  Learned: '4',
-};
-
 export interface ReaderBottomBarProps {
+  isDrawerOpen?: boolean;
   selectedWordId?: string | null;
   selectedWordStatus?: LingQStatusType;
   onSelectedWordStatusChange?: (status: LingQStatusType) => void;
@@ -72,6 +62,7 @@ const EXPANDED_MENU_ITEMS: { id: string; label: string; icon: React.ReactNode; o
 ];
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
+  isDrawerOpen = false,
   selectedWordId,
   selectedWordStatus = 'New',
   onSelectedWordStatusChange,
@@ -101,19 +92,10 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
-  const [isStatusExpanded, setIsStatusExpanded] = useState(false);
   const actionsContainerRef = useRef<HTMLDivElement>(null);
 
   const hasWordSelected = selectedWordId != null;
-  const isLearningStatus =
-    selectedWordStatus === 'New' ||
-    selectedWordStatus === 'Recognized' ||
-    selectedWordStatus === 'Familiar' ||
-    selectedWordStatus === 'Learned';
-
-  useEffect(() => {
-    if (!hasWordSelected) setIsStatusExpanded(false);
-  }, [hasWordSelected]);
+  const showActiveSelection = hasWordSelected && !isDrawerOpen;
 
   const handlePlayClick = () => {
     setIsPlaying(true);
@@ -165,106 +147,16 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   return (
     <div className="reader-bottom-bar">
       <div className="reader-bottom-bar-inner">
-        {hasWordSelected ? (
-          <div className="reader-bottom-bar-active-row">
-            {isStatusExpanded ? (
-              <div className="reader-bottom-bar-active-pill reader-bottom-bar-active-expanded">
-                <LingQStatusBar
-                  status={selectedWordStatus}
-                  onStatusChange={onSelectedWordStatusChange!}
-                  learningOnly
-                />
-                <button
-                  type="button"
-                  className="reader-bottom-bar-active-close"
-                  onClick={() => setIsStatusExpanded(false)}
-                  aria-label="Back"
-                >
-                  <ChevronLeft size={18} aria-hidden />
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="reader-bottom-bar-active-pill reader-bottom-bar-active-pill--left">
-                  {selectedWordStatus === 'Known' ? (
-                    <button
-                      type="button"
-                      className="lingq-status-chip lingq-status-chip--known lingq-status-chip--active"
-                      onClick={() => onSelectedWordStatusChange?.('New')}
-                      aria-label="Known"
-                      aria-pressed
-                    >
-                      <Check size={14} aria-hidden />
-                      <span className="lingq-status-chip__label">Known</span>
-                    </button>
-                  ) : selectedWordStatus === 'Ignored' ? (
-                    <button
-                      type="button"
-                      className="lingq-status-chip lingq-status-chip--ignored lingq-status-chip--active"
-                      onClick={() => onSelectedWordStatusChange?.('New')}
-                      aria-label="Ignored"
-                      aria-pressed
-                    >
-                      <EyeOff size={14} aria-hidden />
-                      <span className="lingq-status-chip__label">Ignored</span>
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className={`lingq-status-chip lingq-status-chip--learning ${isLearningStatus ? 'lingq-status-chip--active' : ''}`}
-                        onClick={() => setIsStatusExpanded(true)}
-                        aria-label="Word status"
-                      >
-                        <span className="lingq-status-chip__number">
-                          {LEARNING_NUMBERS[selectedWordStatus] ?? '1'}
-                        </span>
-                      </button>
-                      <div className="reader-bottom-bar-active-divider" aria-hidden />
-                      <button
-                        type="button"
-                        className="lingq-status-chip lingq-status-chip--ignored"
-                        onClick={() => onSelectedWordStatusChange?.('Ignored')}
-                        aria-pressed={false}
-                        aria-label="Ignored"
-                      >
-                        <EyeOff size={14} aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        className="lingq-status-chip lingq-status-chip--known"
-                        onClick={() => onSelectedWordStatusChange?.('Known')}
-                        aria-pressed={false}
-                        aria-label="Known"
-                      >
-                        <Check size={14} aria-hidden />
-                      </button>
-                    </>
-                  )}
-                </div>
-                <div className="reader-bottom-bar-active-pill reader-bottom-bar-active-pill--right">
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-active-chevron-btn"
-                    onClick={onPrevWord}
-                    disabled={!canGoPrev}
-                    aria-label="Previous word"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-active-chevron-btn"
-                    onClick={onNextWord}
-                    disabled={!canGoNext}
-                    aria-label="Next word"
-                  >
-                    <ChevronRight size={24} />
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+        {showActiveSelection ? (
+          <ActiveSelectionBar
+            selectedWordId={selectedWordId}
+            selectedWordStatus={selectedWordStatus}
+            onSelectedWordStatusChange={onSelectedWordStatusChange!}
+            canGoPrev={canGoPrev}
+            canGoNext={canGoNext}
+            onPrevWord={onPrevWord!}
+            onNextWord={onNextWord!}
+          />
         ) : (
           <>
         <div

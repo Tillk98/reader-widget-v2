@@ -93,6 +93,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       if (popupRef.current.contains(target)) return false;
       const bar = document.querySelector('.reader-bottom-bar');
       if (bar && bar.contains(target)) return false;
+      if ((target as Node).closest?.('[data-drawer-active-bar]')) return false;
       return true;
     };
     const handleMouseOutside = (e: MouseEvent) => {

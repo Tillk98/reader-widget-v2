@@ -1,7 +1,9 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import { Pause, Play, Languages } from 'lucide-react';
 import type { Sentence as SentenceType } from '../data/lesson';
+import type { LingQStatusType } from './LingQStatusBar';
 import { Word } from './Word';
+import { ActiveSelectionBar } from './ActiveSelectionBar';
 import { DrawerVideoPlayer } from './DrawerVideoPlayer';
 import playerBack from '../assets/player-back.png';
 import playerForward from '../assets/player-forward.png';
@@ -30,6 +32,14 @@ export interface AudioModeDrawerProps {
   ignoredWords: Set<string>;
   onWordClick: (wordId: string) => void;
   videoUrl?: string;
+  /** Active word selection (for active selection bar in drawer) */
+  selectedWordId?: string | null;
+  selectedWordStatus?: LingQStatusType;
+  onSelectedWordStatusChange?: (status: LingQStatusType) => void;
+  canGoPrev?: boolean;
+  canGoNext?: boolean;
+  onPrevWord?: () => void;
+  onNextWord?: () => void;
 }
 
 export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
@@ -46,7 +56,15 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
   ignoredWords,
   onWordClick,
   videoUrl,
+  selectedWordId,
+  selectedWordStatus = 'New',
+  onSelectedWordStatusChange,
+  canGoPrev = false,
+  canGoNext = false,
+  onPrevWord,
+  onNextWord,
 }) => {
+  const showActiveBar = open && selectedWordId != null && onSelectedWordStatusChange != null;
   const [selectedSentenceIndex, setSelectedSentenceIndex] = React.useState<number | null>(null);
   const sentenceToolbarRef = useRef<HTMLDivElement | null>(null);
   const handleDragStartYRef = useRef<number | null>(null);
@@ -117,14 +135,17 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
     [onClose]
   );
 
-  const handleHandlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (handleDragStartYRef.current === null) return;
-    const deltaY = e.clientY - handleDragStartYRef.current;
-    if (deltaY >= HANDLE_DRAG_CLOSE_THRESHOLD_PX) onClose();
-    else onClose(); /* tap on handle also closes */
-    handleDragStartYRef.current = null;
-    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-  }, [onClose]);
+  const handleHandlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (handleDragStartYRef.current === null) return;
+      const deltaY = e.clientY - handleDragStartYRef.current;
+      if (deltaY >= HANDLE_DRAG_CLOSE_THRESHOLD_PX) onClose();
+      else onClose(); /* tap on handle also closes */
+      handleDragStartYRef.current = null;
+      (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    },
+    [onClose]
+  );
 
   const handleHandlePointerCancel = useCallback(() => {
     handleDragStartYRef.current = null;
@@ -255,7 +276,23 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
           </div>
         </main>
 
-        <div className="audio-mode-drawer-player-wrap">
+        <div className="audio-mode-drawer-player-section">
+          {showActiveBar && (
+            <div className="audio-mode-drawer-active-bar-float" data-drawer-active-bar>
+              <div className="audio-mode-drawer-active-bar-inner">
+                <ActiveSelectionBar
+                  selectedWordId={selectedWordId}
+                  selectedWordStatus={selectedWordStatus}
+                  onSelectedWordStatusChange={onSelectedWordStatusChange}
+                  canGoPrev={canGoPrev}
+                  canGoNext={canGoNext}
+                  onPrevWord={onPrevWord ?? (() => {})}
+                  onNextWord={onNextWord ?? (() => {})}
+                />
+              </div>
+            </div>
+          )}
+          <div className="audio-mode-drawer-player-wrap">
           <>
             {selectedSentenceIndex !== null && selectedSentenceIndex < sentences.length && (
               <div
@@ -345,6 +382,7 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
           </div>
             )}
           </>
+          </div>
         </div>
         </>
         ) : (
@@ -399,7 +437,23 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
             </div>
           </main>
         </div>
-        {selectedSentenceIndex !== null && selectedSentenceIndex < sentences.length && (
+        <div className="audio-mode-drawer-video-bottom">
+          {showActiveBar && (
+            <div className="audio-mode-drawer-active-bar-row" data-drawer-active-bar>
+              <div className="audio-mode-drawer-active-bar-inner">
+                <ActiveSelectionBar
+                  selectedWordId={selectedWordId}
+                  selectedWordStatus={selectedWordStatus}
+                  onSelectedWordStatusChange={onSelectedWordStatusChange}
+                  canGoPrev={canGoPrev}
+                  canGoNext={canGoNext}
+                  onPrevWord={onPrevWord ?? (() => {})}
+                  onNextWord={onNextWord ?? (() => {})}
+                />
+              </div>
+            </div>
+          )}
+          {selectedSentenceIndex !== null && selectedSentenceIndex < sentences.length && (
           <div className="audio-mode-drawer-video-toolbar-wrap">
             <div
               ref={sentenceToolbarRef}
@@ -424,7 +478,8 @@ export const AudioModeDrawer: React.FC<AudioModeDrawerProps> = ({
               </button>
             </div>
           </div>
-        )}
+          )}
+        </div>
         </>
         )}
       </div>

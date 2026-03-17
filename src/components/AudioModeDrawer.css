@@ -217,6 +217,72 @@
   background: #f4fcef;
 }
 
+/* Wrapper for player + floating active bar (audio mode) */
+.audio-mode-drawer-player-section {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Active selection bar floating above the audio player – same horizontal padding as default bar (20px) */
+.audio-mode-drawer-active-bar-float {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  padding: 0 20px 8px;
+  z-index: 10;
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Video mode: bottom strip (active bar + sentence toolbar) – above scrolling text */
+.audio-mode-drawer-video-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.audio-mode-drawer-video-bottom > * {
+  pointer-events: auto;
+}
+
+/* Active selection bar at bottom of drawer (video mode) */
+.audio-mode-drawer-active-bar-row {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 12px 20px;
+  padding-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.audio-mode-drawer-video-bottom .audio-mode-drawer-active-bar-row:last-child {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.audio-mode-drawer-video-bottom .audio-mode-drawer-active-bar-row + .audio-mode-drawer-video-toolbar-wrap {
+  padding-top: 0;
+}
+
+/* Inner wrapper for active bar (centering, max-width to match main bottom bar). Full width so bar can use space; parent provides side padding. */
+.audio-mode-drawer-active-bar-inner {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
 .audio-mode-drawer-player-wrap {
   flex-shrink: 0;
   width: 100%;
@@ -237,6 +303,12 @@
   padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
   z-index: 10;
+}
+
+.audio-mode-drawer-video-bottom .audio-mode-drawer-video-toolbar-wrap {
+  position: relative;
+  bottom: auto;
+  flex-shrink: 0;
 }
 
 .audio-mode-drawer-video-toolbar-wrap .audio-mode-drawer-sentence-toolbar {

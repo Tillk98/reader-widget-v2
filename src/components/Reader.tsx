@@ -485,8 +485,20 @@ export const Reader: React.FC = () => {
             knownWords={knownWords}
             ignoredWords={ignoredWords}
             onWordClick={handleWordClick}
+            selectedWordId={selectedWordId}
+            selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
+            onSelectedWordStatusChange={
+              selectedWordId
+                ? (status) => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
+                : undefined
+            }
+            canGoPrev={selectedWordIndex > 0}
+            canGoNext={selectedWordIndex >= 0 && selectedWordIndex < allWords.length - 1}
+            onPrevWord={handlePrevWord}
+            onNextWord={handleNextWord}
           />
           <ReaderBottomBar
+            isDrawerOpen={isDrawerOpen}
             selectedWordId={selectedWordId}
             selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
             onSelectedWordStatusChange={
