@@ -16,6 +16,7 @@ interface ReaderPopUpProps {
 }
 
 export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
+  wordId,
   wordText,
   wordTranslation,
   wordTransliteration,
@@ -26,8 +27,15 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
+  /** Local override after editing meaning in the expanded sheet */
+  const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
 
-  const meaning = wordTranslation ?? '';
+  useEffect(() => {
+    setMeaningOverride(undefined);
+  }, [wordId, wordTranslation]);
+
+  const effectiveTranslation = meaningOverride ?? wordTranslation;
+  const meaning = effectiveTranslation ?? '';
 
   const calculatePosition = useCallback(() => {
     if (!popupRef.current) return;
@@ -93,9 +101,10 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     return (
       <WordDetailBottomSheet
         wordText={wordText}
-        wordTranslation={wordTranslation}
+        wordTranslation={effectiveTranslation}
         wordStatus={wordStatus}
         onWordStatusChange={onWordStatusChange}
+        onWordTranslationChange={setMeaningOverride}
         onClose={onClose}
       />
     );
