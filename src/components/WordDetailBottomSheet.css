@@ -132,23 +132,41 @@
   outline-offset: 2px;
 }
 
+/* Meaning field — default + focus (Figma 2261:2843): 1.5px action-secondary border on focus */
 .word-detail-sheet-meaning-field {
   width: 100%;
   padding: var(--spacing-spacing-sm, 12px) var(--spacing-spacing-md, 16px);
-  border: 1px solid var(--border-default, #d1d6d9);
+  border: 1.5px solid var(--border-default, #d1d6d9);
   border-radius: var(--radius-2xs, 4px);
   box-sizing: border-box;
   background: var(--backgrounds-page, #ffffff);
 }
 
-.word-detail-sheet-meaning-primary {
+.word-detail-sheet-meaning-field:focus-within {
+  border-color: var(--typography-action-secondary, #2e75cd);
+}
+
+.word-detail-sheet-meaning-input {
+  display: block;
+  width: 100%;
   margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
   font-family: 'DM Sans', sans-serif;
   font-size: 16px;
   font-weight: 600;
   line-height: 20px;
   color: var(--typography-default, #000000);
   text-align: left;
+}
+
+.word-detail-sheet-meaning-input:focus {
+  outline: none;
+}
+
+.word-detail-sheet-meaning-input::placeholder {
+  color: var(--typography-muted, #6d7680);
 }
 
 /* Tabs */

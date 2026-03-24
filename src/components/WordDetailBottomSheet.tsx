@@ -118,6 +118,8 @@ export interface WordDetailBottomSheetProps {
   dictionaryProviders?: WordDetailDictionaryProvider[];
   /** Single user note shown on the Notes tab (static; not AI-generated). */
   wordNote?: WordDetailWordNote;
+  /** Called when the user edits the primary meaning in the header field. */
+  onWordTranslationChange?: (value: string) => void;
 }
 
 export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
@@ -137,6 +139,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   lynxHistoryMessages = DEFAULT_LYNX_HISTORY,
   dictionaryProviders = DEFAULT_DICTIONARY_PROVIDERS,
   wordNote = DEFAULT_WORD_NOTE,
+  onWordTranslationChange,
 }) => {
   const handleRef = useRef<HTMLDivElement>(null);
   const handleDragStartYRef = useRef<number | null>(null);
@@ -154,6 +157,17 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     wordTranslation != null && wordTranslation.trim() !== ''
       ? wordTranslation
       : DEFAULT_PRIMARY_MEANING;
+
+  const [meaningDraft, setMeaningDraft] = React.useState(primaryMeaning);
+  useEffect(() => {
+    setMeaningDraft(primaryMeaning);
+  }, [primaryMeaning]);
+
+  const handleMeaningChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setMeaningDraft(v);
+    onWordTranslationChange?.(v);
+  };
 
   useEffect(() => {
     const el = handleRef.current;
@@ -319,7 +333,15 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
               </button>
             </div>
             <div className="word-detail-sheet-meaning-field">
-              <p className="word-detail-sheet-meaning-primary">{primaryMeaning}</p>
+              <input
+                type="text"
+                className="word-detail-sheet-meaning-input"
+                value={meaningDraft}
+                onChange={handleMeaningChange}
+                aria-label="Meaning"
+                autoComplete="off"
+                spellCheck
+              />
             </div>
           </div>
 
