@@ -74,3 +74,100 @@
 .lingq-status-chip__label {
   line-height: 16px;
 }
+
+/* Sheet variant (Figma 2181:47905) — full-width six segments + sliding highlight */
+.lingq-status-bar--sheet {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.lingq-status-bar__sheet-track {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  padding: var(--spacing-spacing-2xs, 4px);
+  border-radius: var(--radius-xs, 6px);
+  background: var(--backgrounds-page, #ffffff);
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.lingq-status-bar__sheet-highlight {
+  position: absolute;
+  left: var(--spacing-spacing-2xs, 4px);
+  top: var(--spacing-spacing-2xs, 4px);
+  bottom: var(--spacing-spacing-2xs, 4px);
+  width: calc((100% - 8px) / 6);
+  border-radius: 7.5px;
+  pointer-events: none;
+  z-index: 0;
+  transition: transform 0.2s ease, border-color 0.15s ease, background-color 0.15s ease;
+  box-shadow: 0px 1.25px 5px 0px rgba(0, 0, 0, 0.25);
+  transform: translateX(calc(var(--segment-index, 0) * 100%));
+}
+
+.lingq-status-bar__sheet-highlight--ignored {
+  border: 1.25px solid var(--border-destructive, #dd2525);
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+}
+
+.lingq-status-bar__sheet-highlight--learning {
+  border: 1.25px solid var(--border-action-secondary, #2e75cd);
+  background: var(--color-blue-50, #f4fbfe);
+}
+
+.lingq-status-bar__sheet-highlight--known {
+  border: 1.25px solid var(--border-action-primary, #42a564);
+  background: var(--surfaces-action-primary-subtle, #f4fcef);
+}
+
+.lingq-status-bar__sheet-segment {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 7.5px;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--typography-muted, #6d7680);
+  cursor: pointer;
+}
+
+.lingq-status-bar__sheet-segment svg {
+  display: block;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.lingq-status-bar__sheet-segment:focus-visible {
+  outline: 2px solid var(--typography-action-secondary, #2e75cd);
+  outline-offset: 2px;
+  z-index: 2;
+}
+
+.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--ignored,
+.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--ignored svg {
+  color: var(--typography-destructive, #dd2525);
+}
+
+.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--learning span {
+  color: var(--typography-action-secondary, #2e75cd);
+}
+
+.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--known,
+.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--known svg {
+  color: var(--typography-action-primary, #42a564);
+}

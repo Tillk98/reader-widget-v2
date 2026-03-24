@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ActiveSelectionBar } from './ActiveSelectionBar';
-import sentenceIcon from '../assets/sentence-icon.png';
-import reviewIcon from '../assets/review-icon.png';
+import sentenceDefaultIcon from '../assets/sentence-default.png';
+import reviewDefaultIcon from '../assets/review-default.png';
 import lessonImage from '../assets/lesson-image.png';
 import './ReaderBottomBar.css';
 
@@ -324,7 +324,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   onClick={onSentence}
                   aria-label="Sentence"
                 >
-                  <img src={sentenceIcon} alt="" className="reader-bottom-bar-custom-icon" />
+                  <img src={sentenceDefaultIcon} alt="" className="reader-bottom-bar-custom-icon" />
                 </button>
                 <button
                   type="button"
@@ -332,7 +332,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   onClick={onReview}
                   aria-label="Review"
                 >
-                  <img src={reviewIcon} alt="" className="reader-bottom-bar-custom-icon" />
+                  <img src={reviewDefaultIcon} alt="" className="reader-bottom-bar-custom-icon" />
                 </button>
                 <button
                   type="button"

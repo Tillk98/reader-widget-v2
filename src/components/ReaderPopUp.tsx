@@ -16,6 +16,7 @@ interface ReaderPopUpProps {
 }
 
 export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
+  wordText,
   wordTranslation,
   wordTransliteration,
   anchorRect,
@@ -91,8 +92,8 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   if (showBottomSheet) {
     return (
       <WordDetailBottomSheet
+        wordText={wordText}
         wordTranslation={wordTranslation}
-        wordTransliteration={wordTransliteration}
         wordStatus={wordStatus}
         onWordStatusChange={onWordStatusChange}
         onClose={onClose}
