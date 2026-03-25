@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Play,
-  Pause,
-  X,
   Youtube,
   FileText,
   ChevronsUpDown,
@@ -16,22 +14,21 @@ import {
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ActiveSelectionBar } from './ActiveSelectionBar';
+import { MediaPlayerBottomBar } from './MediaPlayerBottomBar';
 import sentenceDefaultIcon from '../assets/sentence-default.png';
 import reviewDefaultIcon from '../assets/review-default.png';
-import lessonImage from '../assets/lesson-image.png';
 import './ReaderBottomBar.css';
 
 export interface ReaderBottomBarProps {
-  isDrawerOpen?: boolean;
+  mediaMode?: 'none' | 'audio' | 'video';
+  mediaPlayerExpanded?: boolean;
+  onMediaPlayerExpand?: () => void;
+  onMediaPlayerCollapse?: () => void;
+  onMediaClose?: () => void;
   selectedWordId?: string | null;
   selectedWordStatus?: LingQStatusType;
   onSelectedWordStatusChange?: (status: LingQStatusType) => void;
-  canGoPrev?: boolean;
-  canGoNext?: boolean;
-  onPrevWord?: () => void;
-  onNextWord?: () => void;
   onPlay?: () => void;
-  onPause?: () => void;
   onSentence?: () => void;
   onReview?: () => void;
   onChevrons?: () => void;
@@ -43,7 +40,6 @@ export interface ReaderBottomBarProps {
   onInfo?: () => void;
   onRefresh?: () => void;
   onSettings?: () => void;
-  onLessonImageClick?: () => void;
   hasVideo?: boolean;
   onVideoMode?: () => void;
   lessonTitle?: string;
@@ -62,16 +58,15 @@ const EXPANDED_MENU_ITEMS: { id: string; label: string; icon: React.ReactNode; o
 ];
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
-  isDrawerOpen = false,
+  mediaMode = 'none',
+  mediaPlayerExpanded = false,
+  onMediaPlayerExpand,
+  onMediaPlayerCollapse,
+  onMediaClose,
   selectedWordId,
   selectedWordStatus = 'New',
   onSelectedWordStatusChange,
-  canGoPrev = false,
-  canGoNext = false,
-  onPrevWord,
-  onNextWord,
   onPlay,
-  onPause,
   onSentence,
   onReview,
   onChevrons,
@@ -83,39 +78,17 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onInfo,
   onRefresh,
   onSettings,
-  onLessonImageClick,
   hasVideo = false,
   onVideoMode,
   lessonTitle = 'Lesson',
   lessonSource = '',
 }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
   const actionsContainerRef = useRef<HTMLDivElement>(null);
 
   const hasWordSelected = selectedWordId != null;
-  const showActiveSelection = hasWordSelected && !isDrawerOpen;
-
-  const handlePlayClick = () => {
-    setIsPlaying(true);
-    setIsPaused(false);
-    onPlay?.();
-  };
-
-  const handlePauseInPlayer = () => {
-    setIsPaused(true);
-  };
-
-  const handlePlayInPlayer = () => {
-    setIsPaused(false);
-  };
-
-  const handleClosePlayer = () => {
-    setIsPlaying(false);
-    setIsPaused(false);
-    onPause?.();
-  };
+  const inMediaMode = mediaMode !== 'none';
+  const showDefaultChrome = !inMediaMode && !hasWordSelected;
 
   useEffect(() => {
     if (!isActionsExpanded) return;
@@ -146,29 +119,36 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
 
   return (
     <div className="reader-bottom-bar">
-      <div className="reader-bottom-bar-inner">
-        {showActiveSelection ? (
+      <div
+        className={`reader-bottom-bar-inner ${inMediaMode || hasWordSelected ? 'reader-bottom-bar-inner--stack' : ''}`}
+      >
+        {hasWordSelected && (
           <ActiveSelectionBar
             selectedWordId={selectedWordId}
             selectedWordStatus={selectedWordStatus}
             onSelectedWordStatusChange={onSelectedWordStatusChange!}
-            canGoPrev={canGoPrev}
-            canGoNext={canGoNext}
-            onPrevWord={onPrevWord!}
-            onNextWord={onNextWord!}
           />
-        ) : (
-          <>
-        <div
-          className={`reader-bottom-bar-play-area ${isPlaying ? 'reader-bottom-bar-play-area-playing' : ''} ${isPlaying && isActionsExpanded ? 'reader-bottom-bar-play-area-menu-expanded' : ''}`}
-        >
-          {!isPlaying ? (
-            <>
+        )}
+
+        {inMediaMode && (
+          <MediaPlayerBottomBar
+            expanded={mediaPlayerExpanded}
+            lessonTitle={lessonTitle}
+            lessonSource={lessonSource}
+            onRequestExpand={() => onMediaPlayerExpand?.()}
+            onRequestCollapse={() => onMediaPlayerCollapse?.()}
+            onClose={() => onMediaClose?.()}
+          />
+        )}
+
+        {showDefaultChrome && (
+          <div className="reader-bottom-bar-default-row">
+            <div className="reader-bottom-bar-play-area">
               <div className="reader-bottom-bar-play-pill">
                 <button
                   type="button"
                   className="reader-bottom-bar-play-btn"
-                  onClick={handlePlayClick}
+                  onClick={() => onPlay?.()}
                   aria-label="Play"
                 >
                   <Play size={24} className="reader-bottom-bar-play-pause-icon" />
@@ -184,134 +164,8 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   <Youtube size={18} className="reader-bottom-bar-video-icon" />
                 </button>
               )}
-            </>
-          ) : isActionsExpanded ? (
-            <div className="reader-bottom-bar-playing-minimal">
-              <button
-                type="button"
-                className="reader-bottom-bar-pause-btn"
-                onClick={isPaused ? handlePlayInPlayer : handlePauseInPlayer}
-                aria-label={isPaused ? 'Play' : 'Pause'}
-              >
-                {isPaused ? (
-                  <Play size={24} className="reader-bottom-bar-play-pause-icon" />
-                ) : (
-                  <Pause size={24} className="reader-bottom-bar-play-pause-icon reader-bottom-bar-icon-enter" />
-                )}
-              </button>
-              <button
-                type="button"
-                className="reader-bottom-bar-lesson-info"
-                onClick={() => setIsActionsExpanded(false)}
-                aria-label="Close menu and expand player"
-              >
-                <div className="reader-bottom-bar-lesson-image-wrap">
-                  <img
-                    src={lessonImage}
-                    alt="Lesson"
-                    className="reader-bottom-bar-lesson-image"
-                  />
-                </div>
-              </button>
             </div>
-          ) : (
-            <div className="reader-bottom-bar-playing-inner">
-              <div className="reader-bottom-bar-playing-top-row">
-                <div className="reader-bottom-bar-playing-left">
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-pause-btn"
-                    onClick={isPaused ? handlePlayInPlayer : handlePauseInPlayer}
-                    aria-label={isPaused ? 'Play' : 'Pause'}
-                  >
-                    {isPaused ? (
-                      <Play size={24} className="reader-bottom-bar-play-pause-icon" />
-                    ) : (
-                      <Pause size={24} className="reader-bottom-bar-play-pause-icon reader-bottom-bar-icon-enter" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-lesson-info"
-                    onClick={() => onLessonImageClick?.()}
-                    aria-label="Open Audio Mode"
-                  >
-                    <div className="reader-bottom-bar-lesson-image-wrap">
-                      <img
-                        src={lessonImage}
-                        alt="Lesson"
-                        className="reader-bottom-bar-lesson-image"
-                      />
-                    </div>
-                    <div className="reader-bottom-bar-lesson-details">
-                      <p className="reader-bottom-bar-lesson-title">{lessonTitle}</p>
-                      {lessonSource ? (
-                        <p className="reader-bottom-bar-lesson-source">{lessonSource}</p>
-                      ) : null}
-                    </div>
-                  </button>
-                </div>
-                <div className="reader-bottom-bar-playing-right">
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-close-player-btn"
-                    onClick={handleClosePlayer}
-                    aria-label="Close player"
-                  >
-                    <X size={18} className="reader-bottom-bar-close-player-icon" />
-                  </button>
-                </div>
-              </div>
-              <div className="reader-bottom-bar-mini-progress-wrap">
-                <div className="reader-bottom-bar-mini-progress-track">
-                  <div className="reader-bottom-bar-mini-progress-fill" />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
 
-        <div className={`reader-bottom-bar-right ${isPlaying ? 'reader-bottom-bar-right-playing' : ''}`}>
-          {isPlaying ? (
-            <div ref={actionsContainerRef} className="reader-bottom-bar-right-when-playing">
-              {!isActionsExpanded && (
-                <div className="reader-bottom-bar-chevron-only">
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-chevron-only-btn"
-                    onClick={handleChevronClick}
-                    aria-label="Expand menu"
-                    aria-expanded={isActionsExpanded}
-                  >
-                    <ChevronsUpDown size={24} />
-                  </button>
-                </div>
-              )}
-              {isActionsExpanded ? (
-                <div
-                  className="reader-bottom-bar-actions-container expanded"
-                  aria-expanded
-                >
-                  <div className="reader-bottom-bar-expanded-menu">
-                    <div className="reader-bottom-bar-expanded-grid">
-                      {EXPANDED_MENU_ITEMS.map(({ id, label, icon }) => (
-                        <button
-                          key={id}
-                          type="button"
-                          className="reader-bottom-bar-expanded-item"
-                          onClick={() => expandedHandlers[id]?.()}
-                          aria-label={label}
-                        >
-                          <span className="reader-bottom-bar-expanded-icon">{icon}</span>
-                          <span className="reader-bottom-bar-expanded-label">{label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          ) : (
             <div
               ref={actionsContainerRef}
               className={`reader-bottom-bar-actions-container ${isActionsExpanded ? 'expanded' : 'collapsed'}`}
@@ -361,9 +215,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                 </div>
               </div>
             </div>
-          )}
-        </div>
-          </>
+          </div>
         )}
       </div>
     </div>
