@@ -5,7 +5,9 @@ import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
 import { ReaderBottomBar } from './ReaderBottomBar';
-import { AudioModeDrawer } from './AudioModeDrawer';
+import { MediaModeLessonContent } from './MediaModeLessonContent';
+import { DrawerVideoPlayer } from './DrawerVideoPlayer';
+import videoThumbnail from '../assets/video-thumbnail.png';
 import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
@@ -28,8 +30,8 @@ export const Reader: React.FC = () => {
   const ignoreNextWordClick = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<'audio' | 'video'>('audio');
+  const [mediaMode, setMediaMode] = useState<'none' | 'audio' | 'video'>('none');
+  const [mediaPlayerExpanded, setMediaPlayerExpanded] = useState(false);
 
   const knownWords = React.useMemo(() => {
     const s = new Set<string>();
@@ -55,7 +57,6 @@ export const Reader: React.FC = () => {
     return s;
   }, [wordStatusMap]);
 
-  // Get all words from the lesson
   const allWords = React.useMemo(() => {
     const words: Word[] = [];
     lesson.sentences.forEach(sentence => {
@@ -66,7 +67,6 @@ export const Reader: React.FC = () => {
     return words;
   }, []);
 
-  // Calculate pages based on container dimensions
   const calculatePages = useCallback(() => {
     if (!containerRef.current) return;
 
@@ -75,19 +75,16 @@ export const Reader: React.FC = () => {
     const containerHeight = container.clientHeight;
 
     if (containerWidth === 0 || containerHeight === 0) {
-      // Fallback: create a single page with all words
       if (allWords.length > 0) {
         setPages([{ words: allWords }]);
       }
       return;
     }
 
-    // Create a temporary hidden container to measure text accurately
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'absolute';
     tempContainer.style.top = '-9999px';
     tempContainer.style.left = '-9999px';
-    // Use max-width of 600px for text content (matching page-content max-width)
     const contentWidth = Math.min(containerWidth, 600);
     tempContainer.style.width = `${contentWidth}px`;
     tempContainer.style.paddingTop = '8px';
@@ -105,17 +102,15 @@ export const Reader: React.FC = () => {
 
     const newPages: Page[] = [];
     let currentPage: Word[] = [];
-    const pagePadding = 16; // 8px top + 8px bottom
-    const titleHeight = 80; // Approximate title height
-    const topReserved = 40; // Progress bar (matches .reader-content margin-top)
-    const bottomReserved = 80; // Bottom bar + breathing room (matches .reader-content padding-bottom)
+    const pagePadding = 16;
+    const titleHeight = 80;
+    const topReserved = 40;
+    const bottomReserved = 80;
     const availableHeight = containerHeight - topReserved - bottomReserved - pagePadding - titleHeight;
 
-    // Build pages by measuring accumulated height with actual word spans
     for (let i = 0; i < allWords.length; i++) {
       const word = allWords[i];
-      
-      // Create a span for the word (matching the actual Word component styling)
+
       const wordSpan = document.createElement('span');
       wordSpan.textContent = word.text;
       wordSpan.style.display = 'inline-block';
@@ -124,29 +119,23 @@ export const Reader: React.FC = () => {
       wordSpan.style.fontSize = '18px';
       wordSpan.style.lineHeight = '37.8px';
       tempContainer.appendChild(wordSpan);
-      
-      // Add space after word (except for last word)
+
       if (i < allWords.length - 1) {
         tempContainer.appendChild(document.createTextNode(' '));
       }
 
-      // Measure the current height
       const measuredHeight = tempContainer.offsetHeight;
 
-      // If we've exceeded the available height, start a new page
       if (measuredHeight > availableHeight && currentPage.length > 0) {
-        // Remove the last word and space from temp container
         if (tempContainer.lastChild) {
           tempContainer.removeChild(tempContainer.lastChild);
         }
         if (tempContainer.lastChild) {
           tempContainer.removeChild(tempContainer.lastChild);
         }
-        
-        // Save current page (without the last word that caused overflow)
+
         newPages.push({ words: [...currentPage] });
-        
-        // Start new page with current word
+
         currentPage = [word];
         tempContainer.innerHTML = '';
         const newWordSpan = document.createElement('span');
@@ -165,45 +154,36 @@ export const Reader: React.FC = () => {
       }
     }
 
-    // Add the last page if it has words
     if (currentPage.length > 0) {
       newPages.push({ words: currentPage });
     }
 
     document.body.removeChild(tempContainer);
 
-    // Ensure we have at least one page
     if (newPages.length === 0 && allWords.length > 0) {
       newPages.push({ words: allWords });
     }
 
     setPages(newPages);
-    
-    // Adjust current page index if it's out of bounds
-    if (currentPageIndex >= newPages.length) {
-      setCurrentPageIndex(Math.max(0, newPages.length - 1));
-    }
-  }, [allWords, currentPageIndex]);
 
-  // Recalculate pages on mount and window resize
+    setCurrentPageIndex(prev => (prev >= newPages.length ? Math.max(0, newPages.length - 1) : prev));
+  }, [allWords]);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Use ResizeObserver to detect when container gets dimensions
     const resizeObserver = new ResizeObserver(() => {
       calculatePages();
     });
 
     resizeObserver.observe(containerRef.current);
 
-    // Also listen to window resize
     const handleResize = () => {
       calculatePages();
     };
 
     window.addEventListener('resize', handleResize);
-    
-    // Initial calculation
+
     calculatePages();
 
     return () => {
@@ -218,39 +198,44 @@ export const Reader: React.FC = () => {
     dragOffsetPx.current = 0;
   }, []);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!contentRef.current || pages.length === 0) return;
-    /* On desktop, only treat as drag when the mouse button is pressed (avoid hover triggering) */
-    if (e.pointerType === 'mouse' && e.buttons === 0) return;
-    const dx = e.clientX - dragStartX.current;
-    if (!isDragging) {
-      if (Math.abs(dx) >= DRAG_THRESHOLD_PX) {
-        setIsDragging(true);
-        dragOffsetPx.current = dx;
-        setDragOffset(dx);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!contentRef.current || pages.length === 0) return;
+      if (e.pointerType === 'mouse' && e.buttons === 0) return;
+      const dx = e.clientX - dragStartX.current;
+      if (!isDragging) {
+        if (Math.abs(dx) >= DRAG_THRESHOLD_PX) {
+          setIsDragging(true);
+          dragOffsetPx.current = dx;
+          setDragOffset(dx);
+        }
+        return;
       }
-      return;
-    }
-    dragOffsetPx.current = dx;
-    setDragOffset(dx);
-  }, [isDragging, pages.length]);
+      dragOffsetPx.current = dx;
+      setDragOffset(dx);
+    },
+    [isDragging, pages.length]
+  );
 
-  const handlePointerUp = useCallback((e?: React.PointerEvent) => {
-    if (e?.target) (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-    if (!isDragging) return;
-    ignoreNextWordClick.current = true;
-    const contentEl = contentRef.current;
-    const width = contentEl ? contentEl.clientWidth : 1;
-    const ratio = dragOffsetPx.current / width;
-    if (ratio < -SWIPE_THRESHOLD_RATIO && currentPageIndex < pages.length - 1) {
-      setCurrentPageIndex(prev => Math.min(pages.length - 1, prev + 1));
-    } else if (ratio > SWIPE_THRESHOLD_RATIO && currentPageIndex > 0) {
-      setCurrentPageIndex(prev => Math.max(0, prev - 1));
-    }
-    setIsDragging(false);
-    setDragOffset(0);
-    dragOffsetPx.current = 0;
-  }, [isDragging, currentPageIndex, pages.length]);
+  const handlePointerUp = useCallback(
+    (e?: React.PointerEvent) => {
+      if (e?.target) (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+      if (!isDragging) return;
+      ignoreNextWordClick.current = true;
+      const contentEl = contentRef.current;
+      const width = contentEl ? contentEl.clientWidth : 1;
+      const ratio = dragOffsetPx.current / width;
+      if (ratio < -SWIPE_THRESHOLD_RATIO && currentPageIndex < pages.length - 1) {
+        setCurrentPageIndex(prev => Math.min(pages.length - 1, prev + 1));
+      } else if (ratio > SWIPE_THRESHOLD_RATIO && currentPageIndex > 0) {
+        setCurrentPageIndex(prev => Math.max(0, prev - 1));
+      }
+      setIsDragging(false);
+      setDragOffset(0);
+      dragOffsetPx.current = 0;
+    },
+    [isDragging, currentPageIndex, pages.length]
+  );
 
   const handlePointerCancel = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
@@ -259,31 +244,34 @@ export const Reader: React.FC = () => {
     dragOffsetPx.current = 0;
   }, []);
 
-  const handleWordClick = useCallback((wordId: string) => {
-    if (ignoreNextWordClick.current) {
-      ignoreNextWordClick.current = false;
-      return;
-    }
-    if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
-      return;
-    }
-    if (selectedWordId === wordId) {
-      setSelectedWordId(null);
-      setClickedWords(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(wordId);
-        return newSet;
-      });
-    } else {
-      setSelectedWordId(wordId);
-      setWordStatusMap(prev => ({ ...prev, [wordId]: prev[wordId] ?? 'New' }));
-      setClickedWords(prev => {
-        const newSet = new Set(prev);
-        if (!newSet.has(wordId)) newSet.add(wordId);
-        return newSet;
-      });
-    }
-  }, [selectedWordId, knownWords, ignoredWords]);
+  const handleWordClick = useCallback(
+    (wordId: string) => {
+      if (ignoreNextWordClick.current) {
+        ignoreNextWordClick.current = false;
+        return;
+      }
+      if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
+        return;
+      }
+      if (selectedWordId === wordId) {
+        setSelectedWordId(null);
+        setClickedWords(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(wordId);
+          return newSet;
+        });
+      } else {
+        setSelectedWordId(wordId);
+        setWordStatusMap(prev => ({ ...prev, [wordId]: prev[wordId] ?? 'New' }));
+        setClickedWords(prev => {
+          const newSet = new Set(prev);
+          if (!newSet.has(wordId)) newSet.add(wordId);
+          return newSet;
+        });
+      }
+    },
+    [selectedWordId, knownWords, ignoredWords]
+  );
 
   const getWordById = useCallback((wordId: string): Word | undefined => {
     for (const sentence of lesson.sentences) {
@@ -293,12 +281,10 @@ export const Reader: React.FC = () => {
     return undefined;
   }, []);
 
-  // Get word element from DOM
   const getWordElement = useCallback((wordId: string): HTMLElement | null => {
     return document.getElementById(wordId);
   }, []);
 
-  // Close the popup
   const handleClosePopup = useCallback(() => {
     if (selectedWordId) {
       setClickedWords(prev => {
@@ -310,80 +296,42 @@ export const Reader: React.FC = () => {
     setSelectedWordId(null);
   }, [selectedWordId]);
 
-  const selectedWordIndex = React.useMemo(() => {
-    if (!selectedWordId) return -1;
-    const i = allWords.findIndex(w => w.id === selectedWordId);
-    return i >= 0 ? i : -1;
-  }, [selectedWordId, allWords]);
-
-  const handlePrevWord = useCallback(() => {
-    if (selectedWordIndex <= 0) return;
-    const prevWord = allWords[selectedWordIndex - 1];
-    setSelectedWordId(prevWord.id);
-    setWordStatusMap(prev => ({ ...prev, [prevWord.id]: prev[prevWord.id] ?? 'New' }));
-    setClickedWords(prev => {
-      const newSet = new Set(prev);
-      newSet.add(prevWord.id);
-      return newSet;
-    });
-  }, [selectedWordIndex, allWords]);
-
-  const handleNextWord = useCallback(() => {
-    if (selectedWordIndex < 0 || selectedWordIndex >= allWords.length - 1) return;
-    const nextWord = allWords[selectedWordIndex + 1];
-    setSelectedWordId(nextWord.id);
-    setWordStatusMap(prev => ({ ...prev, [nextWord.id]: prev[nextWord.id] ?? 'New' }));
-    setClickedWords(prev => {
-      const newSet = new Set(prev);
-      newSet.add(nextWord.id);
-      return newSet;
-    });
-  }, [selectedWordIndex, allWords]);
-
-  // Data for the selected word (for popup position + meaning)
   const selectedWordData = React.useMemo(() => {
     if (!selectedWordId) return null;
 
     const word = getWordById(selectedWordId);
     if (!word) return null;
 
-    let wordEl: HTMLElement | null = null;
-    if (isDrawerOpen) {
-      const drawer = document.querySelector('.audio-mode-drawer-root.open');
-      wordEl = drawer?.querySelector(`[id="${CSS.escape(selectedWordId)}"]`) as HTMLElement | null ?? null;
-    }
-    if (!wordEl) {
-      wordEl = getWordElement(selectedWordId);
-    }
+    const wordEl = getWordElement(selectedWordId);
     const anchorRect = wordEl?.getBoundingClientRect();
     if (!anchorRect) return null;
 
     return { word, anchorRect };
-  }, [selectedWordId, getWordById, getWordElement, isDrawerOpen]);
+  }, [selectedWordId, getWordById, getWordElement]);
 
   const [hoveredPageIndex, setHoveredPageIndex] = React.useState<number | null>(null);
 
-  const handleProgressBarClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const percentage = clickX / rect.width;
-    const pageIndex = Math.min(
-      Math.max(0, Math.floor(percentage * pages.length)),
-      pages.length - 1
-    );
-    setCurrentPageIndex(pageIndex);
-  }, [pages.length]);
+  const handleProgressBarClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percentage = clickX / rect.width;
+      const pageIndex = Math.min(Math.max(0, Math.floor(percentage * pages.length)), pages.length - 1);
+      setCurrentPageIndex(pageIndex);
+    },
+    [pages.length]
+  );
 
-  const handleProgressBarMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const percentage = mouseX / rect.width;
-    const pageIndex = Math.min(
-      Math.max(0, Math.floor(percentage * pages.length)),
-      pages.length - 1
-    );
-    setHoveredPageIndex(pageIndex);
-  }, [pages.length]);
+  const handleProgressBarMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const percentage = mouseX / rect.width;
+      const pageIndex = Math.min(Math.max(0, Math.floor(percentage * pages.length)), pages.length - 1);
+      setHoveredPageIndex(pageIndex);
+    },
+    [pages.length]
+  );
 
   const handleProgressBarMouseLeave = useCallback(() => {
     setHoveredPageIndex(null);
@@ -393,9 +341,22 @@ export const Reader: React.FC = () => {
   const dragOffsetPercent = contentWidth > 0 ? (dragOffset / contentWidth) * 100 : 0;
   const pageTransform = -currentPageIndex * 100 + dragOffsetPercent;
 
-  // Calculate progress: position thumb at the end of the fill progress
   const fillProgress = pages.length > 0 ? Math.min(100, ((currentPageIndex + 1) / pages.length) * 100) : 0;
   const thumbProgress = fillProgress;
+
+  const inMediaMode = mediaMode !== 'none';
+  const contentClassName = [
+    'reader-content',
+    inMediaMode ? 'reader-content--media' : '',
+    inMediaMode && (mediaPlayerExpanded ? 'reader-content--media-expanded' : 'reader-content--media-collapsed'),
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const handleMediaClose = useCallback(() => {
+    setMediaMode('none');
+    setMediaPlayerExpanded(false);
+  }, []);
 
   return (
     <div className="reader" ref={containerRef}>
@@ -403,60 +364,76 @@ export const Reader: React.FC = () => {
         <div className="reader-loading">Loading...</div>
       ) : (
         <>
-          <div className="reader-progress-container">
-            <div 
-              className="reader-progress-bar"
-              onClick={handleProgressBarClick}
-              onMouseMove={handleProgressBarMouseMove}
-              onMouseLeave={handleProgressBarMouseLeave}
-            >
-              <div 
-                className="reader-progress-fill"
-                style={{ width: `${fillProgress}%` }}
-              />
-              <div 
-                className="reader-progress-thumb"
-                style={{ left: `${thumbProgress}%` }}
-              />
-              {hoveredPageIndex !== null && (
-                <div 
-                  className="reader-progress-tooltip"
-                  style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
-                >
-                  Page {hoveredPageIndex + 1}
-                </div>
-              )}
+          {!inMediaMode && (
+            <div className="reader-progress-container">
+              <div
+                className="reader-progress-bar"
+                onClick={handleProgressBarClick}
+                onMouseMove={handleProgressBarMouseMove}
+                onMouseLeave={handleProgressBarMouseLeave}
+              >
+                <div className="reader-progress-fill" style={{ width: `${fillProgress}%` }} />
+                <div className="reader-progress-thumb" style={{ left: `${thumbProgress}%` }} />
+                {hoveredPageIndex !== null && (
+                  <div
+                    className="reader-progress-tooltip"
+                    style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
+                  >
+                    Page {hoveredPageIndex + 1}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
           <div
-            className="reader-content"
+            className={contentClassName}
             ref={contentRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={e => handlePointerUp(e)}
-            onPointerLeave={() => handlePointerUp()}
-            onPointerCancel={handlePointerCancel}
+            onPointerDown={!inMediaMode ? handlePointerDown : undefined}
+            onPointerMove={!inMediaMode ? handlePointerMove : undefined}
+            onPointerUp={!inMediaMode ? e => handlePointerUp(e) : undefined}
+            onPointerLeave={!inMediaMode ? () => handlePointerUp() : undefined}
+            onPointerCancel={!inMediaMode ? handlePointerCancel : undefined}
           >
-            <div
-              className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
-              style={{
-                transform: `translateX(${pageTransform}%)`,
-                transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
-              }}
-            >
-              {pages.map((page, index) => (
-                <div key={index} className="page-wrapper">
-                  <PageComponent
-                    words={page.words}
+            {!inMediaMode ? (
+              <div
+                className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
+                style={{
+                  transform: `translateX(${pageTransform}%)`,
+                  transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
+                }}
+              >
+                {pages.map((page, index) => (
+                  <div key={index} className="page-wrapper">
+                    <PageComponent
+                      words={page.words}
+                      clickedWords={clickedWords}
+                      lingqWords={lingqWords}
+                      onWordClick={handleWordClick}
+                      knownWords={knownWords}
+                      ignoredWords={ignoredWords}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {mediaMode === 'video' && (
+                  <div className="reader-media-video-wrap">
+                    <DrawerVideoPlayer videoUrl={lesson.videoUrl} posterUrl={videoThumbnail} />
+                  </div>
+                )}
+                <div className="reader-media-lesson-scroll">
+                  <MediaModeLessonContent
+                    sentences={lesson.sentences}
                     clickedWords={clickedWords}
                     lingqWords={lingqWords}
-                    onWordClick={handleWordClick}
                     knownWords={knownWords}
                     ignoredWords={ignoredWords}
+                    onWordClick={handleWordClick}
                   />
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
           {selectedWordId && selectedWordData && (
             <ReaderPopUp
@@ -466,62 +443,33 @@ export const Reader: React.FC = () => {
               wordTranslation={selectedWordData.word.translation}
               anchorRect={selectedWordData.anchorRect}
               wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
-              onWordStatusChange={(status) =>
+              onWordStatusChange={status =>
                 setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
               }
               onClose={handleClosePopup}
             />
           )}
-          <AudioModeDrawer
-            open={isDrawerOpen}
-            onClose={() => setIsDrawerOpen(false)}
-            showPlayer={drawerMode === 'audio'}
-            lessonTitle={lesson.title}
-            lessonSource={lesson.source ?? ''}
-            sentences={lesson.sentences}
-            videoUrl={lesson.videoUrl}
-            clickedWords={clickedWords}
-            lingqWords={lingqWords}
-            knownWords={knownWords}
-            ignoredWords={ignoredWords}
-            onWordClick={handleWordClick}
-            selectedWordId={selectedWordId}
-            selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
-            onSelectedWordStatusChange={
-              selectedWordId
-                ? (status) => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
-                : undefined
-            }
-            canGoPrev={selectedWordIndex > 0}
-            canGoNext={selectedWordIndex >= 0 && selectedWordIndex < allWords.length - 1}
-            onPrevWord={handlePrevWord}
-            onNextWord={handleNextWord}
-          />
           <ReaderBottomBar
-            isDrawerOpen={isDrawerOpen}
+            mediaMode={mediaMode}
+            mediaPlayerExpanded={mediaPlayerExpanded}
+            onMediaPlayerExpand={() => setMediaPlayerExpanded(true)}
+            onMediaPlayerCollapse={() => setMediaPlayerExpanded(false)}
+            onMediaClose={handleMediaClose}
             selectedWordId={selectedWordId}
             selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
             onSelectedWordStatusChange={
               selectedWordId
-                ? (status) => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
+                ? status => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
                 : undefined
             }
-            canGoPrev={selectedWordIndex > 0}
-            canGoNext={selectedWordIndex >= 0 && selectedWordIndex < allWords.length - 1}
-            onPrevWord={handlePrevWord}
-            onNextWord={handleNextWord}
             onPlay={() => {
-              setDrawerMode('audio');
-              setIsDrawerOpen(true);
-            }}
-            onLessonImageClick={() => {
-              setDrawerMode('audio');
-              setIsDrawerOpen(true);
+              setMediaMode('audio');
+              setMediaPlayerExpanded(false);
             }}
             hasVideo={lesson.hasVideo ?? false}
             onVideoMode={() => {
-              setDrawerMode('video');
-              setIsDrawerOpen(true);
+              setMediaMode('video');
+              setMediaPlayerExpanded(false);
             }}
             lessonTitle={lesson.title}
             lessonSource={lesson.source ?? ''}

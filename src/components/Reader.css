@@ -86,9 +86,43 @@
   width: 100%;
   margin-top: 40px; /* Space for fixed progress bar */
   padding-bottom: 80px; /* Space for bottom bar + safe area */
-  transition: margin-right 0.25s ease;
+  transition: margin-right 0.25s ease, padding-bottom 0.2s ease;
   margin-right: 0;
   touch-action: pan-y; /* allow vertical scroll, we handle horizontal swipe */
+}
+
+/* Integrated audio/video: sentence scroll + optional video */
+.reader-content--media {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+  touch-action: auto;
+}
+
+.reader-content--media-collapsed {
+  padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+}
+
+.reader-content--media-expanded {
+  padding-bottom: calc(280px + env(safe-area-inset-bottom, 0px));
+}
+
+.reader-media-video-wrap {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 16px 8px;
+  box-sizing: border-box;
+}
+
+.reader-media-lesson-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .reader-content.panel-open {
