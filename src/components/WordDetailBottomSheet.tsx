@@ -23,7 +23,11 @@ import './WordDetailBottomSheet.css';
 
 export type { WordDetailSentenceContextEntry } from './SentenceBlock';
 
-const DRAG_CLOSE_THRESHOLD_PX = 40;
+/** Aligned with audio/video drawers; lower = easier to dismiss by dragging */
+const DRAG_CLOSE_THRESHOLD_PX = 24;
+
+/** Must match `--word-detail-sheet-duration` in WordDetailBottomSheet.css */
+const SHEET_TRANSITION_MS = 380;
 
 const DEFAULT_SUGGESTED_MEANINGS = ['Her hair was undone', 'Her hair was disheveled'];
 const DEFAULT_RELATED_PHRASE =
@@ -175,9 +179,9 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   wordNote = DEFAULT_WORD_NOTE,
   onWordTranslationChange,
 }) => {
-  const handleRef = useRef<HTMLDivElement>(null);
   const handleDragStartYRef = useRef<number | null>(null);
   const onCloseRef = useRef(onClose);
+  const hasPresentedRef = useRef(false);
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
@@ -205,86 +209,84 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     onWordTranslationChange?.(v);
   };
 
-  useEffect(() => {
-    const el = handleRef.current;
-    if (!el) return;
-    const onTouchMove = (e: TouchEvent) => {
-      if (handleDragStartYRef.current === null) return;
-      e.preventDefault();
-      if (e.touches.length > 0) {
-        const deltaY = e.touches[0].clientY - handleDragStartYRef.current;
-        if (deltaY >= DRAG_CLOSE_THRESHOLD_PX) {
-          handleDragStartYRef.current = null;
-          onCloseRef.current();
-          document.removeEventListener('touchmove', onTouchMove, { capture: true });
-          document.removeEventListener('touchend', onTouchEnd, { capture: true });
-          document.removeEventListener('touchcancel', onTouchEnd, { capture: true });
-        }
-      }
-    };
-    const onTouchEnd = () => {
-      handleDragStartYRef.current = null;
-      document.removeEventListener('touchmove', onTouchMove, { capture: true });
-      document.removeEventListener('touchend', onTouchEnd, { capture: true });
-      document.removeEventListener('touchcancel', onTouchEnd, { capture: true });
-    };
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.changedTouches.length > 0) {
-        handleDragStartYRef.current = e.changedTouches[0].clientY;
-        document.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
-        document.addEventListener('touchend', onTouchEnd, { capture: true });
-        document.addEventListener('touchcancel', onTouchEnd, { capture: true });
-      }
-    };
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchmove', onTouchMove, { capture: true });
-      document.removeEventListener('touchend', onTouchEnd, { capture: true });
-      document.removeEventListener('touchcancel', onTouchEnd, { capture: true });
-    };
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+
+  const requestClose = useCallback(() => {
+    if (!hasPresentedRef.current) {
+      onCloseRef.current();
+      return;
+    }
+    setSheetOpen(false);
   }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
     handleDragStartYRef.current = e.clientY;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (handleDragStartYRef.current === null) return;
-      e.preventDefault();
-      const deltaY = e.clientY - handleDragStartYRef.current;
-      if (deltaY >= DRAG_CLOSE_THRESHOLD_PX) {
-        handleDragStartYRef.current = null;
-        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-        onClose();
-      }
-    },
-    [onClose]
-  );
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (handleDragStartYRef.current === null) return;
+    e.preventDefault();
+    const deltaY = e.clientY - handleDragStartYRef.current;
+    if (deltaY >= DRAG_CLOSE_THRESHOLD_PX) {
+      handleDragStartYRef.current = null;
+      (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+      requestClose();
+    }
+  }, [requestClose]);
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
       if (handleDragStartYRef.current === null) return;
       const deltaY = e.clientY - handleDragStartYRef.current;
-      if (deltaY >= DRAG_CLOSE_THRESHOLD_PX) onClose();
+      if (deltaY >= DRAG_CLOSE_THRESHOLD_PX) requestClose();
       handleDragStartYRef.current = null;
       (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
     },
-    [onClose]
+    [requestClose]
   );
 
-  const handlePointerCancel = useCallback(() => {
+  const handlePointerCancel = useCallback((e: React.PointerEvent) => {
     handleDragStartYRef.current = null;
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
   }, []);
 
-  const [isOpen, setIsOpen] = React.useState(false);
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setIsOpen(true));
-    return () => cancelAnimationFrame(frame);
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setSheetOpen(true));
+    });
+    return () => cancelAnimationFrame(id);
   }, []);
+
+  useEffect(() => {
+    if (sheetOpen) hasPresentedRef.current = true;
+  }, [sheetOpen]);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (sheetOpen || !hasPresentedRef.current) return;
+    const panel = panelRef.current;
+    let finished = false;
+    const invokeClose = () => {
+      if (finished) return;
+      finished = true;
+      onCloseRef.current();
+    };
+    const onTransitionEnd = (e: TransitionEvent) => {
+      if (!panel || e.target !== panel || e.propertyName !== 'transform') return;
+      panel.removeEventListener('transitionend', onTransitionEnd);
+      invokeClose();
+    };
+    if (panel) {
+      panel.addEventListener('transitionend', onTransitionEnd);
+    }
+    const t = window.setTimeout(invokeClose, SHEET_TRANSITION_MS + 80);
+    return () => {
+      panel?.removeEventListener('transitionend', onTransitionEnd);
+      clearTimeout(t);
+    };
+  }, [sheetOpen]);
 
   const meaningsActive = activeTab === 'meanings';
   const sentenceActive = activeTab === 'sentence';
@@ -343,19 +345,20 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
   return (
     <div
-      className={`word-detail-sheet-root ${isOpen ? 'is-open' : ''}`}
+      className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''}`}
       role="dialog"
       aria-label="Word details"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && requestClose()}
     >
-      <div className="word-detail-sheet-panel">
-        <div
-          ref={handleRef}
+      <div ref={panelRef} className="word-detail-sheet-panel">
+        <button
+          type="button"
           className="word-detail-sheet-handle"
-          aria-hidden
-          role="button"
-          tabIndex={0}
-          aria-label="Drag down to close"
+          aria-label="Drag down or tap to close"
+          onClick={(e) => {
+            e.stopPropagation();
+            requestClose();
+          }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
