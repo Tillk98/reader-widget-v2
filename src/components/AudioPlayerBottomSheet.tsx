@@ -220,12 +220,10 @@ export const AudioPlayerBottomSheet: React.FC<AudioPlayerBottomSheetProps> = ({
         onHandlePointerCancel={handleHandlePointerCancel}
         onHandleClick={() => setExpanded(false)}
         onMinimize={() => setExpanded(false)}
-        onClose={onClose}
         wordSelectionActive={hasWordSelected}
         onInspectSentence={onInspectSentence}
         onShowTranslation={onShowTranslation}
         dialogAriaLabel="Audio lesson"
-        closeAriaLabel="Close audio"
       />
       {collapsedBar}
     </>

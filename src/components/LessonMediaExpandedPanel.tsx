@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Languages, Pause, Play, X } from 'lucide-react';
+import { ChevronDown, Languages, Pause, Play } from 'lucide-react';
 import type { Sentence as SentenceType } from '../data/lesson';
 import playerBack from '../assets/player-back.png';
 import playerForward from '../assets/player-forward.png';
@@ -33,10 +33,9 @@ export interface LessonMediaExpandedPanelProps {
   onHandlePointerUp: (e: React.PointerEvent) => void;
   onHandlePointerCancel: (e: React.PointerEvent) => void;
   onHandleClick: () => void;
+  /** Audio: collapse to mini player. Video: exit to reader (no mini player). */
   onMinimize: () => void;
-  onClose: () => void;
   dialogAriaLabel: string;
-  closeAriaLabel: string;
 }
 
 export const LessonMediaExpandedPanel: React.FC<LessonMediaExpandedPanelProps> = ({
@@ -63,9 +62,7 @@ export const LessonMediaExpandedPanel: React.FC<LessonMediaExpandedPanelProps> =
   onHandlePointerCancel,
   onHandleClick,
   onMinimize,
-  onClose,
   dialogAriaLabel,
-  closeAriaLabel,
 }) => {
   /** Independent from main transport / video play — toolbar-only control. */
   const [toolbarPlayPaused, setToolbarPlayPaused] = useState(true);
@@ -194,11 +191,14 @@ export const LessonMediaExpandedPanel: React.FC<LessonMediaExpandedPanelProps> =
               ) : null}
               <div className={bottomActionsClass}>
                 <div className="audio-sheet__bottom-actions-start">
-                  {!isVideo ? (
-                    <button type="button" className="audio-sheet__icon-btn" aria-label="Minimize player" onClick={onMinimize}>
-                      <ChevronDown size={18} strokeWidth={2} />
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    className="audio-sheet__icon-btn"
+                    aria-label={isVideo ? 'Return to reader' : 'Minimize player'}
+                    onClick={onMinimize}
+                  >
+                    <ChevronDown size={18} strokeWidth={2} />
+                  </button>
                 </div>
                 <div className="audio-sheet__bottom-actions-middle">
                   <div
@@ -255,9 +255,6 @@ export const LessonMediaExpandedPanel: React.FC<LessonMediaExpandedPanelProps> =
                     </div>
                   </div>
                 </div>
-                <button type="button" className="audio-sheet__icon-btn" onClick={onClose} aria-label={closeAriaLabel}>
-                  <X size={18} strokeWidth={2} />
-                </button>
               </div>
             </div>
           </div>

@@ -152,9 +152,7 @@ export const VideoPlayerBottomSheet: React.FC<VideoPlayerBottomSheetProps> = ({
       onHandlePointerCancel={handleHandlePointerCancel}
       onHandleClick={requestClose}
       onMinimize={requestClose}
-      onClose={requestClose}
       dialogAriaLabel="Video lesson"
-      closeAriaLabel="Close video"
     />
   );
 };
