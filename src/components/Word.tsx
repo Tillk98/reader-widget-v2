@@ -4,6 +4,8 @@ import './Word.css';
 
 interface WordProps {
   word: WordType;
+  /** When set, used as the span `id` (e.g. to avoid duplicate ids when the same lesson renders in the sheet and on pages). */
+  domId?: string;
   isClicked: boolean;
   isLingQ: boolean;
   onClick: (wordId: string) => void;
@@ -13,6 +15,7 @@ interface WordProps {
 
 export const Word: React.FC<WordProps> = ({
   word,
+  domId,
   isClicked,
   isLingQ,
   onClick,
@@ -33,7 +36,7 @@ export const Word: React.FC<WordProps> = ({
 
   return (
     <span
-      id={word.id}
+      id={domId ?? word.id}
       className={getClassName()}
       onClick={handleClick}
       style={{ cursor: isKnown || isIgnored ? 'default' : 'pointer' }}

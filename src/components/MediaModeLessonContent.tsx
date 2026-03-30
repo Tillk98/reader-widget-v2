@@ -5,6 +5,8 @@ import './MediaModeLessonContent.css';
 
 export interface MediaModeLessonContentProps {
   sentences: SentenceType[];
+  /** Prefix for word span ids: `{prefix}-{word.id}` so sheet words do not collide with paginated reader words. */
+  wordDomIdPrefix?: string;
   clickedWords: Set<string>;
   lingqWords: Set<string>;
   knownWords: Set<string>;
@@ -14,6 +16,7 @@ export interface MediaModeLessonContentProps {
 
 export const MediaModeLessonContent: React.FC<MediaModeLessonContentProps> = ({
   sentences,
+  wordDomIdPrefix,
   clickedWords,
   lingqWords,
   knownWords,
@@ -29,6 +32,11 @@ export const MediaModeLessonContent: React.FC<MediaModeLessonContentProps> = ({
               <React.Fragment key={word.id}>
                 <Word
                   word={word}
+                  domId={
+                    wordDomIdPrefix != null && wordDomIdPrefix !== ''
+                      ? `${wordDomIdPrefix}-${word.id}`
+                      : undefined
+                  }
                   isClicked={clickedWords.has(word.id)}
                   isLingQ={lingqWords.has(word.id)}
                   onClick={onWordClick}

@@ -5,13 +5,16 @@ import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
 import { ReaderBottomBar } from './ReaderBottomBar';
-import { MediaModeLessonContent } from './MediaModeLessonContent';
-import { DrawerVideoPlayer } from './DrawerVideoPlayer';
+import { AudioPlayerBottomSheet } from './AudioPlayerBottomSheet';
+import { VideoPlayerBottomSheet } from './VideoPlayerBottomSheet';
 import videoThumbnail from '../assets/video-thumbnail.png';
 import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
 const SWIPE_THRESHOLD_RATIO = 0.15;
+
+/** Must match `wordDomIdPrefix` on `MediaModeLessonContent` in the audio/video sheet. */
+const MEDIA_SHEET_WORD_DOM_PREFIX = 'lesson-media';
 
 interface Page {
   words: Word[];
@@ -31,7 +34,7 @@ export const Reader: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [mediaMode, setMediaMode] = useState<'none' | 'audio' | 'video'>('none');
-  const [mediaPlayerExpanded, setMediaPlayerExpanded] = useState(false);
+  const [audioSheetExpanded, setAudioSheetExpanded] = useState(false);
 
   const knownWords = React.useMemo(() => {
     const s = new Set<string>();
@@ -282,8 +285,18 @@ export const Reader: React.FC = () => {
   }, []);
 
   const getWordElement = useCallback((wordId: string): HTMLElement | null => {
+    /* Collapsed audio: user reads paginated pages — anchor to page words like default mode.
+       Expanded audio/video sheet: transcript uses prefixed ids so we don't hit duplicate page ids. */
+    if (mediaMode === 'audio' && audioSheetExpanded) {
+      const inSheet = document.getElementById(`${MEDIA_SHEET_WORD_DOM_PREFIX}-${wordId}`);
+      if (inSheet) return inSheet;
+    }
+    if (mediaMode === 'video') {
+      const inSheet = document.getElementById(`${MEDIA_SHEET_WORD_DOM_PREFIX}-${wordId}`);
+      if (inSheet) return inSheet;
+    }
     return document.getElementById(wordId);
-  }, []);
+  }, [mediaMode, audioSheetExpanded]);
 
   const handleClosePopup = useCallback(() => {
     if (selectedWordId) {
@@ -296,6 +309,9 @@ export const Reader: React.FC = () => {
     setSelectedWordId(null);
   }, [selectedWordId]);
 
+  const handleMediaInspectSentence = useCallback(() => {}, []);
+  const handleMediaShowTranslation = useCallback(() => {}, []);
+
   const selectedWordData = React.useMemo(() => {
     if (!selectedWordId) return null;
 
@@ -303,11 +319,15 @@ export const Reader: React.FC = () => {
     if (!word) return null;
 
     const wordEl = getWordElement(selectedWordId);
-    const anchorRect = wordEl?.getBoundingClientRect();
-    if (!anchorRect) return null;
+    if (!wordEl) return null;
 
-    return { word, anchorRect };
+    return { word };
   }, [selectedWordId, getWordById, getWordElement]);
+
+  const resolveSelectedWordAnchorElement = useCallback((): HTMLElement | null => {
+    if (!selectedWordId) return null;
+    return getWordElement(selectedWordId);
+  }, [selectedWordId, getWordElement]);
 
   const [hoveredPageIndex, setHoveredPageIndex] = React.useState<number | null>(null);
 
@@ -344,19 +364,27 @@ export const Reader: React.FC = () => {
   const fillProgress = pages.length > 0 ? Math.min(100, ((currentPageIndex + 1) / pages.length) * 100) : 0;
   const thumbProgress = fillProgress;
 
-  const inMediaMode = mediaMode !== 'none';
-  const contentClassName = [
-    'reader-content',
-    inMediaMode ? 'reader-content--media' : '',
-    inMediaMode && (mediaPlayerExpanded ? 'reader-content--media-expanded' : 'reader-content--media-collapsed'),
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const isVideoMode = mediaMode === 'video';
+  const isAudioOpen = mediaMode === 'audio';
+  const isVideoOpen = mediaMode === 'video';
+  const contentClassName = 'reader-content';
 
   const handleMediaClose = useCallback(() => {
     setMediaMode('none');
-    setMediaPlayerExpanded(false);
   }, []);
+
+  const handleAudioExpandedChange = useCallback((expanded: boolean) => {
+    setAudioSheetExpanded(expanded);
+  }, []);
+
+  const [collapsedAudioChromeHeightPx, setCollapsedAudioChromeHeightPx] = useState(102);
+
+  useEffect(() => {
+    if (mediaMode !== 'audio') setAudioSheetExpanded(false);
+  }, [mediaMode]);
+
+  const liftBottomBarAboveCollapsedAudio =
+    mediaMode === 'audio' && selectedWordId != null && !audioSheetExpanded;
 
   return (
     <div className="reader" ref={containerRef}>
@@ -364,7 +392,7 @@ export const Reader: React.FC = () => {
         <div className="reader-loading">Loading...</div>
       ) : (
         <>
-          {!inMediaMode && (
+          {!isVideoMode && (
             <div className="reader-progress-container">
               <div
                 className="reader-progress-bar"
@@ -388,60 +416,58 @@ export const Reader: React.FC = () => {
           <div
             className={contentClassName}
             ref={contentRef}
-            onPointerDown={!inMediaMode ? handlePointerDown : undefined}
-            onPointerMove={!inMediaMode ? handlePointerMove : undefined}
-            onPointerUp={!inMediaMode ? e => handlePointerUp(e) : undefined}
-            onPointerLeave={!inMediaMode ? () => handlePointerUp() : undefined}
-            onPointerCancel={!inMediaMode ? handlePointerCancel : undefined}
+            onPointerDown={!isVideoMode ? handlePointerDown : undefined}
+            onPointerMove={!isVideoMode ? handlePointerMove : undefined}
+            onPointerUp={!isVideoMode ? e => handlePointerUp(e) : undefined}
+            onPointerLeave={!isVideoMode ? () => handlePointerUp() : undefined}
+            onPointerCancel={!isVideoMode ? handlePointerCancel : undefined}
           >
-            {!inMediaMode ? (
-              <div
-                className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
-                style={{
-                  transform: `translateX(${pageTransform}%)`,
-                  transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
-                }}
-              >
-                {pages.map((page, index) => (
-                  <div key={index} className="page-wrapper">
-                    <PageComponent
-                      words={page.words}
-                      clickedWords={clickedWords}
-                      lingqWords={lingqWords}
-                      onWordClick={handleWordClick}
-                      knownWords={knownWords}
-                      ignoredWords={ignoredWords}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                {mediaMode === 'video' && (
-                  <div className="reader-media-video-wrap">
-                    <DrawerVideoPlayer videoUrl={lesson.videoUrl} posterUrl={videoThumbnail} />
-                  </div>
-                )}
-                <div className="reader-media-lesson-scroll">
-                  <MediaModeLessonContent
-                    sentences={lesson.sentences}
+            <div
+              className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
+              style={{
+                transform: `translateX(${pageTransform}%)`,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
+              }}
+            >
+              {pages.map((page, index) => (
+                <div key={index} className="page-wrapper">
+                  <PageComponent
+                    words={page.words}
                     clickedWords={clickedWords}
                     lingqWords={lingqWords}
+                    onWordClick={handleWordClick}
                     knownWords={knownWords}
                     ignoredWords={ignoredWords}
-                    onWordClick={handleWordClick}
                   />
                 </div>
-              </>
-            )}
+              ))}
+            </div>
           </div>
+          {isAudioOpen && (
+            <AudioPlayerBottomSheet
+              lessonTitle={lesson.title}
+              lessonSource={lesson.source ?? ''}
+              sentences={lesson.sentences}
+              clickedWords={clickedWords}
+              lingqWords={lingqWords}
+              knownWords={knownWords}
+              ignoredWords={ignoredWords}
+              onWordClick={handleWordClick}
+              onClose={handleMediaClose}
+              hasWordSelected={selectedWordId != null}
+              onInspectSentence={handleMediaInspectSentence}
+              onShowTranslation={handleMediaShowTranslation}
+              onExpandedChange={handleAudioExpandedChange}
+              onCollapsedHeightChange={setCollapsedAudioChromeHeightPx}
+            />
+          )}
           {selectedWordId && selectedWordData && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
               wordText={selectedWordData.word.text}
               wordTranslation={selectedWordData.word.translation}
-              anchorRect={selectedWordData.anchorRect}
+              resolveAnchorElement={resolveSelectedWordAnchorElement}
               wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
               onWordStatusChange={status =>
                 setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
@@ -449,12 +475,28 @@ export const Reader: React.FC = () => {
               onClose={handleClosePopup}
             />
           )}
+          {isVideoOpen && (
+            <VideoPlayerBottomSheet
+              lessonTitle={lesson.title}
+              lessonSource={lesson.source ?? ''}
+              sentences={lesson.sentences}
+              clickedWords={clickedWords}
+              lingqWords={lingqWords}
+              knownWords={knownWords}
+              ignoredWords={ignoredWords}
+              onWordClick={handleWordClick}
+              onClose={handleMediaClose}
+              videoUrl={lesson.videoUrl}
+              posterUrl={videoThumbnail}
+              hasWordSelected={selectedWordId != null}
+              onInspectSentence={handleMediaInspectSentence}
+              onShowTranslation={handleMediaShowTranslation}
+            />
+          )}
           <ReaderBottomBar
             mediaMode={mediaMode}
-            mediaPlayerExpanded={mediaPlayerExpanded}
-            onMediaPlayerExpand={() => setMediaPlayerExpanded(true)}
-            onMediaPlayerCollapse={() => setMediaPlayerExpanded(false)}
-            onMediaClose={handleMediaClose}
+            liftAboveCollapsedAudio={liftBottomBarAboveCollapsedAudio}
+            collapsedAudioChromeHeightPx={collapsedAudioChromeHeightPx}
             selectedWordId={selectedWordId}
             selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
             onSelectedWordStatusChange={
@@ -464,15 +506,11 @@ export const Reader: React.FC = () => {
             }
             onPlay={() => {
               setMediaMode('audio');
-              setMediaPlayerExpanded(false);
             }}
             hasVideo={lesson.hasVideo ?? false}
             onVideoMode={() => {
               setMediaMode('video');
-              setMediaPlayerExpanded(false);
             }}
-            lessonTitle={lesson.title}
-            lessonSource={lesson.source ?? ''}
           />
         </>
       )}

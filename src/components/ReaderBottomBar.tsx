@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Play,
   Youtube,
@@ -14,17 +15,16 @@ import {
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ActiveSelectionBar } from './ActiveSelectionBar';
-import { MediaPlayerBottomBar } from './MediaPlayerBottomBar';
 import sentenceDefaultIcon from '../assets/sentence-default.png';
 import reviewDefaultIcon from '../assets/review-default.png';
 import './ReaderBottomBar.css';
 
 export interface ReaderBottomBarProps {
   mediaMode?: 'none' | 'audio' | 'video';
-  mediaPlayerExpanded?: boolean;
-  onMediaPlayerExpand?: () => void;
-  onMediaPlayerCollapse?: () => void;
-  onMediaClose?: () => void;
+  /** When true, bar sits above the collapsed audio mini player (12px gap) so it is not covered. */
+  liftAboveCollapsedAudio?: boolean;
+  /** Measured height (px) of the collapsed audio sheet border box; drives bottom offset when lifted. */
+  collapsedAudioChromeHeightPx?: number;
   selectedWordId?: string | null;
   selectedWordStatus?: LingQStatusType;
   onSelectedWordStatusChange?: (status: LingQStatusType) => void;
@@ -42,8 +42,6 @@ export interface ReaderBottomBarProps {
   onSettings?: () => void;
   hasVideo?: boolean;
   onVideoMode?: () => void;
-  lessonTitle?: string;
-  lessonSource?: string;
 }
 
 const EXPANDED_MENU_ITEMS: { id: string; label: string; icon: React.ReactNode; onClick?: () => void }[] = [
@@ -59,10 +57,8 @@ const EXPANDED_MENU_ITEMS: { id: string; label: string; icon: React.ReactNode; o
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   mediaMode = 'none',
-  mediaPlayerExpanded = false,
-  onMediaPlayerExpand,
-  onMediaPlayerCollapse,
-  onMediaClose,
+  liftAboveCollapsedAudio = false,
+  collapsedAudioChromeHeightPx = 102,
   selectedWordId,
   selectedWordStatus = 'New',
   onSelectedWordStatusChange,
@@ -80,15 +76,14 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onSettings,
   hasVideo = false,
   onVideoMode,
-  lessonTitle = 'Lesson',
-  lessonSource = '',
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
   const actionsContainerRef = useRef<HTMLDivElement>(null);
 
   const hasWordSelected = selectedWordId != null;
-  const inMediaMode = mediaMode !== 'none';
-  const showDefaultChrome = !inMediaMode && !hasWordSelected;
+  const hideBarUnderMediaSheet =
+    (mediaMode === 'audio' || mediaMode === 'video') && !hasWordSelected;
+  const showDefaultChrome = mediaMode === 'none' && !hasWordSelected;
 
   useEffect(() => {
     if (!isActionsExpanded) return;
@@ -117,27 +112,31 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     settings: onSettings,
   };
 
-  return (
-    <div className="reader-bottom-bar">
+  const barStyle: React.CSSProperties | undefined =
+    liftAboveCollapsedAudio && collapsedAudioChromeHeightPx > 0
+      ? ({ '--reader-collapsed-audio-offset': `${collapsedAudioChromeHeightPx}px` } as React.CSSProperties)
+      : undefined;
+
+  const bar = (
+    <div
+      className={[
+        'reader-bottom-bar',
+        hideBarUnderMediaSheet ? 'reader-bottom-bar--hidden-under-media-sheet' : '',
+        liftAboveCollapsedAudio ? 'reader-bottom-bar--above-collapsed-audio' : '',
+        liftAboveCollapsedAudio ? 'reader-bottom-bar--portaled' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={barStyle}
+    >
       <div
-        className={`reader-bottom-bar-inner ${inMediaMode || hasWordSelected ? 'reader-bottom-bar-inner--stack' : ''}`}
+        className={`reader-bottom-bar-inner ${hasWordSelected ? 'reader-bottom-bar-inner--stack' : ''}`}
       >
         {hasWordSelected && (
           <ActiveSelectionBar
             selectedWordId={selectedWordId}
             selectedWordStatus={selectedWordStatus}
             onSelectedWordStatusChange={onSelectedWordStatusChange!}
-          />
-        )}
-
-        {inMediaMode && (
-          <MediaPlayerBottomBar
-            expanded={mediaPlayerExpanded}
-            lessonTitle={lessonTitle}
-            lessonSource={lessonSource}
-            onRequestExpand={() => onMediaPlayerExpand?.()}
-            onRequestCollapse={() => onMediaPlayerCollapse?.()}
-            onClose={() => onMediaClose?.()}
           />
         )}
 
@@ -220,4 +219,9 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
       </div>
     </div>
   );
+
+  if (liftAboveCollapsedAudio && typeof document !== 'undefined') {
+    return createPortal(bar, document.body);
+  }
+  return bar;
 };
