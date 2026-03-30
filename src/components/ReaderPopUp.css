@@ -1,7 +1,8 @@
 /* ReaderPopUp – Figma State=Collapsed variant (ReaderWidget) */
 .reader-popup-widget {
   position: fixed;
-  z-index: 1000;
+  /* Above collapsed mini player (z-index 112) and expanded sheet (111) */
+  z-index: 130;
   background: var(--backgrounds-page, #ffffff);
   border: 1px solid var(--border-default, #d1d6d9);
   border-radius: var(--radius-sm, 8px);
