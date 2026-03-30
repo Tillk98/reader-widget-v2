@@ -219,7 +219,6 @@ export const AudioPlayerBottomSheet: React.FC<AudioPlayerBottomSheetProps> = ({
         onHandlePointerUp={handleHandlePointerUp}
         onHandlePointerCancel={handleHandlePointerCancel}
         onHandleClick={() => setExpanded(false)}
-        onMinimize={() => setExpanded(false)}
         wordSelectionActive={hasWordSelected}
         onInspectSentence={onInspectSentence}
         onShowTranslation={onShowTranslation}
