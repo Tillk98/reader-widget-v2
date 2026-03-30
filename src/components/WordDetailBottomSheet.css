@@ -1,5 +1,6 @@
 /*
- * Word detail bottom sheet — Meanings + Sentence tabs (Figma 2177:35914, 2195:613, 2259:2634).
+ * Word detail bottom sheet — Meanings + Sentence tabs
+ * (Figma 2177:35914, 2195:613, 2259:2634, 2354:1327).
  * Plain CSS; design tokens with fallbacks.
  */
 
@@ -167,6 +168,33 @@
 
 .word-detail-sheet-meaning-input::placeholder {
   color: var(--typography-muted, #6d7680);
+}
+
+/* Saved meanings — read-only bordered cards (Figma 2177:35914) */
+.word-detail-sheet-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-spacing-sm, 12px);
+  width: 100%;
+}
+
+.word-detail-sheet-saved-meaning-card {
+  width: 100%;
+  padding: var(--spacing-spacing-sm, 12px) var(--spacing-spacing-md, 16px);
+  border: 1.5px solid var(--border-default, #d1d6d9);
+  border-radius: var(--radius-2xs, 4px);
+  box-sizing: border-box;
+  background: var(--backgrounds-page, #ffffff);
+}
+
+.word-detail-sheet-saved-meaning-text {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+  text-align: left;
 }
 
 /* Tabs */
@@ -386,7 +414,7 @@
   color: #1a1a1a;
 }
 
-/* Sentence tab (Figma 2195:613) */
+/* Sentence tab — stacked context blocks (Figma 2195:613, 2354:1327) */
 .word-detail-sheet-sentence {
   display: flex;
   flex-direction: column;
@@ -394,25 +422,70 @@
   width: 100%;
 }
 
-.word-detail-sheet-sentence-context-body {
+.word-detail-sentence-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-spacing-xs, 8px);
+  width: 100%;
+  padding: var(--spacing-spacing-md, 16px);
+  border-radius: var(--radius-sm, 8px);
+  box-sizing: border-box;
+}
+
+.word-detail-sentence-block--current {
+  background: var(--color-blue-50, #f4fbfe);
+}
+
+.word-detail-sentence-block--archived {
+  background: var(--backgrounds-page, #f8f9fa);
+}
+
+.word-detail-sentence-block__caption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.word-detail-sentence-block__lesson {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--typography-muted, #6d7680);
+  text-align: left;
+}
+
+.word-detail-sentence-block__meta {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--typography-muted, #6d7680);
+  text-align: left;
+}
+
+.word-detail-sentence-block__translation {
   margin: 0;
   font-family: 'DM Sans', sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 20px;
   color: var(--typography-default, #000000);
+  text-align: left;
 }
 
-.word-detail-sheet-sentence-original {
+.word-detail-sentence-block__original-row {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-spacing-md, 16px);
   width: 100%;
+  min-width: 0;
 }
 
-.word-detail-sheet-sentence-original-text-wrap {
+.word-detail-sentence-block__original-text-wrap {
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -421,7 +494,7 @@
   min-width: 0;
 }
 
-.word-detail-sheet-sentence-quote-bar {
+.word-detail-sentence-block__quote-bar {
   display: block;
   width: 3px;
   flex-shrink: 0;
@@ -429,10 +502,10 @@
   background: var(--typography-muted, #6d7680);
   margin-right: 8px;
   align-self: stretch;
-  min-height: 36px;
+  min-height: 18px;
 }
 
-.word-detail-sheet-sentence-original-text {
+.word-detail-sentence-block__original-text {
   margin: 0;
   flex: 1;
   min-width: 0;
@@ -442,6 +515,38 @@
   line-height: 18px;
   color: var(--typography-muted, #6d7680);
   text-align: left;
+}
+
+.word-detail-sentence-block__actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-spacing-xs, 8px);
+  width: 100%;
+}
+
+.word-detail-sheet-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-spacing-xs, 8px);
+  border: none;
+  border-radius: 50px;
+  background: transparent;
+  color: var(--typography-default, #000000);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.word-detail-sheet-icon-btn:focus-visible {
+  outline: 2px solid var(--typography-action-secondary, #2e75cd);
+  outline-offset: 2px;
+}
+
+.word-detail-sheet-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .word-detail-sheet-term-list {
@@ -581,7 +686,7 @@
   flex-shrink: 0;
 }
 
-/* Explain This / Lynx (Figma 2195:5489) */
+/* Explain This / Lynx (Figma 2195:5489, 2195:5597 — message actions) */
 .word-detail-sheet-explain {
   display: flex;
   flex-direction: column;
@@ -634,6 +739,15 @@
   line-height: 20px;
   color: var(--typography-default, #000000);
   white-space: pre-wrap;
+}
+
+.word-detail-sheet-lynx-card__actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-spacing-xs, 8px);
+  width: 100%;
 }
 
 /* Dictionaries tab (Figma 2195:5695) — empty body + provider strip in content-anchor */

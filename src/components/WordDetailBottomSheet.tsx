@@ -16,7 +16,12 @@ import dictionaryLinguee from '../assets/dictionary-linguee.png';
 import dictionaryDeepL from '../assets/dictionary-deepl.png';
 import type { LingQStatusType } from './LingQStatusBar';
 import { LingQStatusBar } from './LingQStatusBar';
+import { SentenceBlock } from './SentenceBlock';
+import type { WordDetailSentenceContextEntry } from './SentenceBlock';
+import { LynxMessageActions } from './LynxMessageActions';
 import './WordDetailBottomSheet.css';
+
+export type { WordDetailSentenceContextEntry } from './SentenceBlock';
 
 const DRAG_CLOSE_THRESHOLD_PX = 40;
 
@@ -24,13 +29,30 @@ const DEFAULT_SUGGESTED_MEANINGS = ['Her hair was undone', 'Her hair was disheve
 const DEFAULT_RELATED_PHRASE =
   'Ihre Frisur war aufgelöst und hing wie drei Pfund Wolle nach unten.';
 const DEFAULT_TAGS = ['noun', 'adjective', 'phrase'];
-const DEFAULT_PRIMARY_MEANING = 'Her hairstyle was messed up.';
+const DEFAULT_PRIMARY_MEANING = 'Her hairstyle was messed up ; her hair was disheveled.';
 const DEFAULT_QUOTE_LINE = 'Ihre Frisur war aufgelöst';
 
-const DEFAULT_SENTENCE_CONTEXT =
-  'Her hair was disheveled and hung down like three pounds of wool.';
-const DEFAULT_SENTENCE_ORIGINAL =
-  'Ihre Frisur war aufgelöst und hing wie drei Pfund Wolle nach unten.';
+const DEFAULT_SENTENCE_CONTEXTS: WordDetailSentenceContextEntry[] = [
+  {
+    lessonTitle: 'Emil und die Detektive Teil 1',
+    translation: 'Her hair was disheveled and hung down like three pounds of wool.',
+    originalSentence:
+      'Ihre Frisur war aufgelöst und hing wie drei Pfund Wolle nach unten. ',
+    variant: 'current',
+  },
+  {
+    lessonTitle: 'Felix im Büro',
+    translation: 'Sie rannte durch den Regen und Ihre Frisur war aufgelöst.',
+    originalSentence: 'She ran through the rain and her hair was disheveled. ',
+    variant: 'archived',
+  },
+];
+
+function deriveSavedMeanings(wordTranslation: string | undefined): string[] {
+  const t = wordTranslation?.trim() ?? '';
+  if (!t) return [];
+  return t.split(';').map((s) => s.trim()).filter(Boolean);
+}
 
 export type WordDetailSentenceTerm = {
   term: string;
@@ -107,13 +129,21 @@ export interface WordDetailBottomSheetProps {
   relatedPhrase?: string;
   tags?: string[];
   coinCount?: number;
-  sentenceContextTranslation?: string;
-  sentenceOriginal?: string;
+  /** When set, replaces auto-split from `wordTranslation` on `;`. */
+  savedMeanings?: string[];
+  /** Stored sentence contexts (current lesson first). Defaults to Figma demo data. */
+  sentenceContexts?: WordDetailSentenceContextEntry[];
   sentenceTerms?: WordDetailSentenceTerm[];
+  onSentenceAudio?: (entry: WordDetailSentenceContextEntry) => void;
+  onGoToLesson?: (entry: WordDetailSentenceContextEntry) => void;
   /** Lynx “Explain This” primary explanation (typewriter + settle animation uses this on first visit). */
   lynxLatestBody?: string;
   /** Older Lynx messages below the latest card (static in prototype). */
   lynxHistoryMessages?: WordDetailLynxHistoryMessage[];
+  /** Host: TTS or play recorded explanation for the given message. */
+  onLynxAudio?: (message: WordDetailLynxHistoryMessage) => void;
+  /** Host: regenerate explanation for the given message. */
+  onLynxRefresh?: (message: WordDetailLynxHistoryMessage) => void;
   /** Dictionary sources shown in the bottom horizontal strip (Dictionaries tab). */
   dictionaryProviders?: WordDetailDictionaryProvider[];
   /** Single user note shown on the Notes tab (static; not AI-generated). */
@@ -132,11 +162,15 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   relatedPhrase = DEFAULT_RELATED_PHRASE,
   tags = DEFAULT_TAGS,
   coinCount = 3,
-  sentenceContextTranslation = DEFAULT_SENTENCE_CONTEXT,
-  sentenceOriginal = DEFAULT_SENTENCE_ORIGINAL,
+  savedMeanings: savedMeaningsProp,
+  sentenceContexts = DEFAULT_SENTENCE_CONTEXTS,
   sentenceTerms = DEFAULT_SENTENCE_TERMS,
+  onSentenceAudio,
+  onGoToLesson,
   lynxLatestBody = DEFAULT_LYNX_LATEST_BODY,
   lynxHistoryMessages = DEFAULT_LYNX_HISTORY,
+  onLynxAudio,
+  onLynxRefresh,
   dictionaryProviders = DEFAULT_DICTIONARY_PROVIDERS,
   wordNote = DEFAULT_WORD_NOTE,
   onWordTranslationChange,
@@ -144,7 +178,9 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   const handleRef = useRef<HTMLDivElement>(null);
   const handleDragStartYRef = useRef<number | null>(null);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   const [activeTab, setActiveTab] = React.useState<WordDetailTabId>('meanings');
 
@@ -299,6 +335,11 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
   const lynxBusy =
     explainActive && (lynxPhase === 'thinking' || lynxPhase === 'typing' || lynxPhase === 'fresh');
+
+  const resolvedSavedMeanings = React.useMemo(() => {
+    if (savedMeaningsProp !== undefined) return savedMeaningsProp;
+    return deriveSavedMeanings(wordTranslation);
+  }, [savedMeaningsProp, wordTranslation]);
 
   return (
     <div
@@ -464,6 +505,26 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           >
             {meaningsActive ? (
               <>
+                {resolvedSavedMeanings.length > 0 ? (
+                  <section className="word-detail-sheet-block" aria-labelledby="word-detail-saved-heading">
+                    <h2 id="word-detail-saved-heading" className="word-detail-sheet-section-label">
+                      SAVED MEANINGS
+                    </h2>
+                    <div className="word-detail-sheet-saved-list">
+                      {resolvedSavedMeanings.map((text, i) => (
+                        <div
+                          key={`${i}-${text}`}
+                          className="word-detail-sheet-saved-meaning-card"
+                          role="group"
+                          aria-label={`Saved meaning ${i + 1}`}
+                        >
+                          <p className="word-detail-sheet-saved-meaning-text">{text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
                 <section className="word-detail-sheet-block" aria-labelledby="word-detail-suggested-heading">
                   <h2 id="word-detail-suggested-heading" className="word-detail-sheet-section-label">
                     SUGGESTED MEANINGS
@@ -493,17 +554,14 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
             {sentenceActive ? (
               <div className="word-detail-sheet-sentence">
-                <h2 className="word-detail-sheet-section-label">SENTENCE CONTEXT</h2>
-                <p className="word-detail-sheet-sentence-context-body">{sentenceContextTranslation}</p>
-                <div className="word-detail-sheet-sentence-original">
-                  <div className="word-detail-sheet-sentence-original-text-wrap">
-                    <span className="word-detail-sheet-sentence-quote-bar" aria-hidden />
-                    <p className="word-detail-sheet-sentence-original-text">{sentenceOriginal}</p>
-                  </div>
-                  <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play sentence audio">
-                    <Volume2 size={18} aria-hidden />
-                  </button>
-                </div>
+                {sentenceContexts.map((entry, i) => (
+                  <SentenceBlock
+                    key={`${entry.lessonTitle}-${entry.variant}-${i}`}
+                    entry={entry}
+                    onAudio={onSentenceAudio}
+                    onGoToLesson={onGoToLesson}
+                  />
+                ))}
               </div>
             ) : null}
 
@@ -531,6 +589,33 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                         ? lynxLatestBody.slice(0, lynxTypedLength)
                         : lynxLatestBody}
                     </div>
+                    <LynxMessageActions
+                      payload={{
+                        meta:
+                          lynxPhase === 'fresh' || lynxPhase === 'settled'
+                            ? 'Generated Just Now'
+                            : undefined,
+                        body: lynxLatestBody,
+                      }}
+                      onAudio={() =>
+                        onLynxAudio?.({
+                          meta:
+                            lynxPhase === 'fresh' || lynxPhase === 'settled'
+                              ? 'Generated Just Now'
+                              : '',
+                          body: lynxLatestBody,
+                        })
+                      }
+                      onRefresh={() =>
+                        onLynxRefresh?.({
+                          meta:
+                            lynxPhase === 'fresh' || lynxPhase === 'settled'
+                              ? 'Generated Just Now'
+                              : '',
+                          body: lynxLatestBody,
+                        })
+                      }
+                    />
                   </div>
                 ) : null}
 
@@ -538,6 +623,11 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                   <div key={`${msg.meta}-${i}`} className="word-detail-sheet-lynx-card word-detail-sheet-lynx-card--elevated">
                     <p className="word-detail-sheet-lynx-card__meta">{msg.meta}</p>
                     <div className="word-detail-sheet-lynx-card__body">{msg.body}</div>
+                    <LynxMessageActions
+                      payload={{ meta: msg.meta, body: msg.body }}
+                      onAudio={() => onLynxAudio?.(msg)}
+                      onRefresh={() => onLynxRefresh?.(msg)}
+                    />
                   </div>
                 ))}
               </div>
