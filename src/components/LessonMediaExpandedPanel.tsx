@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Languages, Pause, Play } from 'lucide-react';
 import type { Sentence as SentenceType } from '../data/lesson';
 import playerBack from '../assets/player-back.png';
@@ -20,7 +20,7 @@ export interface LessonMediaExpandedPanelProps {
   ignoredWords: Set<string>;
   onWordClick: (wordId: string) => void;
   isPaused: boolean;
-  onTogglePause: (e: React.MouseEvent) => void;
+  onTogglePause: () => void;
   videoSlot?: React.ReactNode;
   /** When true, bottom toolbar grows and adds word actions (play, inspect, translate). */
   wordSelectionActive?: boolean;
@@ -63,10 +63,6 @@ export const LessonMediaExpandedPanel: React.FC<LessonMediaExpandedPanelProps> =
 }) => {
   /** Independent from main transport / video play — toolbar-only control. */
   const [toolbarPlayPaused, setToolbarPlayPaused] = useState(true);
-
-  useEffect(() => {
-    if (!wordSelectionActive) setToolbarPlayPaused(true);
-  }, [wordSelectionActive]);
 
   const isVideo = Boolean(videoSlot);
 
@@ -169,7 +165,15 @@ export const LessonMediaExpandedPanel: React.FC<LessonMediaExpandedPanelProps> =
                     <button type="button" className="audio-sheet__icon-btn" aria-label="Skip back 5 seconds">
                       <img src={playerBack} alt="" width={18} height={18} />
                     </button>
-                    <button type="button" className="audio-sheet__play-btn" onClick={onTogglePause} aria-label={isPaused ? 'Play' : 'Pause'}>
+                    <button
+                      type="button"
+                      className="audio-sheet__play-btn"
+                      onClick={e => {
+                        e.stopPropagation();
+                        onTogglePause();
+                      }}
+                      aria-label={isPaused ? 'Play' : 'Pause'}
+                    >
                       {isPaused ? <Play size={24} /> : <Pause size={24} />}
                     </button>
                     <button type="button" className="audio-sheet__icon-btn" aria-label="Skip forward 5 seconds">

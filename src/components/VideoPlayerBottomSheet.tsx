@@ -71,8 +71,7 @@ export const VideoPlayerBottomSheet: React.FC<VideoPlayerBottomSheetProps> = ({
     return () => window.clearTimeout(t);
   }, [sheetOpen]);
 
-  const togglePause = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  const togglePause = useCallback(() => {
     videoPlayerRef.current?.togglePlayPause();
   }, []);
 

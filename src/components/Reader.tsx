@@ -8,6 +8,7 @@ import { ReaderBottomBar } from './ReaderBottomBar';
 import { AudioPlayerBottomSheet } from './AudioPlayerBottomSheet';
 import { VideoPlayerBottomSheet } from './VideoPlayerBottomSheet';
 import videoThumbnail from '../assets/video-thumbnail.png';
+import lessonImage from '../assets/lesson-image.png';
 import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
@@ -33,8 +34,10 @@ export const Reader: React.FC = () => {
   const ignoreNextWordClick = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
+  const [contentWidthPx, setContentWidthPx] = useState(1);
   const [mediaMode, setMediaMode] = useState<'none' | 'audio' | 'video'>('none');
   const [audioSheetExpanded, setAudioSheetExpanded] = useState(false);
+  const [isAudioPaused, setIsAudioPaused] = useState(false);
 
   const knownWords = React.useMemo(() => {
     const s = new Set<string>();
@@ -194,6 +197,16 @@ export const Reader: React.FC = () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [calculatePages]);
+
+  useEffect(() => {
+    const contentEl = contentRef.current;
+    if (!contentEl) return;
+    const updateWidth = () => setContentWidthPx(Math.max(1, contentEl.clientWidth));
+    updateWidth();
+    const ro = new ResizeObserver(updateWidth);
+    ro.observe(contentEl);
+    return () => ro.disconnect();
+  }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -357,7 +370,7 @@ export const Reader: React.FC = () => {
     setHoveredPageIndex(null);
   }, []);
 
-  const contentWidth = contentRef.current?.clientWidth ?? 1;
+  const contentWidth = contentWidthPx;
   const dragOffsetPercent = contentWidth > 0 ? (dragOffset / contentWidth) * 100 : 0;
   const pageTransform = -currentPageIndex * 100 + dragOffsetPercent;
 
@@ -373,18 +386,18 @@ export const Reader: React.FC = () => {
     setMediaMode('none');
   }, []);
 
-  const handleAudioExpandedChange = useCallback((expanded: boolean) => {
-    setAudioSheetExpanded(expanded);
-  }, []);
-
-  const [collapsedAudioChromeHeightPx, setCollapsedAudioChromeHeightPx] = useState(102);
-
   useEffect(() => {
-    if (mediaMode !== 'audio') setAudioSheetExpanded(false);
+    if (mediaMode !== 'audio') {
+      setAudioSheetExpanded(false);
+      setIsAudioPaused(false);
+    }
   }, [mediaMode]);
 
-  const liftBottomBarAboveCollapsedAudio =
-    mediaMode === 'audio' && selectedWordId != null && !audioSheetExpanded;
+  const handleAudioTogglePlay = useCallback(() => {
+    setMediaMode(prev => (prev === 'audio' ? 'none' : 'audio'));
+    setAudioSheetExpanded(false);
+    setIsAudioPaused(false);
+  }, []);
 
   return (
     <div className="reader" ref={containerRef}>
@@ -453,12 +466,13 @@ export const Reader: React.FC = () => {
               knownWords={knownWords}
               ignoredWords={ignoredWords}
               onWordClick={handleWordClick}
-              onClose={handleMediaClose}
+              expanded={audioSheetExpanded}
+              isPaused={isAudioPaused}
+              onTogglePause={handleAudioTogglePlay}
+              onExpandedChange={setAudioSheetExpanded}
               hasWordSelected={selectedWordId != null}
               onInspectSentence={handleMediaInspectSentence}
               onShowTranslation={handleMediaShowTranslation}
-              onExpandedChange={handleAudioExpandedChange}
-              onCollapsedHeightChange={setCollapsedAudioChromeHeightPx}
             />
           )}
           {selectedWordId && selectedWordData && (
@@ -495,8 +509,8 @@ export const Reader: React.FC = () => {
           )}
           <ReaderBottomBar
             mediaMode={mediaMode}
-            liftAboveCollapsedAudio={liftBottomBarAboveCollapsedAudio}
-            collapsedAudioChromeHeightPx={collapsedAudioChromeHeightPx}
+            isAudioPlaying={mediaMode === 'audio'}
+            lessonImageSrc={lessonImage}
             selectedWordId={selectedWordId}
             selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
             onSelectedWordStatusChange={
@@ -506,8 +520,13 @@ export const Reader: React.FC = () => {
             }
             onPlay={() => {
               setMediaMode('audio');
+              setIsAudioPaused(false);
             }}
-            hasVideo={lesson.hasVideo ?? false}
+            onAudioTogglePlay={handleAudioTogglePlay}
+            onAudioOpenExpanded={() => {
+              setAudioSheetExpanded(true);
+            }}
+            hasVideo={false}
             onVideoMode={() => {
               setMediaMode('video');
             }}

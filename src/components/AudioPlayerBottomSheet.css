@@ -24,38 +24,6 @@
   pointer-events: auto;
 }
 
-/* —— Collapsed mini player —— */
-.audio-sheet--collapsed {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 112;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 0 0 env(safe-area-inset-bottom, 0);
-  background: rgba(255, 255, 255, 0.1);
-  /* progress bar anchor */
-  isolation: isolate;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: var(--radius-sm, 8px) var(--radius-sm, 8px) 0 0;
-  box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.25);
-  transform: translateY(100%);
-  transition: transform var(--audio-sheet-duration, 0.38s) var(--audio-sheet-ease, cubic-bezier(0.4, 0, 0.2, 1));
-}
-
-.audio-sheet--collapsed.audio-sheet--visible {
-  transform: translateY(0);
-}
-
-.audio-sheet--collapsed.audio-sheet--collapsed-away {
-  transform: translateY(100%);
-  pointer-events: none;
-  z-index: 108;
-}
-
 .audio-sheet__handle {
   width: 100%;
   min-height: 28px;
@@ -82,14 +50,6 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
-.audio-sheet__collapsed-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 0 16px 12px;
-  min-width: 0;
-}
-
 .audio-sheet__play-btn {
   flex-shrink: 0;
   display: flex;
@@ -103,20 +63,6 @@
   background: rgba(255, 255, 255, 0.1);
   color: var(--typography-default, #000);
   cursor: pointer;
-}
-
-.audio-sheet__lesson-card {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  border-radius: 8px;
 }
 
 .audio-sheet__lesson-thumb-wrap {
@@ -189,28 +135,6 @@
   cursor: pointer;
 }
 
-.audio-sheet__collapsed-progress {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 4px;
-  pointer-events: none;
-}
-
-.audio-sheet__collapsed-progress-track {
-  width: 100%;
-  height: 4px;
-  background: var(--color-grey-200, #e3e5e7);
-}
-
-.audio-sheet__collapsed-progress-fill {
-  height: 100%;
-  width: 12%;
-  background: var(--surfaces-action-secondary, #2e75cd);
-  border-radius: 0 999px 999px 0;
-}
-
 /* —— Expanded sheet (full viewport — covers reader progress bar; z-index above .reader-progress-container) —— */
 .audio-sheet--expanded {
   position: fixed;
@@ -244,7 +168,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .audio-sheet--collapsed,
   .audio-sheet--expanded,
   .audio-sheet__backdrop,
   .audio-sheet__menu-pill {
@@ -342,7 +265,7 @@
   right: 0;
   bottom: 0;
   z-index: 2;
-  min-height: 200px;
+  min-height: 164px;
   pointer-events: none;
 }
 
@@ -368,9 +291,13 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 24px;
-  padding: 48px 16px 24px;
+  gap: 16px;
+  margin: 0 16px;
+  padding: 24px 16px 16px;
   box-sizing: border-box;
+  background: var(--backgrounds-page, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
 }
 
 /* Video: embedded player already has scrubber + transport; keep bottom row only. */
@@ -389,6 +316,8 @@
 
 .audio-sheet__scrubber-wrap {
   width: 100%;
+  padding: 0 2px;
+  box-sizing: border-box;
 }
 
 .audio-sheet__scrubber-track {
@@ -397,6 +326,7 @@
   height: 4px;
   border-radius: 999px;
   background: var(--color-grey-200, #e3e5e7);
+  overflow: visible;
 }
 
 .audio-sheet__scrubber-fill {
@@ -405,22 +335,22 @@
   left: 0;
   height: 100%;
   width: 12%;
-  background: var(--surfaces-action-secondary, #2e75cd);
+  background: linear-gradient(90deg, #2e75cd 0%, #3f8df2 62%, #76b0ff 100%);
   border-radius: 999px 0 0 999px;
+  box-shadow: 0 0 10px rgba(46, 117, 205, 0.45), 0 0 4px rgba(46, 117, 205, 0.6);
 }
 
 .audio-sheet__scrubber-thumb {
   position: absolute;
   top: 50%;
   left: 12%;
-  width: 28px;
-  height: 28px;
-  margin-top: -14px;
-  margin-left: -14px;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  margin-left: -4px;
   border-radius: 50%;
-  background: var(--surfaces-action-secondary, #2e75cd);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  background: #2e75cd;
+  box-shadow: 0 0 8px rgba(46, 117, 205, 0.6);
   pointer-events: none;
 }
 
@@ -431,9 +361,18 @@
   gap: 16px;
 }
 
+.audio-sheet__transport .audio-sheet__icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.2);
+}
+
 .audio-sheet__transport .audio-sheet__play-btn {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.2);
 }
 
 .audio-sheet__bottom-actions {
@@ -441,7 +380,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 54px;
+  min-height: 40px;
 }
 
 .audio-sheet__bottom-actions-middle {
@@ -456,8 +395,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 54px;
-  padding: 6px 12px;
+  height: 40px;
+  padding: 4px;
   border-radius: 999px;
   box-sizing: border-box;
   width: max-content;
@@ -467,8 +406,8 @@
   overflow: hidden;
   transition: max-width var(--audio-sheet-duration, 0.38s) var(--audio-sheet-ease, cubic-bezier(0.4, 0, 0.2, 1));
   /* Opaque so transcript + fade gradient do not show through (was rgba 0.1). */
-  background: var(--backgrounds-page, #ffffff);
-  box-shadow: 0px 1px 4px 0px var(--color-grey-200, #e3e5e7);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
 }
 
 /* Hug intrinsic width until the middle column is too narrow; then cap and scroll. */
@@ -487,8 +426,8 @@
   flex-flow: row nowrap;
   align-items: center;
   width: max-content;
-  gap: 0;
-  min-height: 42px;
+  gap: 16px;
+  min-height: 32px;
 }
 
 .audio-sheet__menu-pill--expanded .audio-sheet__menu-pill-inner {
@@ -499,24 +438,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 72px;
+  min-width: 32px;
   height: 100%;
-  padding: 0 12px;
+  padding: 8px;
   border: none;
-  border-radius: 749px;
+  border-radius: 999px;
   background: transparent;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 18px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
   color: var(--typography-default, #000);
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .audio-sheet__menu-pill-btn--icon {
-  min-width: 60px;
-  padding: 0 9px;
+  min-width: 32px;
+  padding: 8px;
   color: var(--typography-default, #000);
 }
 

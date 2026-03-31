@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import {
   Play,
+  Pause,
   Youtube,
   FileText,
   ChevronsUpDown,
@@ -21,14 +21,14 @@ import './ReaderBottomBar.css';
 
 export interface ReaderBottomBarProps {
   mediaMode?: 'none' | 'audio' | 'video';
-  /** When true, bar sits above the collapsed audio mini player (12px gap) so it is not covered. */
-  liftAboveCollapsedAudio?: boolean;
-  /** Measured height (px) of the collapsed audio sheet border box; drives bottom offset when lifted. */
-  collapsedAudioChromeHeightPx?: number;
+  isAudioPlaying?: boolean;
+  lessonImageSrc?: string;
   selectedWordId?: string | null;
   selectedWordStatus?: LingQStatusType;
   onSelectedWordStatusChange?: (status: LingQStatusType) => void;
   onPlay?: () => void;
+  onAudioTogglePlay?: () => void;
+  onAudioOpenExpanded?: () => void;
   onSentence?: () => void;
   onReview?: () => void;
   onChevrons?: () => void;
@@ -57,12 +57,14 @@ const EXPANDED_MENU_ITEMS: { id: string; label: string; icon: React.ReactNode; o
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   mediaMode = 'none',
-  liftAboveCollapsedAudio = false,
-  collapsedAudioChromeHeightPx = 102,
+  isAudioPlaying = false,
+  lessonImageSrc,
   selectedWordId,
   selectedWordStatus = 'New',
   onSelectedWordStatusChange,
   onPlay,
+  onAudioTogglePlay,
+  onAudioOpenExpanded,
   onSentence,
   onReview,
   onChevrons,
@@ -81,9 +83,8 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   const actionsContainerRef = useRef<HTMLDivElement>(null);
 
   const hasWordSelected = selectedWordId != null;
-  const hideBarUnderMediaSheet =
-    (mediaMode === 'audio' || mediaMode === 'video') && !hasWordSelected;
-  const showDefaultChrome = mediaMode === 'none' && !hasWordSelected;
+  const hideBarUnderMediaSheet = mediaMode === 'video' && !hasWordSelected;
+  const showDefaultChrome = !hasWordSelected;
 
   useEffect(() => {
     if (!isActionsExpanded) return;
@@ -112,22 +113,14 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     settings: onSettings,
   };
 
-  const barStyle: React.CSSProperties | undefined =
-    liftAboveCollapsedAudio && collapsedAudioChromeHeightPx > 0
-      ? ({ '--reader-collapsed-audio-offset': `${collapsedAudioChromeHeightPx}px` } as React.CSSProperties)
-      : undefined;
-
   const bar = (
     <div
       className={[
         'reader-bottom-bar',
         hideBarUnderMediaSheet ? 'reader-bottom-bar--hidden-under-media-sheet' : '',
-        liftAboveCollapsedAudio ? 'reader-bottom-bar--above-collapsed-audio' : '',
-        liftAboveCollapsedAudio ? 'reader-bottom-bar--portaled' : '',
       ]
         .filter(Boolean)
         .join(' ')}
-      style={barStyle}
     >
       <div
         className={`reader-bottom-bar-inner ${hasWordSelected ? 'reader-bottom-bar-inner--stack' : ''}`}
@@ -143,14 +136,50 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
         {showDefaultChrome && (
           <div className="reader-bottom-bar-default-row">
             <div className="reader-bottom-bar-play-area">
-              <div className="reader-bottom-bar-play-pill">
+              <div
+                className={[
+                  'reader-bottom-bar-play-pill',
+                  'reader-bottom-bar-play-pill--morph',
+                  isAudioPlaying ? 'reader-bottom-bar-play-pill--playing' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
                 <button
                   type="button"
                   className="reader-bottom-bar-play-btn"
-                  onClick={() => onPlay?.()}
-                  aria-label="Play"
+                  onClick={() => {
+                    if (isAudioPlaying) {
+                      onAudioTogglePlay?.();
+                    } else {
+                      onPlay?.();
+                    }
+                  }}
+                  aria-label={isAudioPlaying ? 'Pause' : 'Play'}
                 >
-                  <Play size={24} className="reader-bottom-bar-play-pause-icon" />
+                  {isAudioPlaying ? (
+                    <Pause size={24} className="reader-bottom-bar-play-pause-icon" />
+                  ) : (
+                    <Play size={24} className="reader-bottom-bar-play-pause-icon" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className={[
+                    'reader-bottom-bar-lesson-image-wrap',
+                    'reader-bottom-bar-lesson-image-wrap--morph',
+                    isAudioPlaying ? 'reader-bottom-bar-lesson-image-wrap--visible' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={onAudioOpenExpanded}
+                  aria-label="Open audio player"
+                  tabIndex={isAudioPlaying ? 0 : -1}
+                  aria-hidden={!isAudioPlaying}
+                >
+                  {lessonImageSrc ? (
+                    <img src={lessonImageSrc} alt="" className="reader-bottom-bar-lesson-image" />
+                  ) : null}
                 </button>
               </div>
               {hasVideo && (
@@ -220,8 +249,5 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     </div>
   );
 
-  if (liftAboveCollapsedAudio && typeof document !== 'undefined') {
-    return createPortal(bar, document.body);
-  }
   return bar;
 };
