@@ -340,17 +340,6 @@
     }
   }
 
-  @keyframes reader-vt-video-mode-bar-enter {
-    from {
-      opacity: 0;
-      transform: translateY(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   @keyframes reader-vt-video-mode-bar-leave {
     from {
       opacity: 1;
@@ -402,10 +391,7 @@
       both;
   }
 
-  ::view-transition-new(video-mode-bar) {
-    animation: reader-vt-video-mode-bar-enter var(--reader-vt-enter-ms) var(--reader-vt-smooth-in) both;
-  }
-
+  /* Enter slide is handled by VideoModeBottomBar.css (live DOM) so motion is obvious in all engines. */
   ::view-transition-old(video-mode-bar) {
     animation: reader-vt-video-mode-bar-leave var(--reader-vt-leave-ms) var(--reader-vt-smooth-out) both;
   }

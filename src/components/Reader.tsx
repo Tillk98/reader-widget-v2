@@ -47,6 +47,8 @@ export const Reader: React.FC = () => {
   const [videoBarChromeHeightPx, setVideoBarChromeHeightPx] = useState(0);
   /** Measured height of fixed top video slot — offsets scrollable lesson text. */
   const [videoTopSlotHeightPx, setVideoTopSlotHeightPx] = useState(0);
+  /** No View Transitions: slide audio bar out before leaving video mode. */
+  const [videoBarExitAnimating, setVideoBarExitAnimating] = useState(false);
 
   const knownWords = React.useMemo(() => {
     const s = new Set<string>();
@@ -505,8 +507,17 @@ export const Reader: React.FC = () => {
     });
   }, []);
 
+  const handleVideoBarExitSlideComplete = useCallback(() => {
+    setMediaMode('none');
+    setVideoBarExitAnimating(false);
+  }, []);
+
   const handleExitVideoMode = useCallback(() => {
-    startViewTransition(() => setMediaMode('none'));
+    if (supportsViewTransition()) {
+      startViewTransition(() => setMediaMode('none'));
+      return;
+    }
+    setVideoBarExitAnimating(true);
   }, []);
 
   /** Exit video mode (Escape matches sheet-dismiss habit). */
@@ -634,7 +645,8 @@ export const Reader: React.FC = () => {
               expanded={videoBarExpanded}
               onExpandedChange={setVideoBarExpanded}
               onExitVideoMode={handleExitVideoMode}
-              fallbackSlideIn={!supportsViewTransition()}
+              exiting={videoBarExitAnimating}
+              onExitSlideComplete={handleVideoBarExitSlideComplete}
               lessonTitle={lesson.title}
               lessonSource={lesson.source ?? ''}
               lessonImageSrc={lessonImage}

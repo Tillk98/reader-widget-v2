@@ -21,6 +21,7 @@
   max-width: 600px;
   margin: 0 auto;
   width: 100%;
+  animation: video-mode-bar-slide-up 0.52s cubic-bezier(0.33, 1, 0.68, 1) both;
 }
 
 .video-mode-bottom-bar__inner {
@@ -308,8 +309,7 @@
   transition: width 0.2s ease;
 }
 
-/* When View Transitions API is unavailable (e.g. Firefox), slide in from bottom */
-@keyframes video-mode-bar-fallback-slide-up {
+@keyframes video-mode-bar-slide-up {
   from {
     transform: translateY(100%);
   }
@@ -318,8 +318,18 @@
   }
 }
 
-.video-mode-bottom-bar--fallback-slide-in {
-  animation: video-mode-bar-fallback-slide-up 0.48s cubic-bezier(0.33, 1, 0.68, 1) both;
+@keyframes video-mode-bar-slide-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.video-mode-bottom-bar--exit {
+  animation: video-mode-bar-slide-out 0.58s cubic-bezier(0.4, 0, 0.2, 1) both;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -327,7 +337,13 @@
     transition-duration: 0.01ms;
   }
 
-  .video-mode-bottom-bar--fallback-slide-in {
-    animation: none;
+  .video-mode-bottom-bar {
+    animation: none !important;
+  }
+
+  .video-mode-bottom-bar--exit {
+    animation: none !important;
+    transform: translateY(100%);
+    opacity: 0;
   }
 }

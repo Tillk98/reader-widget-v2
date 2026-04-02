@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 import { Pause, Play } from 'lucide-react';
 import playerBack from '../assets/player-back.png';
 import playerForward from '../assets/player-forward.png';
@@ -26,8 +26,10 @@ export interface VideoModeBottomBarProps {
   playbackSpeedLabel?: string;
   /** Collapsed only: drag down past threshold to leave video mode and return to default reader. */
   onExitVideoMode?: () => void;
-  /** When View Transitions API is unavailable, slide the bar up with CSS instead. */
-  fallbackSlideIn?: boolean;
+  /** When true, plays slide-down exit (no View Transitions). Parent should unmount after onExitSlideComplete. */
+  exiting?: boolean;
+  /** Fired when exit slide animation ends (or immediately if reduced motion). */
+  onExitSlideComplete?: () => void;
 }
 
 export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
@@ -46,10 +48,12 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
   onCyclePlaybackSpeed,
   playbackSpeedLabel = '1x',
   onExitVideoMode,
-  fallbackSlideIn = false,
+  exiting = false,
+  onExitSlideComplete,
 }) => {
   const dragStartY = useRef<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const exitSlideCompleteCalledRef = useRef(false);
 
   useLayoutEffect(() => {
     if (!onChromeHeightChange) return;
@@ -64,6 +68,46 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
     ro.observe(el);
     return () => ro.disconnect();
   }, [onChromeHeightChange, expanded, lessonTitle, lessonSource]);
+
+  useEffect(() => {
+    if (!exiting) {
+      exitSlideCompleteCalledRef.current = false;
+      return;
+    }
+    if (exitSlideCompleteCalledRef.current) return;
+
+    const el = rootRef.current;
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const finish = () => {
+      if (exitSlideCompleteCalledRef.current) return;
+      exitSlideCompleteCalledRef.current = true;
+      onExitSlideComplete?.();
+    };
+
+    if (reducedMotion) {
+      finish();
+      return;
+    }
+
+    const fallbackMs = 650;
+    const t = window.setTimeout(finish, fallbackMs);
+
+    const onAnimationEnd = (e: AnimationEvent) => {
+      if (e.target !== el) return;
+      if (e.animationName !== 'video-mode-bar-slide-out') return;
+      window.clearTimeout(t);
+      finish();
+    };
+
+    el?.addEventListener('animationend', onAnimationEnd);
+    return () => {
+      window.clearTimeout(t);
+      el?.removeEventListener('animationend', onAnimationEnd);
+    };
+  }, [exiting, onExitSlideComplete]);
 
   const handleDragPointerDown = useCallback((e: React.PointerEvent) => {
     dragStartY.current = e.clientY;
@@ -107,7 +151,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
       className={[
         'video-mode-bottom-bar',
         expanded ? 'video-mode-bottom-bar--expanded' : 'video-mode-bottom-bar--collapsed',
-        fallbackSlideIn && 'video-mode-bottom-bar--fallback-slide-in',
+        exiting && 'video-mode-bottom-bar--exit',
       ]
         .filter(Boolean)
         .join(' ')}
