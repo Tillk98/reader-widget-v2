@@ -98,8 +98,8 @@ export const Reader: React.FC = () => {
     const readerEl = containerRef.current;
     const contentEl = contentRef.current;
     const containerWidth = (contentEl ?? readerEl).clientWidth;
-    const PAGE_CONTENT_VERTICAL_PADDING = 16; /* matches Page.css 8px + 8px */
-    const readerContentPaddingBottomPage = 80; /* matches .reader-content padding-bottom (page mode) */
+    const PAGE_CONTENT_VERTICAL_PADDING = 12; /* matches Page.css 6px + 6px */
+    const readerContentPaddingBottomPage = 64; /* matches .reader-content padding-bottom (page mode) */
 
     let availableHeight: number;
     if (contentEl) {
@@ -109,8 +109,8 @@ export const Reader: React.FC = () => {
     } else {
       /* Loading shell: .reader-content not mounted yet — approximate with legacy reserves */
       const titleHeight = 80;
-      const topReserved = 40;
-      const bottomReserved = 80;
+      const topReserved = 32; /* matches .reader-content margin-top (page mode) */
+      const bottomReserved = 64; /* matches .reader-content padding-bottom (page mode) */
       availableHeight =
         readerEl.clientHeight -
         topReserved -
@@ -139,8 +139,8 @@ export const Reader: React.FC = () => {
     tempContainer.style.left = '-9999px';
     const contentWidth = Math.min(containerWidth, 600);
     tempContainer.style.width = `${contentWidth}px`;
-    tempContainer.style.paddingTop = '8px';
-    tempContainer.style.paddingBottom = '8px';
+    tempContainer.style.paddingTop = '6px';
+    tempContainer.style.paddingBottom = '6px';
     tempContainer.style.paddingLeft = '12px';
     tempContainer.style.paddingRight = '12px';
     tempContainer.style.boxSizing = 'border-box';

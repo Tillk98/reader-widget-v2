@@ -7,6 +7,11 @@ import './VideoModeBottomBar.css';
 
 const DRAG_THRESHOLD_PX = 40;
 
+function targetIsInteractiveControl(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(target.closest('button, a, [role="button"], input, textarea, select'));
+}
+
 export interface VideoModeBottomBarProps {
   /** Reports total fixed chrome height so the word-selection strip can sit above this bar. */
   onChromeHeightChange?: (heightPx: number) => void;
@@ -52,7 +57,10 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
   onExitSlideComplete,
 }) => {
   const dragStartY = useRef<number | null>(null);
+  const dragStartX = useRef<number | null>(null);
+  const pointerDownTargetRef = useRef<EventTarget | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const exitSlideCompleteCalledRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -109,38 +117,66 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
     };
   }, [exiting, onExitSlideComplete]);
 
-  const handleDragPointerDown = useCallback((e: React.PointerEvent) => {
+  const handlePanelPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0) return;
     dragStartY.current = e.clientY;
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragStartX.current = e.clientX;
+    pointerDownTargetRef.current = e.target;
+    innerRef.current?.setPointerCapture?.(e.pointerId);
   }, []);
 
-  const handleDragPointerUp = useCallback(
+  const handlePanelPointerUp = useCallback(
     (e: React.PointerEvent) => {
-      if (dragStartY.current === null) {
-        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+      innerRef.current?.releasePointerCapture?.(e.pointerId);
+
+      if (dragStartY.current === null || dragStartX.current === null) {
+        dragStartY.current = null;
+        dragStartX.current = null;
+        pointerDownTargetRef.current = null;
         return;
       }
+
       const deltaY = e.clientY - dragStartY.current;
-      if (expanded) {
-        if (deltaY >= DRAG_THRESHOLD_PX) {
-          onExpandedChange(false);
-        }
-      } else if (deltaY >= DRAG_THRESHOLD_PX) {
-        onExitVideoMode?.();
-      } else if (deltaY <= -DRAG_THRESHOLD_PX) {
-        onExpandedChange(true);
-      } else if (Math.abs(deltaY) < DRAG_THRESHOLD_PX) {
-        onExpandedChange(!expanded);
-      }
+      const deltaX = e.clientX - dragStartX.current;
+      const startedOnControl = targetIsInteractiveControl(pointerDownTargetRef.current);
+
       dragStartY.current = null;
-      (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+      dragStartX.current = null;
+      pointerDownTargetRef.current = null;
+
+      const verticalDominant =
+        Math.abs(deltaY) >= DRAG_THRESHOLD_PX && Math.abs(deltaY) >= Math.abs(deltaX);
+
+      if (verticalDominant) {
+        e.preventDefault();
+        if (expanded) {
+          if (deltaY >= DRAG_THRESHOLD_PX) {
+            onExpandedChange(false);
+          }
+        } else if (deltaY >= DRAG_THRESHOLD_PX) {
+          onExitVideoMode?.();
+        } else if (deltaY <= -DRAG_THRESHOLD_PX) {
+          onExpandedChange(true);
+        }
+        return;
+      }
+
+      /* Collapsed only: small tap on chrome (not on buttons) expands — matches old drag-handle behavior */
+      const smallMove =
+        Math.abs(deltaY) < DRAG_THRESHOLD_PX && Math.abs(deltaX) < DRAG_THRESHOLD_PX;
+      if (smallMove && !expanded && !startedOnControl) {
+        e.preventDefault();
+        onExpandedChange(true);
+      }
     },
     [expanded, onExpandedChange, onExitVideoMode]
   );
 
-  const handleDragPointerCancel = useCallback((e: React.PointerEvent) => {
+  const handlePanelPointerCancel = useCallback((e: React.PointerEvent) => {
+    innerRef.current?.releasePointerCapture?.(e.pointerId);
     dragStartY.current = null;
-    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    dragStartX.current = null;
+    pointerDownTargetRef.current = null;
   }, []);
 
   const progressPct = Math.min(100, Math.max(0, playbackProgress * 100));
@@ -157,21 +193,22 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
         .join(' ')}
       data-video-mode-bar
     >
-      <div className="video-mode-bottom-bar__inner">
-        <button
-          type="button"
-          className="video-mode-bottom-bar__drag"
-          aria-label={
-            expanded
-              ? 'Collapse player or drag down'
-              : 'Drag up to expand, drag down to close video mode'
-          }
-          onPointerDown={handleDragPointerDown}
-          onPointerUp={handleDragPointerUp}
-          onPointerCancel={handleDragPointerCancel}
-        >
+      <div
+        ref={innerRef}
+        className="video-mode-bottom-bar__inner"
+        role="region"
+        aria-label={
+          expanded
+            ? 'Audio player — swipe down to collapse, or use controls'
+            : 'Audio player — swipe up to expand, swipe down to leave video mode, or use controls'
+        }
+        onPointerDown={handlePanelPointerDown}
+        onPointerUp={handlePanelPointerUp}
+        onPointerCancel={handlePanelPointerCancel}
+      >
+        <div className="video-mode-bottom-bar__drag" aria-hidden>
           <span className="video-mode-bottom-bar__drag-bar" />
-        </button>
+        </div>
 
         {expanded && (
           <>
