@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { lesson } from '../data/lesson';
 import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
@@ -260,7 +260,9 @@ export const Reader: React.FC = () => {
     };
   }, [calculatePages, scheduleResizePaginate]);
 
-  useEffect(() => {
+  /** `.reader-content` only mounts after `pages` load; a mount-only effect missed the ref and left width at 1px. */
+  useLayoutEffect(() => {
+    if (pages.length === 0) return;
     const contentEl = contentRef.current;
     if (!contentEl) return;
     const updateWidth = () => setContentWidthPx(Math.max(1, contentEl.clientWidth));
@@ -268,7 +270,7 @@ export const Reader: React.FC = () => {
     const ro = new ResizeObserver(updateWidth);
     ro.observe(contentEl);
     return () => ro.disconnect();
-  }, []);
+  }, [pages.length]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -429,9 +431,11 @@ export const Reader: React.FC = () => {
     setHoveredPageIndex(null);
   }, []);
 
-  const contentWidth = contentWidthPx;
-  const dragOffsetPercent = contentWidth > 0 ? (dragOffset / contentWidth) * 100 : 0;
-  const pageTransform = -currentPageIndex * 100 + dragOffsetPercent;
+  const pageColumnPx = Math.max(1, contentWidthPx);
+  const trackWidthPx = pages.length * pageColumnPx;
+  /** Pixel translate: one column = pageColumnPx; dragOffset is pointer delta in px (same as measure). */
+  const pageTranslatePx =
+    pages.length === 0 ? 0 : -currentPageIndex * pageColumnPx + dragOffset;
 
   const fillProgress = pages.length > 0 ? Math.min(100, ((currentPageIndex + 1) / pages.length) * 100) : 0;
   const thumbProgress = fillProgress;
@@ -442,7 +446,6 @@ export const Reader: React.FC = () => {
     'reader-content',
     isVideoModeOpen && 'reader-content--video-mode',
     isVideoModeOpen && videoBarExpanded && 'reader-content--video-expanded',
-    isPageMode && isDragging && 'reader-content--page-swiping',
   ]
     .filter(Boolean)
     .join(' ');
@@ -617,12 +620,13 @@ export const Reader: React.FC = () => {
                 <div
                   className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
                   style={{
-                    transform: `translate3d(${pageTransform}%, 0, 0)`,
+                    width: trackWidthPx > 0 ? trackWidthPx : pageColumnPx,
+                    transform: `translate3d(${pageTranslatePx}px, 0, 0)`,
                     transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.25, 0.1, 0.25, 1)',
                   }}
                 >
                   {pages.map((page, index) => (
-                    <div key={index} className="page-wrapper">
+                    <div key={index} className="page-wrapper" style={{ width: pageColumnPx }}>
                       <PageComponent
                         words={page.words}
                         clickedWords={clickedWords}

@@ -115,19 +115,14 @@
   margin-top: 40px; /* Space for fixed progress bar */
   padding-bottom: 80px; /* Space for bottom bar + safe area */
   margin-right: 0;
-  /* Page mode: horizontal paging only — pan-y lets the browser vertically pan/overscroll this subtree */
-  touch-action: pan-x pinch-zoom;
+  /* Page mode: pointer-driven paging — pan-x steals horizontal swipes from our transform */
+  touch-action: none;
   overscroll-behavior: none;
   transition:
     margin-top 0.65s cubic-bezier(0.16, 1, 0.3, 1),
     margin-right 0.25s ease,
     padding-top 0.65s cubic-bezier(0.16, 1, 0.3, 1),
     padding-bottom 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Horizontal paging uses pointer handlers; block browser from stealing the gesture */
-.reader-content.reader-content--page-swiping {
-  touch-action: none;
 }
 
 /* Inner shell for lesson layout (page vs video). Intentionally no view-transition-name here:
@@ -254,12 +249,13 @@
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: stretch;
-  width: 100%;
-  height: 100%;
   flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
   box-sizing: border-box;
   background-color: #fff;
+  /* Width + translate are set inline (px) so the track matches the visible column during swipe */
+  backface-visibility: hidden;
 }
 
 .pages-container-dragging {
@@ -267,9 +263,7 @@
 }
 
 .page-wrapper {
-  flex: 0 0 100%;
-  width: 100%;
-  max-width: 100%;
+  flex: 0 0 auto;
   min-width: 0;
   height: 100%;
   box-sizing: border-box;
