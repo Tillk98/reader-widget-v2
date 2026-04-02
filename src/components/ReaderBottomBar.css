@@ -6,15 +6,6 @@
  * - Morphing: state changes use CSS transitions (height/opacity/transform); no instant swaps.
  */
 
-.reader-bottom-bar--hidden-under-media-sheet {
-  visibility: hidden;
-  pointer-events: none;
-  height: 0;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
 .reader-bottom-bar {
   position: fixed;
   bottom: 0;
@@ -27,6 +18,12 @@
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
   pointer-events: none;
+  view-transition-name: reader-bottom-chrome;
+}
+
+/* Word status strip sits above the fixed lesson video bar */
+.reader-bottom-bar--above-video-bar {
+  z-index: 55;
 }
 
 .reader-bottom-bar-inner {
@@ -43,6 +40,8 @@
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-end;
+  position: relative;
+  min-height: 48px;
 }
 
 .reader-bottom-bar-default-row {
@@ -54,11 +53,38 @@
   width: 100%;
 }
 
+/*
+ * While the LingQ sheet replaces the default chrome, keep the pill row in the tree and fade it out
+ * under the strip (same duration/ease as .reader-bottom-bar-actions-container morph).
+ */
+.reader-bottom-bar-default-row--morph-out {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  animation: reader-bottom-bar-default-chrome-morph-out 0.48s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+
+@keyframes reader-bottom-bar-default-chrome-morph-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
 /* Active selection mode (word selected): full-width sheet status track */
 .reader-bottom-bar-active-row {
   display: flex;
   align-items: center;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .reader-bottom-bar-active-sheet-wrap {
@@ -68,6 +94,24 @@
   align-items: center;
   width: 100%;
   height: 48px;
+}
+
+/*
+ * Unfurls right → left on inner row only — .lingq-status-bar__sheet-track keeps white fill + box-shadow.
+ */
+.reader-bottom-bar-inner--stack .reader-bottom-bar-active-sheet-wrap .lingq-status-bar__sheet-track-unfurl {
+  animation: reader-bottom-bar-status-sheet-morph-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes reader-bottom-bar-status-sheet-morph-in {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 0 100% round 999px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round 999px);
+  }
 }
 
 /* Right side: single bottom-anchored column so expanded menu grows upward */
@@ -89,31 +133,60 @@
   min-width: 0;
 }
 
-/* Actions container: morphs from pill (collapsed) to rounded panel (expanded) */
+/* Actions container: morphs from pill (collapsed) to rounded panel (expanded)
+ *
+ * Collapsed radius uses half the pill height (24px), not 999px: animating 999px→12px
+ * looks choppy because almost all of the numeric range is visually identical to a pill;
+ * only the last ~12–24px of change reads on screen. 24px→12px interpolates smoothly.
+ */
 .reader-bottom-bar-actions-container {
+  --reader-bottom-bar-morph-duration: 0.48s;
+  --reader-bottom-bar-morph-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --reader-bottom-bar-radius-duration: 0.58s;
+  --reader-bottom-bar-radius-ease: cubic-bezier(0.45, 0, 0.55, 1);
+
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0px 1px 4px 0px #e3e5e7;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  transition: max-height 0.25s ease, border-radius 0.25s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    max-height var(--reader-bottom-bar-morph-duration) var(--reader-bottom-bar-morph-ease),
+    border-radius var(--reader-bottom-bar-radius-duration) var(--reader-bottom-bar-radius-ease),
+    background 0.28s ease,
+    box-shadow 0.35s ease;
 }
 
 .reader-bottom-bar-actions-container.collapsed {
   max-height: 48px;
-  border-radius: 999px;
+  border-radius: 24px;
 }
 
 .reader-bottom-bar-actions-container.expanded {
-  max-height: 320px;
-  border-radius: 16px;
+  max-height: 360px;
+  border-radius: 12px;
   min-width: 0;
   max-width: 100%;
+  /* Heavy frost: lesson text must not read through the expanded menu */
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0px 1px 4px rgba(0, 0, 0, 0.12),
+    0px 12px 40px rgba(0, 0, 0, 0.1);
+  isolation: isolate;
 }
 
-.reader-bottom-bar-actions-container:hover {
+.reader-bottom-bar-actions-container:hover:not(.expanded) {
   background: rgba(255, 255, 255, 0.15);
+}
+
+.reader-bottom-bar-actions-container.expanded:hover {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
 }
 
 /* Collapsed: pill with 3 icon buttons */
@@ -124,17 +197,23 @@
   padding: 4px;
   box-sizing: border-box;
   gap: 0;
-  transition: opacity 0.2s ease;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--reader-bottom-bar-morph-duration) var(--reader-bottom-bar-morph-ease),
+    transform var(--reader-bottom-bar-morph-duration) var(--reader-bottom-bar-morph-ease);
 }
 
 .reader-bottom-bar-actions-container.expanded .reader-bottom-bar-pill {
   opacity: 0;
+  transform: translateY(-6px);
   pointer-events: none;
   position: absolute;
 }
 
 .reader-bottom-bar-actions-container.collapsed .reader-bottom-bar-expanded-menu {
   opacity: 0;
+  transform: translateY(10px);
   pointer-events: none;
   position: absolute;
 }
@@ -175,23 +254,51 @@
   flex-shrink: 0;
 }
 
-/* Expanded: grid of 8 actions (no collapse chevron) */
+/* Expanded: secondary wrap + divider + primary actions (no collapse chevron) */
 .reader-bottom-bar-expanded-menu {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  padding: 16px;
+  align-self: flex-end;
+  padding: 12px;
   gap: 16px;
-  transition: opacity 0.2s ease;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--reader-bottom-bar-morph-duration) var(--reader-bottom-bar-morph-ease),
+    transform var(--reader-bottom-bar-morph-duration) var(--reader-bottom-bar-morph-ease);
   min-height: 0;
-  max-width: 100%;
+  max-width: 275px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.reader-bottom-bar-expanded-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 50px);
+.reader-bottom-bar-actions-container.expanded .reader-bottom-bar-expanded-menu {
+  transition-delay: 0.04s, 0.04s;
+}
+
+.reader-bottom-bar-expanded-secondary {
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
-  justify-content: end;
+  justify-content: center;
+  width: 100%;
+}
+
+.reader-bottom-bar-expanded-divider {
+  height: 1px;
+  width: 100%;
+  flex-shrink: 0;
+  background: #e3e5e7;
+}
+
+.reader-bottom-bar-expanded-primary {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  width: 100%;
 }
 
 .reader-bottom-bar-expanded-item {
@@ -208,7 +315,11 @@
   transition: transform 0.15s ease;
 }
 
-.reader-bottom-bar-expanded-item:hover {
+.reader-bottom-bar-expanded-secondary .reader-bottom-bar-expanded-item:hover {
+  transform: scale(1.05);
+}
+
+.reader-bottom-bar-expanded-primary .reader-bottom-bar-expanded-item:hover {
   transform: scale(1.05);
 }
 
@@ -229,8 +340,32 @@
   transition: background 0.2s ease;
 }
 
-.reader-bottom-bar-expanded-item:hover .reader-bottom-bar-expanded-icon {
+.reader-bottom-bar-expanded-secondary .reader-bottom-bar-expanded-item:hover .reader-bottom-bar-expanded-icon {
   background: rgba(244, 247, 251, 0.9);
+}
+
+.reader-bottom-bar-expanded-icon--primary-refresh {
+  width: 50px;
+  height: 40px;
+  padding: 8px;
+  background: #f4fbfe;
+  color: #2e75cd;
+}
+
+.reader-bottom-bar-expanded-item--primary-refresh:hover .reader-bottom-bar-expanded-icon--primary-refresh {
+  background: #e8f4fc;
+}
+
+.reader-bottom-bar-expanded-icon--primary-exit {
+  width: 50px;
+  height: 40px;
+  padding: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.reader-bottom-bar-expanded-item--primary-exit:hover .reader-bottom-bar-expanded-icon--primary-exit {
+  background: #fee8e8;
 }
 
 .reader-bottom-bar-expanded-icon svg {
@@ -247,10 +382,13 @@
   white-space: nowrap;
 }
 
-/* Medium width: 3 columns (8 items = 3+3+2) */
 @media (max-width: 480px) {
-  .reader-bottom-bar-expanded-grid {
-    grid-template-columns: repeat(3, 50px);
+  .reader-bottom-bar-expanded-secondary {
+    gap: 12px;
+  }
+
+  .reader-bottom-bar-expanded-primary {
+    gap: 12px;
   }
 }
 
@@ -741,6 +879,7 @@
 
   .reader-bottom-bar-actions-container.collapsed {
     max-height: 44px;
+    border-radius: 22px;
   }
 
   .reader-bottom-bar-pill {
@@ -762,10 +901,12 @@
     height: 22px;
   }
 
-  .reader-bottom-bar-expanded-grid {
-    grid-template-columns: repeat(2, 50px);
+  .reader-bottom-bar-expanded-secondary {
     gap: 12px;
-    justify-content: end;
+  }
+
+  .reader-bottom-bar-expanded-primary {
+    gap: 12px;
   }
 
   .reader-bottom-bar-expanded-item {
@@ -784,13 +925,29 @@
   }
 
   .reader-bottom-bar-actions-container.expanded {
-    max-height: 300px;
+    max-height: 380px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .reader-bottom-bar-play-pill--morph,
-  .reader-bottom-bar-lesson-image-wrap--morph {
+  .reader-bottom-bar-lesson-image-wrap--morph,
+  .reader-bottom-bar-actions-container,
+  .reader-bottom-bar-pill,
+  .reader-bottom-bar-expanded-menu {
     transition-duration: 0.01ms;
+  }
+
+  .reader-bottom-bar-actions-container.expanded .reader-bottom-bar-expanded-menu {
+    transition-delay: 0s;
+  }
+
+  .reader-bottom-bar-default-row--morph-out {
+    animation: none;
+    opacity: 0;
+  }
+
+  .reader-bottom-bar-inner--stack .reader-bottom-bar-active-sheet-wrap .lingq-status-bar__sheet-track-unfurl {
+    animation: none;
   }
 }

@@ -145,32 +145,34 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
           }
           onPointerDown={handleTrackPointerDown}
         >
-          <div
-            className={`lingq-status-bar__sheet-highlight lingq-status-bar__sheet-highlight--${highlightTone}`}
-            aria-hidden
-          />
-          {SHEET_SEGMENT_ORDER.map((seg, i) => {
-            const active = displayIndex === i;
-            const isLearning = LEARNING_STATUSES.includes(seg);
-            return (
-              <button
-                key={seg}
-                type="button"
-                className={`lingq-status-bar__sheet-segment ${active ? 'lingq-status-bar__sheet-segment--active' : ''} ${isLearning ? 'lingq-status-bar__sheet-segment--learning' : ''} ${seg === 'Ignored' ? 'lingq-status-bar__sheet-segment--ignored' : ''} ${seg === 'Known' ? 'lingq-status-bar__sheet-segment--known' : ''}`}
-                onClick={() => onStatusChange(seg)}
-                aria-pressed={status === seg}
-                aria-label={LEARNING_LABELS[seg]}
-              >
-                {seg === 'Ignored' ? (
-                  <EyeOff size={20} aria-hidden />
-                ) : seg === 'Known' ? (
-                  <Check size={20} aria-hidden />
-                ) : (
-                  <span>{LEARNING_NUMBERS[seg]}</span>
-                )}
-              </button>
-            );
-          })}
+          <div className="lingq-status-bar__sheet-track-unfurl">
+            <div
+              className={`lingq-status-bar__sheet-highlight lingq-status-bar__sheet-highlight--${highlightTone}`}
+              aria-hidden
+            />
+            {SHEET_SEGMENT_ORDER.map((seg, i) => {
+              const active = displayIndex === i;
+              const isLearning = LEARNING_STATUSES.includes(seg);
+              return (
+                <button
+                  key={seg}
+                  type="button"
+                  className={`lingq-status-bar__sheet-segment ${active ? 'lingq-status-bar__sheet-segment--active' : ''} ${isLearning ? 'lingq-status-bar__sheet-segment--learning' : ''} ${seg === 'Ignored' ? 'lingq-status-bar__sheet-segment--ignored' : ''} ${seg === 'Known' ? 'lingq-status-bar__sheet-segment--known' : ''}`}
+                  onClick={() => onStatusChange(seg)}
+                  aria-pressed={status === seg}
+                  aria-label={LEARNING_LABELS[seg]}
+                >
+                  {seg === 'Ignored' ? (
+                    <EyeOff size={20} aria-hidden />
+                  ) : seg === 'Known' ? (
+                    <Check size={20} aria-hidden />
+                  ) : (
+                    <span>{LEARNING_NUMBERS[seg]}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     );

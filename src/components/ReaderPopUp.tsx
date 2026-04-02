@@ -14,6 +14,8 @@ interface ReaderPopUpProps {
   wordStatus?: LingQStatusType;
   onWordStatusChange?: (status: LingQStatusType) => void;
   onClose: () => void;
+  /** Fired when the user opens the meanings / word-detail bottom sheet (popup bubble is unmounted). */
+  onWordDetailSheetOpen?: () => void;
 }
 
 export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
@@ -25,6 +27,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   wordStatus = 'New',
   onWordStatusChange,
   onClose,
+  onWordDetailSheetOpen,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
@@ -68,12 +71,9 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     const handleUpdate = () => calculatePosition();
     window.addEventListener('scroll', handleUpdate, true);
     window.addEventListener('resize', handleUpdate);
-    const transcriptScrollers = document.querySelectorAll('[data-lesson-media-transcript-scroll]');
-    transcriptScrollers.forEach(el => el.addEventListener('scroll', handleUpdate, { passive: true }));
     return () => {
       window.removeEventListener('scroll', handleUpdate, true);
       window.removeEventListener('resize', handleUpdate);
-      transcriptScrollers.forEach(el => el.removeEventListener('scroll', handleUpdate));
     };
   }, [calculatePosition]);
 
@@ -90,21 +90,12 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       const bar = document.querySelector('.reader-bottom-bar');
       if (bar && bar.contains(target)) return false;
       const hitEl = hitElement(target);
-      if (hitEl?.closest('[data-drawer-active-bar]')) return false;
+      /* Inline video mode bar (sibling of bottom bar): interacting must not clear word selection */
+      if (hitEl?.closest('[data-video-mode-bar]')) return false;
 
-      /* Another lesson word (pages or media sheet): don't close on mousedown so word-to-word selection
+      /* Another lesson word: don't close on mousedown so word-to-word selection
          doesn't briefly clear and re-trigger toolbar expand animation. */
       if (hitEl?.closest('.reader .blue-word, .reader .yellow-word')) return false;
-
-      if (hitEl?.closest('[data-lesson-media-sheet]')) {
-        /* Video + bottom chrome (toolbar, scrubber, transport): interact without closing. */
-        if (hitEl.closest('.audio-sheet__video-slot, .audio-sheet__expanded-controls')) {
-          return false;
-        }
-        const anchor = resolveAnchorElement();
-        if (anchor && (hitEl === anchor || anchor.contains(hitEl))) return false;
-        return true;
-      }
 
       return true;
     };
@@ -124,6 +115,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
 
   const handleExpandClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
+    onWordDetailSheetOpen?.();
     setShowBottomSheet(true);
   };
 

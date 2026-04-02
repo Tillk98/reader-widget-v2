@@ -2,7 +2,7 @@
  * Word detail bottom sheet — Meanings + Sentence tabs
  * (Figma 2177:35914, 2195:613, 2259:2634, 2354:1327).
  * Plain CSS; design tokens with fallbacks.
- * Open/close motion matches audio/video sheets (see AudioPlayerBottomSheet.css).
+ * Open/close motion matches audio/video sheets (see WordDetailBottomSheet.css timing vars).
  */
 
 .word-detail-sheet-root {

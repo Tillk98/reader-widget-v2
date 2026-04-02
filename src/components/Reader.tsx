@@ -5,17 +5,15 @@ import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
 import { ReaderBottomBar } from './ReaderBottomBar';
-import { AudioPlayerBottomSheet } from './AudioPlayerBottomSheet';
-import { VideoPlayerBottomSheet } from './VideoPlayerBottomSheet';
-import videoThumbnail from '../assets/video-thumbnail.png';
+import { VideoModeBottomBar } from './VideoModeBottomBar';
+import { VideoModeVideoPlayer } from './VideoModeVideoPlayer';
+import videoModeThumbnail from '../assets/video-mode-thumbnail.png';
 import lessonImage from '../assets/lesson-image.png';
+import { startViewTransition, supportsViewTransition } from '../utils/viewTransition';
 import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
 const SWIPE_THRESHOLD_RATIO = 0.15;
-
-/** Must match `wordDomIdPrefix` on `MediaModeLessonContent` in the audio/video sheet. */
-const MEDIA_SHEET_WORD_DOM_PREFIX = 'lesson-media';
 
 interface Page {
   words: Word[];
@@ -32,12 +30,23 @@ export const Reader: React.FC = () => {
   const dragStartX = useRef<number>(0);
   const dragOffsetPx = useRef<number>(0);
   const ignoreNextWordClick = useRef(false);
+  /** Skip ResizeObserver pagination while swiping — avoids remounting pages mid-gesture (white flash). */
+  const isPageSwipeDraggingRef = useRef(false);
+  /** Block pagination recalculation briefly after a page change (resize often fires during transform; recalc remounts rows → flash). */
+  const paginationCooldownUntilRef = useRef(0);
+  const resizePaginateDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipPaginationCooldownOnMountRef = useRef(true);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [contentWidthPx, setContentWidthPx] = useState(1);
-  const [mediaMode, setMediaMode] = useState<'none' | 'audio' | 'video'>('none');
-  const [audioSheetExpanded, setAudioSheetExpanded] = useState(false);
-  const [isAudioPaused, setIsAudioPaused] = useState(false);
+  const [mediaMode, setMediaMode] = useState<'none' | 'video'>('none');
+  const [videoBarExpanded, setVideoBarExpanded] = useState(false);
+  const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
+  const prevMediaModeRef = useRef<'none' | 'video'>(mediaMode);
+  /** Measured height of fixed VideoModeBottomBar — positions LingQ strip above it. */
+  const [videoBarChromeHeightPx, setVideoBarChromeHeightPx] = useState(0);
+  /** Measured height of fixed top video slot — offsets scrollable lesson text. */
+  const [videoTopSlotHeightPx, setVideoTopSlotHeightPx] = useState(0);
 
   const knownWords = React.useMemo(() => {
     const s = new Set<string>();
@@ -73,17 +82,52 @@ export const Reader: React.FC = () => {
     return words;
   }, []);
 
+  const wordToSentenceIndex = React.useMemo(() => {
+    const m = new Map<string, number>();
+    lesson.sentences.forEach((sentence, si) => {
+      sentence.words.forEach(w => m.set(w.id, si));
+    });
+    return m;
+  }, []);
+
   const calculatePages = useCallback(() => {
     if (!containerRef.current) return;
 
-    const container = containerRef.current;
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
+    const readerEl = containerRef.current;
+    const contentEl = contentRef.current;
+    const containerWidth = (contentEl ?? readerEl).clientWidth;
+    const PAGE_CONTENT_VERTICAL_PADDING = 16; /* matches Page.css 8px + 8px */
+    const readerContentPaddingBottomPage = 80; /* matches .reader-content padding-bottom (page mode) */
 
-    if (containerWidth === 0 || containerHeight === 0) {
+    let availableHeight: number;
+    if (contentEl) {
+      /* Measure the real column: .reader clientHeight mixes in full viewport; content box matches the page stack. */
+      availableHeight =
+        contentEl.clientHeight - readerContentPaddingBottomPage - PAGE_CONTENT_VERTICAL_PADDING;
+    } else {
+      /* Loading shell: .reader-content not mounted yet — approximate with legacy reserves */
+      const titleHeight = 80;
+      const topReserved = 40;
+      const bottomReserved = 80;
+      availableHeight =
+        readerEl.clientHeight -
+        topReserved -
+        bottomReserved -
+        PAGE_CONTENT_VERTICAL_PADDING -
+        titleHeight;
+    }
+
+    if (containerWidth === 0 || availableHeight <= 0) {
       if (allWords.length > 0) {
         setPages([{ words: allWords }]);
       }
+      return;
+    }
+
+    /* Video mode: full lesson in one column; vertical scroll — no horizontal pagination. */
+    if (mediaMode === 'video') {
+      setPages(allWords.length > 0 ? [{ words: allWords }] : []);
+      setCurrentPageIndex(0);
       return;
     }
 
@@ -95,8 +139,8 @@ export const Reader: React.FC = () => {
     tempContainer.style.width = `${contentWidth}px`;
     tempContainer.style.paddingTop = '8px';
     tempContainer.style.paddingBottom = '8px';
-    tempContainer.style.paddingLeft = '1px';
-    tempContainer.style.paddingRight = '1px';
+    tempContainer.style.paddingLeft = '12px';
+    tempContainer.style.paddingRight = '12px';
     tempContainer.style.boxSizing = 'border-box';
     tempContainer.style.fontFamily = 'Lora, serif';
     tempContainer.style.fontSize = '18px';
@@ -106,24 +150,23 @@ export const Reader: React.FC = () => {
     tempContainer.style.overflow = 'visible';
     document.body.appendChild(tempContainer);
 
+    const applyWordSpanMetrics = (el: HTMLSpanElement) => {
+      el.style.display = 'inline-block';
+      el.style.padding = '2px 1px';
+      el.style.fontFamily = 'Lora, serif';
+      el.style.fontSize = '18px';
+      el.style.lineHeight = '37.8px';
+    };
+
     const newPages: Page[] = [];
     let currentPage: Word[] = [];
-    const pagePadding = 16;
-    const titleHeight = 80;
-    const topReserved = 40;
-    const bottomReserved = 80;
-    const availableHeight = containerHeight - topReserved - bottomReserved - pagePadding - titleHeight;
 
     for (let i = 0; i < allWords.length; i++) {
       const word = allWords[i];
 
       const wordSpan = document.createElement('span');
       wordSpan.textContent = word.text;
-      wordSpan.style.display = 'inline-block';
-      wordSpan.style.padding = '2px 1px';
-      wordSpan.style.fontFamily = 'Lora, serif';
-      wordSpan.style.fontSize = '18px';
-      wordSpan.style.lineHeight = '37.8px';
+      applyWordSpanMetrics(wordSpan);
       tempContainer.appendChild(wordSpan);
 
       if (i < allWords.length - 1) {
@@ -146,11 +189,7 @@ export const Reader: React.FC = () => {
         tempContainer.innerHTML = '';
         const newWordSpan = document.createElement('span');
         newWordSpan.textContent = word.text;
-        newWordSpan.style.display = 'inline-block';
-        newWordSpan.style.padding = '2px 1px';
-        newWordSpan.style.fontFamily = 'Lora, serif';
-        newWordSpan.style.fontSize = '18px';
-        newWordSpan.style.lineHeight = '37.8px';
+        applyWordSpanMetrics(newWordSpan);
         tempContainer.appendChild(newWordSpan);
         if (i < allWords.length - 1) {
           tempContainer.appendChild(document.createTextNode(' '));
@@ -173,19 +212,39 @@ export const Reader: React.FC = () => {
     setPages(newPages);
 
     setCurrentPageIndex(prev => (prev >= newPages.length ? Math.max(0, newPages.length - 1) : prev));
-  }, [allWords]);
+  }, [allWords, mediaMode]);
+
+  const scheduleResizePaginate = useCallback(() => {
+    if (resizePaginateDebounceRef.current) clearTimeout(resizePaginateDebounceRef.current);
+    resizePaginateDebounceRef.current = setTimeout(() => {
+      resizePaginateDebounceRef.current = null;
+      if (isPageSwipeDraggingRef.current) return;
+      if (Date.now() < paginationCooldownUntilRef.current) return;
+      calculatePages();
+    }, 140);
+  }, [calculatePages]);
+
+  useEffect(() => {
+    if (skipPaginationCooldownOnMountRef.current) {
+      skipPaginationCooldownOnMountRef.current = false;
+      return;
+    }
+    paginationCooldownUntilRef.current = Date.now() + 480;
+  }, [currentPageIndex]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const resizeObserver = new ResizeObserver(() => {
-      calculatePages();
+      if (isPageSwipeDraggingRef.current) return;
+      scheduleResizePaginate();
     });
 
     resizeObserver.observe(containerRef.current);
 
     const handleResize = () => {
-      calculatePages();
+      if (isPageSwipeDraggingRef.current) return;
+      scheduleResizePaginate();
     };
 
     window.addEventListener('resize', handleResize);
@@ -195,8 +254,9 @@ export const Reader: React.FC = () => {
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
+      if (resizePaginateDebounceRef.current) clearTimeout(resizePaginateDebounceRef.current);
     };
-  }, [calculatePages]);
+  }, [calculatePages, scheduleResizePaginate]);
 
   useEffect(() => {
     const contentEl = contentRef.current;
@@ -221,6 +281,7 @@ export const Reader: React.FC = () => {
       const dx = e.clientX - dragStartX.current;
       if (!isDragging) {
         if (Math.abs(dx) >= DRAG_THRESHOLD_PX) {
+          isPageSwipeDraggingRef.current = true;
           setIsDragging(true);
           dragOffsetPx.current = dx;
           setDragOffset(dx);
@@ -237,6 +298,7 @@ export const Reader: React.FC = () => {
     (e?: React.PointerEvent) => {
       if (e?.target) (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
       if (!isDragging) return;
+      isPageSwipeDraggingRef.current = false;
       ignoreNextWordClick.current = true;
       const contentEl = contentRef.current;
       const width = contentEl ? contentEl.clientWidth : 1;
@@ -255,6 +317,7 @@ export const Reader: React.FC = () => {
 
   const handlePointerCancel = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    isPageSwipeDraggingRef.current = false;
     setIsDragging(false);
     setDragOffset(0);
     dragOffsetPx.current = 0;
@@ -298,20 +361,17 @@ export const Reader: React.FC = () => {
   }, []);
 
   const getWordElement = useCallback((wordId: string): HTMLElement | null => {
-    /* Collapsed audio: user reads paginated pages — anchor to page words like default mode.
-       Expanded audio/video sheet: transcript uses prefixed ids so we don't hit duplicate page ids. */
-    if (mediaMode === 'audio' && audioSheetExpanded) {
-      const inSheet = document.getElementById(`${MEDIA_SHEET_WORD_DOM_PREFIX}-${wordId}`);
-      if (inSheet) return inSheet;
-    }
-    if (mediaMode === 'video') {
-      const inSheet = document.getElementById(`${MEDIA_SHEET_WORD_DOM_PREFIX}-${wordId}`);
-      if (inSheet) return inSheet;
-    }
     return document.getElementById(wordId);
-  }, [mediaMode, audioSheetExpanded]);
+  }, []);
+
+  const [wordDetailSheetOpen, setWordDetailSheetOpen] = useState(false);
+
+  useEffect(() => {
+    setWordDetailSheetOpen(false);
+  }, [selectedWordId]);
 
   const handleClosePopup = useCallback(() => {
+    setWordDetailSheetOpen(false);
     if (selectedWordId) {
       setClickedWords(prev => {
         const newSet = new Set(prev);
@@ -321,9 +381,6 @@ export const Reader: React.FC = () => {
     }
     setSelectedWordId(null);
   }, [selectedWordId]);
-
-  const handleMediaInspectSentence = useCallback(() => {}, []);
-  const handleMediaShowTranslation = useCallback(() => {}, []);
 
   const selectedWordData = React.useMemo(() => {
     if (!selectedWordId) return null;
@@ -377,35 +434,130 @@ export const Reader: React.FC = () => {
   const fillProgress = pages.length > 0 ? Math.min(100, ((currentPageIndex + 1) / pages.length) * 100) : 0;
   const thumbProgress = fillProgress;
 
-  const isVideoMode = mediaMode === 'video';
-  const isAudioOpen = mediaMode === 'audio';
-  const isVideoOpen = mediaMode === 'video';
-  const contentClassName = 'reader-content';
+  const isPageMode = mediaMode === 'none';
+  const isVideoModeOpen = mediaMode === 'video';
+  const contentClassName = [
+    'reader-content',
+    isVideoModeOpen && 'reader-content--video-mode',
+    isVideoModeOpen && videoBarExpanded && 'reader-content--video-expanded',
+    isPageMode && isDragging && 'reader-content--page-swiping',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  const handleMediaClose = useCallback(() => {
-    setMediaMode('none');
-  }, []);
+  const videoChromeFallbackPx = 132;
+  const effectiveVideoChromePx =
+    videoBarChromeHeightPx > 0 ? videoBarChromeHeightPx : videoChromeFallbackPx;
+  /** Fallback until ResizeObserver measures the video chrome (safe area + card + video). */
+  const videoTopStackFallbackPx = 236;
+
+  const readerContentVideoStyle: React.CSSProperties | undefined = isVideoModeOpen
+    ? {
+        paddingBottom: `${effectiveVideoChromePx}px`,
+        paddingTop:
+          videoTopSlotHeightPx > 0
+            ? `${videoTopSlotHeightPx}px`
+            : `${videoTopStackFallbackPx}px`,
+      }
+    : undefined;
+
+  const lingqStripAnchorAboveVideoBarPx =
+    isVideoModeOpen && selectedWordId != null ? effectiveVideoChromePx : undefined;
+
+  /** Top of video bar from viewport bottom — drives fixed text fade (LingQ strip overlays text, not included) */
+  const readerRootStyle: React.CSSProperties | undefined = isVideoModeOpen
+    ? ({
+        '--reader-video-chrome-stack': `${effectiveVideoChromePx}px`,
+        '--reader-video-top-stack': `${videoTopSlotHeightPx > 0 ? videoTopSlotHeightPx : videoTopStackFallbackPx}px`,
+      } as React.CSSProperties)
+    : undefined;
 
   useEffect(() => {
-    if (mediaMode !== 'audio') {
-      setAudioSheetExpanded(false);
-      setIsAudioPaused(false);
+    if (mediaMode !== 'video') {
+      setVideoBarExpanded(false);
+      setIsPlaybackPaused(false);
+      setVideoBarChromeHeightPx(0);
+      setVideoTopSlotHeightPx(0);
     }
   }, [mediaMode]);
 
-  const handleAudioTogglePlay = useCallback(() => {
-    setMediaMode(prev => (prev === 'audio' ? 'none' : 'audio'));
-    setAudioSheetExpanded(false);
-    setIsAudioPaused(false);
+  /** Leaving video mode: restore default pagination layout and scroll position. */
+  useEffect(() => {
+    if (prevMediaModeRef.current === 'video' && mediaMode === 'none') {
+      setCurrentPageIndex(0);
+      const el = contentRef.current;
+      if (el) el.scrollTop = 0;
+    }
+    prevMediaModeRef.current = mediaMode;
+  }, [mediaMode]);
+
+  /** Pause / resume playback while staying in video mode (ReaderBottomBar mini controls when word selected). */
+  const handlePlaybackPauseToggle = useCallback(() => {
+    setIsPlaybackPaused(p => !p);
   }, []);
 
+  /** Enter video mode from the default bottom bar play control. */
+  const handleEnterVideoMode = useCallback(() => {
+    startViewTransition(() => {
+      setMediaMode('video');
+      setIsPlaybackPaused(false);
+      setVideoBarExpanded(false);
+    });
+  }, []);
+
+  const handleExitVideoMode = useCallback(() => {
+    startViewTransition(() => setMediaMode('none'));
+  }, []);
+
+  /** Exit video mode (Escape matches sheet-dismiss habit). */
+  useEffect(() => {
+    if (mediaMode !== 'video') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleExitVideoMode();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mediaMode, handleExitVideoMode]);
+
+  useEffect(() => {
+    if (mediaMode !== 'video') return;
+    const el = contentRef.current;
+    if (el) el.scrollTop = 0;
+  }, [mediaMode]);
+
   return (
-    <div className="reader" ref={containerRef}>
+    <div
+      className={[
+        'reader',
+        isVideoModeOpen && 'reader--video-mode',
+        isVideoModeOpen && videoBarExpanded && 'reader--video-mode-expanded',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      ref={containerRef}
+      style={readerRootStyle}
+    >
       {pages.length === 0 ? (
         <div className="reader-loading">Loading...</div>
       ) : (
         <>
-          {!isVideoMode && (
+          {isVideoModeOpen && (
+            <VideoModeVideoPlayer
+              lessonTitle={lesson.title}
+              lessonSource={lesson.source ?? ''}
+              lessonImageSrc={lessonImage}
+              thumbnailSrc={videoModeThumbnail}
+              playbackProgress={0.08}
+              isPaused={isPlaybackPaused}
+              onTogglePause={handlePlaybackPauseToggle}
+              onSlotHeightChange={setVideoTopSlotHeightPx}
+            />
+          )}
+          {isVideoModeOpen && <div className="reader-video-text-fade--top" aria-hidden />}
+          {isVideoModeOpen && <div className="reader-video-text-fade" aria-hidden />}
+          {isPageMode && (
             <div className="reader-progress-container">
               <div
                 className="reader-progress-bar"
@@ -428,51 +580,66 @@ export const Reader: React.FC = () => {
           )}
           <div
             className={contentClassName}
+            style={readerContentVideoStyle}
             ref={contentRef}
-            onPointerDown={!isVideoMode ? handlePointerDown : undefined}
-            onPointerMove={!isVideoMode ? handlePointerMove : undefined}
-            onPointerUp={!isVideoMode ? e => handlePointerUp(e) : undefined}
-            onPointerLeave={!isVideoMode ? () => handlePointerUp() : undefined}
-            onPointerCancel={!isVideoMode ? handlePointerCancel : undefined}
+            onPointerDown={isPageMode ? handlePointerDown : undefined}
+            onPointerMove={isPageMode ? handlePointerMove : undefined}
+            onPointerUp={isPageMode ? e => handlePointerUp(e) : undefined}
+            onPointerLeave={isPageMode ? () => handlePointerUp() : undefined}
+            onPointerCancel={isPageMode ? handlePointerCancel : undefined}
           >
-            <div
-              className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
-              style={{
-                transform: `translateX(${pageTransform}%)`,
-                transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
-              }}
-            >
-              {pages.map((page, index) => (
-                <div key={index} className="page-wrapper">
+            <div className="reader-body-vt">
+              {isVideoModeOpen ? (
+                <div className="reader-video-scroll">
                   <PageComponent
-                    words={page.words}
+                    words={allWords}
                     clickedWords={clickedWords}
                     lingqWords={lingqWords}
                     onWordClick={handleWordClick}
                     knownWords={knownWords}
                     ignoredWords={ignoredWords}
+                    videoLessonLayout
+                    wordToSentenceIndex={wordToSentenceIndex}
                   />
                 </div>
-              ))}
+              ) : (
+                <div
+                  className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
+                  style={{
+                    transform: `translate3d(${pageTransform}%, 0, 0)`,
+                    transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                  }}
+                >
+                  {pages.map((page, index) => (
+                    <div key={index} className="page-wrapper">
+                      <PageComponent
+                        words={page.words}
+                        clickedWords={clickedWords}
+                        lingqWords={lingqWords}
+                        onWordClick={handleWordClick}
+                        knownWords={knownWords}
+                        ignoredWords={ignoredWords}
+                        videoLessonLayout={false}
+                        wordToSentenceIndex={wordToSentenceIndex}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          {isAudioOpen && (
-            <AudioPlayerBottomSheet
+          {isVideoModeOpen && (
+            <VideoModeBottomBar
+              onChromeHeightChange={setVideoBarChromeHeightPx}
+              expanded={videoBarExpanded}
+              onExpandedChange={setVideoBarExpanded}
+              onExitVideoMode={handleExitVideoMode}
+              fallbackSlideIn={!supportsViewTransition()}
               lessonTitle={lesson.title}
               lessonSource={lesson.source ?? ''}
-              sentences={lesson.sentences}
-              clickedWords={clickedWords}
-              lingqWords={lingqWords}
-              knownWords={knownWords}
-              ignoredWords={ignoredWords}
-              onWordClick={handleWordClick}
-              expanded={audioSheetExpanded}
-              isPaused={isAudioPaused}
-              onTogglePause={handleAudioTogglePlay}
-              onExpandedChange={setAudioSheetExpanded}
-              hasWordSelected={selectedWordId != null}
-              onInspectSentence={handleMediaInspectSentence}
-              onShowTranslation={handleMediaShowTranslation}
+              lessonImageSrc={lessonImage}
+              isPaused={isPlaybackPaused}
+              onTogglePause={handlePlaybackPauseToggle}
             />
           )}
           {selectedWordId && selectedWordData && (
@@ -487,50 +654,33 @@ export const Reader: React.FC = () => {
                 setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
               }
               onClose={handleClosePopup}
+              onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
             />
           )}
-          {isVideoOpen && (
-            <VideoPlayerBottomSheet
-              lessonTitle={lesson.title}
-              lessonSource={lesson.source ?? ''}
-              sentences={lesson.sentences}
-              clickedWords={clickedWords}
-              lingqWords={lingqWords}
-              knownWords={knownWords}
-              ignoredWords={ignoredWords}
-              onWordClick={handleWordClick}
-              onClose={handleMediaClose}
-              videoUrl={lesson.videoUrl}
-              posterUrl={videoThumbnail}
-              hasWordSelected={selectedWordId != null}
-              onInspectSentence={handleMediaInspectSentence}
-              onShowTranslation={handleMediaShowTranslation}
+          {(mediaMode !== 'video' || selectedWordId != null) && (
+            <ReaderBottomBar
+              mediaMode={mediaMode}
+              isVideoPlaying={mediaMode === 'video' && !isPlaybackPaused}
+              anchorAboveVideoBarPx={lingqStripAnchorAboveVideoBarPx}
+              lessonImageSrc={lessonImage}
+              wordDetailSheetOpen={wordDetailSheetOpen}
+              selectedWordId={selectedWordId}
+              selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
+              onSelectedWordStatusChange={
+                selectedWordId
+                  ? status => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
+                  : undefined
+              }
+              onPlay={handleEnterVideoMode}
+              onToggleVideoPlayback={handlePlaybackPauseToggle}
+              onExpandVideoBar={() => {
+                setVideoBarExpanded(true);
+              }}
+              hasVideo={false}
+              onVideoMode={handleEnterVideoMode}
+              onExit={() => {}}
             />
           )}
-          <ReaderBottomBar
-            mediaMode={mediaMode}
-            isAudioPlaying={mediaMode === 'audio'}
-            lessonImageSrc={lessonImage}
-            selectedWordId={selectedWordId}
-            selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
-            onSelectedWordStatusChange={
-              selectedWordId
-                ? status => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
-                : undefined
-            }
-            onPlay={() => {
-              setMediaMode('audio');
-              setIsAudioPaused(false);
-            }}
-            onAudioTogglePlay={handleAudioTogglePlay}
-            onAudioOpenExpanded={() => {
-              setAudioSheetExpanded(true);
-            }}
-            hasVideo={false}
-            onVideoMode={() => {
-              setMediaMode('video');
-            }}
-          />
         </>
       )}
     </div>

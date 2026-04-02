@@ -1,6 +1,8 @@
 .reader {
   width: 100%;
-  height: 100vh;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -8,7 +10,26 @@
   --panel-width: clamp(320px, 30vw, 420px);
 }
 
+/*
+ * Fixed lesson fades + scroll insets (descendants inherit). Top band is 25% height of bottom (75% smaller).
+ */
+.reader--video-mode {
+  --reader-video-fade-band-bottom: 96px;
+  --reader-video-fade-band-top: 24px;
+}
+
+.reader--video-mode.reader--video-mode-expanded {
+  --reader-video-fade-band-bottom: 104px;
+  --reader-video-fade-band-top: 26px;
+}
+
+/*
+ * Page progress: same track / fill / thumb as expanded video scrubber, reading green. No card chrome —
+ * only padding around the bar.
+ */
 .reader-progress-container {
+  --reader-progress-accent: #02a723;
+
   position: fixed;
   top: 0;
   left: 0;
@@ -16,12 +37,13 @@
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 12px 16px;
   box-sizing: border-box;
-  background-color: #fff;
   z-index: 100;
+  view-transition-name: reader-progress;
 }
 
+/* Mirrors .video-mode-bottom-bar__scrubber-track */
 .reader-progress-bar {
   position: relative;
   width: 100%;
@@ -32,25 +54,28 @@
   overflow: visible;
 }
 
+/* Mirrors .video-mode-bottom-bar__scrubber-fill (green) */
 .reader-progress-fill {
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
-  background-color: #02a723;
+  background: var(--reader-progress-accent);
   border-radius: 2px;
   transition: width 0.2s ease;
 }
 
+/* Mirrors .video-mode-bottom-bar__scrubber-thumb (green ring) */
 .reader-progress-thumb {
   position: absolute;
   top: 50%;
-  transform: translate(-50%, -50%);
   width: 12px;
   height: 12px;
-  background-color: #fff;
   border-radius: 50%;
+  background-color: #fff;
+  border: 2px solid var(--reader-progress-accent);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -50%);
   transition: left 0.2s ease;
   pointer-events: none;
 }
@@ -82,13 +107,137 @@
 .reader-content {
   flex: 1;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow: hidden;
   width: 100%;
   margin-top: 40px; /* Space for fixed progress bar */
   padding-bottom: 80px; /* Space for bottom bar + safe area */
-  transition: margin-right 0.25s ease, padding-bottom 0.2s ease;
   margin-right: 0;
-  touch-action: pan-y; /* allow vertical scroll, we handle horizontal swipe */
+  /* Page mode: horizontal paging only — pan-y lets the browser vertically pan/overscroll this subtree */
+  touch-action: pan-x pinch-zoom;
+  overscroll-behavior: none;
+  transition:
+    margin-top 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    margin-right 0.25s ease,
+    padding-top 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    padding-bottom 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Horizontal paging uses pointer handlers; block browser from stealing the gesture */
+.reader-content.reader-content--page-swiping {
+  touch-action: none;
+}
+
+/* Inner shell for lesson layout (page vs video). Intentionally no view-transition-name here:
+ * naming this subtree `reader-body` caused WebKit to composite an empty layer during horizontal
+ * paging (white flash) while the child .pages-container carried the translate3d transform. */
+.reader-body-vt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Vertical scroll lives on .reader-content; do not clip the full lesson */
+.reader-content--video-mode .reader-body-vt {
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+/* Video mode: vertical scroll through full lesson; no top progress bar; no horizontal paging */
+.reader-content--video-mode {
+  margin-top: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  padding-bottom: 132px;
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior: auto;
+}
+
+.reader-video-scroll {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/*
+ * Inset past fixed gradients: full band at bottom; short band at top (vars on .reader--video-mode).
+ */
+.reader--video-mode .reader-content--video-mode .reader-video-scroll {
+  padding-top: var(--reader-video-fade-band-top);
+  padding-bottom: var(--reader-video-fade-band-bottom);
+}
+
+/*
+ * Fixed to the viewport so it always sits above the video chrome. (An absolute pseudo on the
+ * scroll container was anchored to the document bottom, so the fade never appeared in view.)
+ */
+.reader-video-text-fade {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--reader-video-chrome-stack, 132px);
+  height: var(--reader-video-fade-band-bottom, 96px);
+  z-index: 45;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.38) 30%,
+    rgba(255, 255, 255, 0.85) 70%,
+    #ffffff 100%
+  );
+}
+
+/*
+ * Top fade (below fixed video chrome): reverse of .reader-video-text-fade — solid white at the
+ * top of the band (under the player) grading to transparent so lesson text reads normally below.
+ */
+.reader-video-text-fade--top {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--reader-video-top-stack, 240px);
+  height: var(--reader-video-fade-band-top, 24px);
+  z-index: 45;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.88) 45%,
+    rgba(255, 255, 255, 0.4) 78%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+/* Soft fade when entering video mode (View Transitions handles the player chrome) */
+@supports (view-transition-name: none) {
+  @keyframes reader-vt-fade-stripes-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .reader--video-mode .reader-video-text-fade,
+  .reader--video-mode .reader-video-text-fade--top {
+    animation: reader-vt-fade-stripes-in 1.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+.reader-content--video-mode.reader-content--video-expanded {
+  padding-bottom: 260px;
 }
 
 .reader-content.panel-open {
@@ -102,23 +251,193 @@
 
 .pages-container {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
   width: 100%;
   height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+
+.pages-container-dragging {
   will-change: transform;
 }
 
 .page-wrapper {
-  min-width: 100%;
+  flex: 0 0 100%;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 100%;
-  flex-shrink: 0;
+  box-sizing: border-box;
+  background-color: #fff;
 }
 
 .reader-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   font-family: Lora, serif;
   font-size: 18px;
+}
+
+/*
+ * View Transitions API: page chrome, lesson video stack, bottom bar.
+ * Easing: smooth deceleration in (0.16,1,0.3,1), slightly quicker ease-in on exit.
+ */
+@supports (view-transition-name: none) {
+  --reader-vt-smooth-in: cubic-bezier(0.16, 1, 0.3, 1);
+  --reader-vt-smooth-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --reader-vt-enter-ms: 680ms;
+  --reader-vt-leave-ms: 580ms;
+  /* Lesson video stack (top slot): slower fade/slide — matches stripe fade-in duration */
+  --reader-vt-video-top-enter-ms: 1.35s;
+  --reader-vt-video-top-leave-ms: 1.05s;
+
+  @keyframes reader-vt-progress-leave {
+    to {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes reader-vt-progress-enter {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes reader-vt-video-mode-top-enter {
+    from {
+      opacity: 0;
+      transform: translateY(-22px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes reader-vt-video-mode-top-leave {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+  }
+
+  @keyframes reader-vt-video-mode-bar-enter {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes reader-vt-video-mode-bar-leave {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes reader-vt-bottom-chrome-enter {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes reader-vt-bottom-chrome-leave {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(22px);
+    }
+  }
+
+  ::view-transition-old(reader-progress) {
+    animation: reader-vt-progress-leave var(--reader-vt-leave-ms) var(--reader-vt-smooth-out) both;
+  }
+
+  ::view-transition-new(reader-progress) {
+    animation: reader-vt-progress-enter var(--reader-vt-enter-ms) var(--reader-vt-smooth-in) both;
+  }
+
+  ::view-transition-new(video-mode-top) {
+    animation: reader-vt-video-mode-top-enter var(--reader-vt-video-top-enter-ms) var(--reader-vt-smooth-in)
+      both;
+  }
+
+  ::view-transition-old(video-mode-top) {
+    animation: reader-vt-video-mode-top-leave var(--reader-vt-video-top-leave-ms) var(--reader-vt-smooth-out)
+      both;
+  }
+
+  ::view-transition-new(video-mode-bar) {
+    animation: reader-vt-video-mode-bar-enter var(--reader-vt-enter-ms) var(--reader-vt-smooth-in) both;
+  }
+
+  ::view-transition-old(video-mode-bar) {
+    animation: reader-vt-video-mode-bar-leave var(--reader-vt-leave-ms) var(--reader-vt-smooth-out) both;
+  }
+
+  ::view-transition-new(reader-bottom-chrome) {
+    animation: reader-vt-bottom-chrome-enter var(--reader-vt-enter-ms) var(--reader-vt-smooth-in) both;
+  }
+
+  ::view-transition-old(reader-bottom-chrome) {
+    animation: reader-vt-bottom-chrome-leave var(--reader-vt-leave-ms) var(--reader-vt-smooth-out) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @supports (view-transition-name: none) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0.01ms !important;
+    }
+  }
+
+  .reader--video-mode .reader-video-text-fade,
+  .reader--video-mode .reader-video-text-fade--top {
+    animation: none !important;
+  }
+
+  .reader-content {
+    transition: margin-right 0.25s ease;
+  }
+
+  .pages-container:not(.pages-container-dragging) {
+    transition-duration: 0.05s !important;
+  }
 }

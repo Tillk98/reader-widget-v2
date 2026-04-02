@@ -1,8 +1,10 @@
+/* Full-viewport reader: do not pad #root — padding + child height: 100vh overflows the viewport and shows a document scrollbar. */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  max-width: none;
 }
 
 .logo {

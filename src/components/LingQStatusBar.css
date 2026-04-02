@@ -96,12 +96,23 @@
   box-sizing: border-box;
 }
 
+/* Inner row: highlight + segments. Bottom bar applies clip-path unfurl here only — track keeps fill + shadow. */
+.lingq-status-bar__sheet-track-unfurl {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
 .lingq-status-bar__sheet-highlight {
   position: absolute;
-  left: var(--spacing-spacing-2xs, 4px);
-  top: var(--spacing-spacing-2xs, 4px);
-  bottom: var(--spacing-spacing-2xs, 4px);
-  width: calc((100% - 8px) / 6);
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(100% / 6);
   border-radius: 999px;
   pointer-events: none;
   z-index: 0;

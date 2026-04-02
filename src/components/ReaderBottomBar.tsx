@@ -6,12 +6,13 @@ import {
   FileText,
   ChevronsUpDown,
   Bot,
-  Maximize2,
-  Type,
-  BarChart3,
+  PictureInPicture,
+  CaseSensitive,
+  ChartColumn,
   Info,
   RefreshCw,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ActiveSelectionBar } from './ActiveSelectionBar';
@@ -20,15 +21,15 @@ import reviewDefaultIcon from '../assets/review-default.png';
 import './ReaderBottomBar.css';
 
 export interface ReaderBottomBarProps {
-  mediaMode?: 'none' | 'audio' | 'video';
-  isAudioPlaying?: boolean;
+  mediaMode?: 'none' | 'video';
+  isVideoPlaying?: boolean;
   lessonImageSrc?: string;
   selectedWordId?: string | null;
   selectedWordStatus?: LingQStatusType;
   onSelectedWordStatusChange?: (status: LingQStatusType) => void;
   onPlay?: () => void;
-  onAudioTogglePlay?: () => void;
-  onAudioOpenExpanded?: () => void;
+  onToggleVideoPlayback?: () => void;
+  onExpandVideoBar?: () => void;
   onSentence?: () => void;
   onReview?: () => void;
   onChevrons?: () => void;
@@ -40,31 +41,38 @@ export interface ReaderBottomBarProps {
   onInfo?: () => void;
   onRefresh?: () => void;
   onSettings?: () => void;
+  onExit?: () => void;
   hasVideo?: boolean;
   onVideoMode?: () => void;
+  /** In video mode: distance from viewport bottom to anchor this bar above the fixed lesson video bar (px). */
+  anchorAboveVideoBarPx?: number;
+  /** Word detail (meanings) bottom sheet is open — after a short delay the LingQ strip yields to the default row. */
+  wordDetailSheetOpen?: boolean;
 }
 
-const EXPANDED_MENU_ITEMS: { id: string; label: string; icon: React.ReactNode; onClick?: () => void }[] = [
+/** After the sheet is open, wait this long before swapping the LingQ strip for the default play / menu row. */
+const WORD_DETAIL_DEFAULT_CHROME_DELAY_MS = 1000;
+
+const EXPANDED_SECONDARY_ITEMS: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'lynx', label: 'Lynx AI', icon: <Bot size={20} /> },
-  { id: 'simplify', label: 'Simplify', icon: <Maximize2 size={20} /> },
-  { id: 'theme', label: 'Theme', icon: <Type size={20} /> },
+  { id: 'simplify', label: 'Simplify', icon: <PictureInPicture size={20} /> },
+  { id: 'theme', label: 'Theme', icon: <CaseSensitive size={20} /> },
   { id: 'grammar', label: 'Grammar', icon: <FileText size={20} /> },
-  { id: 'statistics', label: 'Statistics', icon: <BarChart3 size={20} /> },
+  { id: 'statistics', label: 'Statistics', icon: <ChartColumn size={20} /> },
   { id: 'info', label: 'Info', icon: <Info size={20} /> },
-  { id: 'refresh', label: 'Refresh', icon: <RefreshCw size={20} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   mediaMode = 'none',
-  isAudioPlaying = false,
+  isVideoPlaying = false,
   lessonImageSrc,
   selectedWordId,
   selectedWordStatus = 'New',
   onSelectedWordStatusChange,
   onPlay,
-  onAudioTogglePlay,
-  onAudioOpenExpanded,
+  onToggleVideoPlayback,
+  onExpandVideoBar,
   onSentence,
   onReview,
   onChevrons,
@@ -76,15 +84,47 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onInfo,
   onRefresh,
   onSettings,
+  onExit,
   hasVideo = false,
   onVideoMode,
+  anchorAboveVideoBarPx,
+  wordDetailSheetOpen = false,
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
+  const [defaultChromeAfterSheetDelay, setDefaultChromeAfterSheetDelay] = useState(false);
   const actionsContainerRef = useRef<HTMLDivElement>(null);
 
   const hasWordSelected = selectedWordId != null;
-  const hideBarUnderMediaSheet = mediaMode === 'video' && !hasWordSelected;
-  const showDefaultChrome = !hasWordSelected;
+
+  useEffect(() => {
+    if (!wordDetailSheetOpen) {
+      setDefaultChromeAfterSheetDelay(false);
+      return;
+    }
+    const id = window.setTimeout(() => {
+      setDefaultChromeAfterSheetDelay(true);
+    }, WORD_DETAIL_DEFAULT_CHROME_DELAY_MS);
+    return () => window.clearTimeout(id);
+  }, [wordDetailSheetOpen]);
+
+  /**
+   * Default play / menu row when no word selected, or after word-detail sheet delay in page mode.
+   * In video mode (inline lesson + video bar), the strip hides after the delay but is not replaced
+   * by the default row — there is no separate default menu in that layout.
+   */
+  const showDefaultChrome =
+    !hasWordSelected ||
+    (wordDetailSheetOpen && defaultChromeAfterSheetDelay && mediaMode !== 'video');
+  /** LingQ strip: word selected, and either sheet not open yet or still inside the pre-default delay while sheet is open. */
+  const showActiveSelection =
+    hasWordSelected &&
+    (!wordDetailSheetOpen || !defaultChromeAfterSheetDelay);
+
+  /** Keep default chrome in DOM while morphing out so the pill can transition into the LingQ strip (page mode only). */
+  const renderDefaultChromeLayer =
+    showDefaultChrome || (hasWordSelected && showActiveSelection && mediaMode === 'none');
+  const isDefaultChromeMorphingOut =
+    hasWordSelected && showActiveSelection && mediaMode === 'none' && !showDefaultChrome;
 
   useEffect(() => {
     if (!isActionsExpanded) return;
@@ -109,7 +149,6 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     grammar: onGrammar,
     statistics: onStatistics,
     info: onInfo,
-    refresh: onRefresh,
     settings: onSettings,
   };
 
@@ -117,30 +156,35 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     <div
       className={[
         'reader-bottom-bar',
-        hideBarUnderMediaSheet ? 'reader-bottom-bar--hidden-under-media-sheet' : '',
+        anchorAboveVideoBarPx != null && anchorAboveVideoBarPx > 0 ? 'reader-bottom-bar--above-video-bar' : '',
       ]
         .filter(Boolean)
         .join(' ')}
+      style={
+        anchorAboveVideoBarPx != null && anchorAboveVideoBarPx > 0
+          ? { bottom: anchorAboveVideoBarPx }
+          : undefined
+      }
     >
       <div
-        className={`reader-bottom-bar-inner ${hasWordSelected ? 'reader-bottom-bar-inner--stack' : ''}`}
+        className={`reader-bottom-bar-inner ${showActiveSelection ? 'reader-bottom-bar-inner--stack' : ''}`}
       >
-        {hasWordSelected && (
-          <ActiveSelectionBar
-            selectedWordId={selectedWordId}
-            selectedWordStatus={selectedWordStatus}
-            onSelectedWordStatusChange={onSelectedWordStatusChange!}
-          />
-        )}
-
-        {showDefaultChrome && (
-          <div className="reader-bottom-bar-default-row">
+        {renderDefaultChromeLayer && (
+          <div
+            className={[
+              'reader-bottom-bar-default-row',
+              isDefaultChromeMorphingOut && 'reader-bottom-bar-default-row--morph-out',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-hidden={isDefaultChromeMorphingOut}
+          >
             <div className="reader-bottom-bar-play-area">
               <div
                 className={[
                   'reader-bottom-bar-play-pill',
                   'reader-bottom-bar-play-pill--morph',
-                  isAudioPlaying ? 'reader-bottom-bar-play-pill--playing' : '',
+                  isVideoPlaying ? 'reader-bottom-bar-play-pill--playing' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -149,15 +193,15 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   type="button"
                   className="reader-bottom-bar-play-btn"
                   onClick={() => {
-                    if (isAudioPlaying) {
-                      onAudioTogglePlay?.();
+                    if (isVideoPlaying) {
+                      onToggleVideoPlayback?.();
                     } else {
                       onPlay?.();
                     }
                   }}
-                  aria-label={isAudioPlaying ? 'Pause' : 'Play'}
+                  aria-label={isVideoPlaying ? 'Pause' : 'Play'}
                 >
-                  {isAudioPlaying ? (
+                  {isVideoPlaying ? (
                     <Pause size={24} className="reader-bottom-bar-play-pause-icon" />
                   ) : (
                     <Play size={24} className="reader-bottom-bar-play-pause-icon" />
@@ -168,14 +212,14 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   className={[
                     'reader-bottom-bar-lesson-image-wrap',
                     'reader-bottom-bar-lesson-image-wrap--morph',
-                    isAudioPlaying ? 'reader-bottom-bar-lesson-image-wrap--visible' : '',
+                    isVideoPlaying ? 'reader-bottom-bar-lesson-image-wrap--visible' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  onClick={onAudioOpenExpanded}
-                  aria-label="Open audio player"
-                  tabIndex={isAudioPlaying ? 0 : -1}
-                  aria-hidden={!isAudioPlaying}
+                  onClick={onExpandVideoBar}
+                  aria-label="Open video player"
+                  tabIndex={isVideoPlaying ? 0 : -1}
+                  aria-hidden={!isVideoPlaying}
                 >
                   {lessonImageSrc ? (
                     <img src={lessonImageSrc} alt="" className="reader-bottom-bar-lesson-image" />
@@ -227,8 +271,8 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                 </button>
               </div>
               <div className="reader-bottom-bar-expanded-menu">
-                <div className="reader-bottom-bar-expanded-grid">
-                  {EXPANDED_MENU_ITEMS.map(({ id, label, icon }) => (
+                <div className="reader-bottom-bar-expanded-secondary">
+                  {EXPANDED_SECONDARY_ITEMS.map(({ id, label, icon }) => (
                     <button
                       key={id}
                       type="button"
@@ -241,9 +285,43 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                     </button>
                   ))}
                 </div>
+                <div className="reader-bottom-bar-expanded-divider" role="separator" aria-hidden="true" />
+                <div className="reader-bottom-bar-expanded-primary">
+                  <button
+                    type="button"
+                    className="reader-bottom-bar-expanded-item reader-bottom-bar-expanded-item--primary-refresh"
+                    onClick={() => onRefresh?.()}
+                    aria-label="Refresh"
+                  >
+                    <span className="reader-bottom-bar-expanded-icon reader-bottom-bar-expanded-icon--primary-refresh">
+                      <RefreshCw size={20} />
+                    </span>
+                    <span className="reader-bottom-bar-expanded-label">Refresh</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="reader-bottom-bar-expanded-item reader-bottom-bar-expanded-item--primary-exit"
+                    onClick={() => onExit?.()}
+                    aria-label="Exit"
+                  >
+                    <span className="reader-bottom-bar-expanded-icon reader-bottom-bar-expanded-icon--primary-exit">
+                      <LogOut size={20} />
+                    </span>
+                    <span className="reader-bottom-bar-expanded-label">Exit</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        )}
+
+        {showActiveSelection && (
+          <ActiveSelectionBar
+            key={selectedWordId ?? 'selection'}
+            selectedWordId={selectedWordId}
+            selectedWordStatus={selectedWordStatus}
+            onSelectedWordStatusChange={onSelectedWordStatusChange!}
+          />
         )}
       </div>
     </div>
