@@ -469,10 +469,9 @@ export const Reader: React.FC = () => {
   const lingqStripAnchorAboveVideoBarPx =
     isVideoModeOpen && selectedWordId != null ? effectiveVideoChromePx : undefined;
 
-  /** Top of video bar from viewport bottom — drives fixed text fade (LingQ strip overlays text, not included) */
+  /** `--reader-video-top-stack` positions the top lesson fade below the fixed video slot. */
   const readerRootStyle: React.CSSProperties | undefined = isVideoModeOpen
     ? ({
-        '--reader-video-chrome-stack': `${effectiveVideoChromePx}px`,
         '--reader-video-top-stack': `${videoTopSlotHeightPx > 0 ? videoTopSlotHeightPx : videoTopStackFallbackPx}px`,
       } as React.CSSProperties)
     : undefined;
@@ -570,7 +569,6 @@ export const Reader: React.FC = () => {
             />
           )}
           {isVideoModeOpen && <div className="reader-video-text-fade--top" aria-hidden />}
-          {isVideoModeOpen && <div className="reader-video-text-fade" aria-hidden />}
           {isPageMode && (
             <div className="reader-progress-container">
               <div
