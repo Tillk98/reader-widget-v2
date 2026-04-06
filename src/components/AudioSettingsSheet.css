@@ -32,7 +32,8 @@
   bottom: 0;
   display: flex;
   justify-content: center;
-  padding: 0;
+  /* Match .audio-mini-player / lesson chrome: horizontal inset on narrow viewports */
+  padding: 0 20px;
   /* Match ReaderBottomBar: inset above home indicator, not flush to screen edge */
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
