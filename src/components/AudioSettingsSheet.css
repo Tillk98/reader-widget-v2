@@ -1,0 +1,251 @@
+/* Audio settings bottom sheet — Figma Reader 2561:2634 */
+
+.audio-settings-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+}
+
+.audio-settings-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.4);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: audio-settings-backdrop-in 0.28s ease both;
+}
+
+.audio-settings-sheet__backdrop:focus-visible {
+  outline: none;
+}
+
+.audio-settings-sheet__panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  /* Match ReaderBottomBar: inset above home indicator, not flush to screen edge */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  pointer-events: none;
+  animation: audio-settings-panel-in 0.36s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+.audio-settings-sheet__card {
+  pointer-events: auto;
+  width: 100%;
+  padding: 0 16px 24px;
+  box-sizing: border-box;
+}
+
+.audio-settings-sheet__card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+}
+
+.audio-settings-sheet__drag-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.audio-settings-sheet__drag-area:active {
+  cursor: grabbing;
+}
+
+.audio-settings-sheet__drag-bar {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: #c5c9ce;
+}
+
+.audio-settings-sheet__header {
+  display: flex;
+  align-items: center;
+  padding: 0 16px 0;
+}
+
+.audio-settings-sheet__title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 22px;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.audio-settings-sheet__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.audio-settings-sheet__row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 54px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--ui-ctrl-border-light);
+  border-radius: var(--ui-ctrl-radius-md);
+  background: var(--ui-ctrl-surface-muted);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  box-shadow: var(--ui-ctrl-shadow);
+  transition: var(--ui-ctrl-transition);
+}
+
+.audio-settings-sheet__row:hover {
+  background: var(--ui-ctrl-surface-hover);
+  box-shadow: var(--ui-ctrl-shadow-hover);
+}
+
+.audio-settings-sheet__row:active {
+  transform: var(--ui-ctrl-press);
+}
+
+.audio-settings-sheet__row:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.audio-settings-sheet__row--repeat {
+  cursor: default;
+}
+
+.audio-settings-sheet__row--repeat:hover {
+  background: var(--ui-ctrl-surface-muted);
+}
+
+.audio-settings-sheet__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  color: #1a1a1a;
+}
+
+.audio-settings-sheet__row-icon {
+  flex-shrink: 0;
+  color: #1a1a1a;
+}
+
+.audio-settings-sheet__value {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.audio-settings-sheet__row--repeat .audio-settings-sheet__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.audio-settings-sheet__segments {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: var(--ui-ctrl-radius-pill);
+  background: var(--ui-ctrl-surface-muted);
+  border: 1px solid var(--ui-ctrl-border-light);
+  box-shadow: var(--ui-ctrl-shadow);
+}
+
+.audio-settings-sheet__segment {
+  border: none;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: var(--ui-ctrl-radius-pill);
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6d7680;
+  cursor: pointer;
+  transition: var(--ui-ctrl-transition);
+}
+
+.audio-settings-sheet__segment:hover {
+  color: #1a1a1a;
+}
+
+.audio-settings-sheet__segment:active {
+  transform: var(--ui-ctrl-press);
+}
+
+.audio-settings-sheet__segment:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.audio-settings-sheet__segment--active {
+  background: var(--ui-ctrl-surface);
+  color: #1a1a1a;
+  box-shadow: var(--ui-ctrl-shadow);
+}
+
+@keyframes audio-settings-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes audio-settings-panel-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audio-settings-sheet__backdrop,
+  .audio-settings-sheet__panel {
+    animation: none !important;
+  }
+}

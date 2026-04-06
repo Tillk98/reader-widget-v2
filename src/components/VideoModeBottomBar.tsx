@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef, useLayoutEffect } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { AudioLines, ChevronDown, Pause, Play } from 'lucide-react';
 import playerBack from '../assets/player-back.png';
 import playerForward from '../assets/player-forward.png';
-import playerRepeat from '../assets/player-repeat.png';
 import './VideoModeBottomBar.css';
 
 const DRAG_THRESHOLD_PX = 40;
@@ -26,11 +25,14 @@ export interface VideoModeBottomBarProps {
   playbackProgress?: number;
   onSkipBack?: () => void;
   onSkipForward?: () => void;
-  onRepeat?: () => void;
-  onCyclePlaybackSpeed?: () => void;
-  playbackSpeedLabel?: string;
   /** Collapsed only: drag down past threshold to leave video mode and return to default reader. */
   onExitVideoMode?: () => void;
+  /** Expanded: X (or equivalent) — minimize / exit to page (audio returns to mini player). */
+  onDismiss?: () => void;
+  /** Lesson type — expanded chrome matches Figma audio vs video. */
+  lessonMedia?: 'video' | 'audio';
+  /** Optional: waveform / audio details (stub). */
+  onAudioDetails?: () => void;
   /** When true, plays slide-down exit (no View Transitions). Parent should unmount after onExitSlideComplete. */
   exiting?: boolean;
   /** Fired when exit slide animation ends (or immediately if reduced motion). */
@@ -49,10 +51,10 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
   playbackProgress = 0.08,
   onSkipBack,
   onSkipForward,
-  onRepeat,
-  onCyclePlaybackSpeed,
-  playbackSpeedLabel = '1x',
   onExitVideoMode,
+  onDismiss,
+  lessonMedia = 'audio',
+  onAudioDetails,
   exiting = false,
   onExitSlideComplete,
 }) => {
@@ -119,6 +121,10 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
 
   const handlePanelPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
+    /* Don't capture the pointer when starting on a control — capture breaks click on chevron / transport. */
+    if (targetIsInteractiveControl(e.target)) {
+      return;
+    }
     dragStartY.current = e.clientY;
     dragStartX.current = e.clientX;
     pointerDownTargetRef.current = e.target;
@@ -199,18 +205,20 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
         role="region"
         aria-label={
           expanded
-            ? 'Audio player — swipe down to collapse, or use controls'
-            : 'Audio player — swipe up to expand, swipe down to leave video mode, or use controls'
+            ? `${lessonMedia === 'video' ? 'Video' : 'Audio'} player — swipe down to collapse, or use controls`
+            : `${lessonMedia === 'video' ? 'Video' : 'Audio'} player — swipe up on the bar to expand, swipe down to leave lesson mode, or use controls`
         }
         onPointerDown={handlePanelPointerDown}
         onPointerUp={handlePanelPointerUp}
         onPointerCancel={handlePanelPointerCancel}
       >
-        <div className="video-mode-bottom-bar__drag" aria-hidden>
-          <span className="video-mode-bottom-bar__drag-bar" />
-        </div>
+        {!expanded && (
+          <div className="video-mode-bottom-bar__drag" aria-hidden>
+            <span className="video-mode-bottom-bar__drag-bar" />
+          </div>
+        )}
 
-        {expanded && (
+        {expanded ? (
           <>
             <div className="video-mode-bottom-bar__scrubber">
               <div className="video-mode-bottom-bar__scrubber-track">
@@ -225,96 +233,93 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
               </div>
             </div>
 
-            <div className="video-mode-bottom-bar__transport-primary" role="group" aria-label="Playback">
+            <div className="video-mode-bottom-bar__media-actions" role="group" aria-label="Playback">
               <button
                 type="button"
                 className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
-                aria-label="Skip back 5 seconds"
-                onClick={() => onSkipBack?.()}
+                aria-label="Audio details"
+                onClick={() => onAudioDetails?.()}
               >
-                <img src={playerBack} alt="" width={20} height={20} />
+                <AudioLines size={18} strokeWidth={2} />
               </button>
-              <button
-                type="button"
-                className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--lg"
-                aria-label={isPaused ? 'Play' : 'Pause'}
-                onClick={onTogglePause}
-              >
-                {isPaused ? <Play size={24} /> : <Pause size={24} />}
-              </button>
+              <div className="video-mode-bottom-bar__media-actions-center">
+                <button
+                  type="button"
+                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                  aria-label="Skip back 5 seconds"
+                  onClick={() => onSkipBack?.()}
+                >
+                  <img src={playerBack} alt="" width={20} height={20} />
+                </button>
+                <button
+                  type="button"
+                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--lg"
+                  aria-label={isPaused ? 'Play' : 'Pause'}
+                  onClick={onTogglePause}
+                >
+                  {isPaused ? <Play size={24} /> : <Pause size={24} />}
+                </button>
+                <button
+                  type="button"
+                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                  aria-label="Skip forward 5 seconds"
+                  onClick={() => onSkipForward?.()}
+                >
+                  <img src={playerForward} alt="" width={20} height={20} />
+                </button>
+              </div>
               <button
                 type="button"
                 className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
-                aria-label="Skip forward 5 seconds"
-                onClick={() => onSkipForward?.()}
+                aria-label="Return to lesson"
+                onClick={() => onDismiss?.()}
               >
-                <img src={playerForward} alt="" width={20} height={20} />
+                <ChevronDown size={18} strokeWidth={2} />
               </button>
             </div>
           </>
-        )}
+        ) : (
+          <>
+            <div className="video-mode-bottom-bar__footer">
+              <div className="video-mode-bottom-bar__meta">
+                <div className="video-mode-bottom-bar__thumb-wrap">
+                  <img src={lessonImageSrc} alt="" className="video-mode-bottom-bar__thumb" />
+                </div>
+                <div className="video-mode-bottom-bar__titles">
+                  <p className="video-mode-bottom-bar__title">{lessonTitle}</p>
+                  {lessonSource ? <p className="video-mode-bottom-bar__source">{lessonSource}</p> : null}
+                </div>
+              </div>
 
-        <div className="video-mode-bottom-bar__footer">
-          <div className="video-mode-bottom-bar__meta">
-            <div className="video-mode-bottom-bar__thumb-wrap">
-              <img src={lessonImageSrc} alt="" className="video-mode-bottom-bar__thumb" />
+              <div className="video-mode-bottom-bar__collapsed-controls" role="group" aria-label="Playback">
+                <button
+                  type="button"
+                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                  aria-label="Skip back 5 seconds"
+                  onClick={() => onSkipBack?.()}
+                >
+                  <img src={playerBack} alt="" width={19} height={19} />
+                </button>
+                <button
+                  type="button"
+                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--lg"
+                  aria-label={isPaused ? 'Play' : 'Pause'}
+                  onClick={onTogglePause}
+                >
+                  {isPaused ? <Play size={24} /> : <Pause size={24} />}
+                </button>
+              </div>
             </div>
-            <div className="video-mode-bottom-bar__titles">
-              <p className="video-mode-bottom-bar__title">{lessonTitle}</p>
-              {lessonSource ? <p className="video-mode-bottom-bar__source">{lessonSource}</p> : null}
-            </div>
-          </div>
 
-          {expanded ? (
-            <div className="video-mode-bottom-bar__secondary-controls" role="group" aria-label="More controls">
-              <button
-                type="button"
-                className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
-                aria-label="Repeat"
-                onClick={() => onRepeat?.()}
-              >
-                <img src={playerRepeat} alt="" width={20} height={20} />
-              </button>
-              <button
-                type="button"
-                className="video-mode-bottom-bar__speed-btn"
-                aria-label="Playback speed"
-                onClick={() => onCyclePlaybackSpeed?.()}
-              >
-                {playbackSpeedLabel}
-              </button>
+            <div className="video-mode-bottom-bar__progress-edge" aria-hidden="true">
+              <div className="video-mode-bottom-bar__progress-track-edge">
+                <div
+                  className="video-mode-bottom-bar__progress-fill-edge"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
             </div>
-          ) : (
-            <div className="video-mode-bottom-bar__collapsed-controls" role="group" aria-label="Playback">
-              <button
-                type="button"
-                className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
-                aria-label="Skip back 5 seconds"
-                onClick={() => onSkipBack?.()}
-              >
-                <img src={playerBack} alt="" width={19} height={19} />
-              </button>
-              <button
-                type="button"
-                className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--lg"
-                aria-label={isPaused ? 'Play' : 'Pause'}
-                onClick={onTogglePause}
-              >
-                {isPaused ? <Play size={24} /> : <Pause size={24} />}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {!expanded && (
-          <div className="video-mode-bottom-bar__progress-edge" aria-hidden="true">
-            <div className="video-mode-bottom-bar__progress-track-edge">
-              <div
-                className="video-mode-bottom-bar__progress-fill-edge"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
+          </>
         )}
       </div>
     </div>

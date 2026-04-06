@@ -90,8 +90,10 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       const bar = document.querySelector('.reader-bottom-bar');
       if (bar && bar.contains(target)) return false;
       const hitEl = hitElement(target);
-      /* Inline video mode bar (sibling of bottom bar): interacting must not clear word selection */
+      /* Inline lesson media bar (sibling of bottom bar): interacting must not clear word selection */
       if (hitEl?.closest('[data-video-mode-bar]')) return false;
+      if (hitEl?.closest('[data-audio-settings-sheet]')) return false;
+      if (hitEl?.closest('[data-audio-mini-player]')) return false;
 
       /* Another lesson word: don't close on mousedown so word-to-word selection
          doesn't briefly clear and re-trigger toolbar expand animation. */
@@ -148,7 +150,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
           )}
         </div>
         <div className="reader-popup-widget-chevron-btn" aria-hidden>
-          <ChevronRight size={18} />
+          <ChevronRight size={16} />
         </div>
       </div>
     </div>

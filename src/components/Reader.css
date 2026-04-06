@@ -5,7 +5,8 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   background-color: #fff;
   --panel-width: clamp(320px, 30vw, 420px);
 }
@@ -125,6 +126,11 @@
     padding-bottom 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Page mode: audio mini sits in the bottom bar slot (single chrome, not stacked). */
+.reader-content.reader-content--audio-mini:not(.reader-content--video-mode) {
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+}
+
 /* Inner shell for lesson layout (page vs video). Intentionally no view-transition-name here:
  * naming this subtree `reader-body` caused WebKit to composite an empty layer during horizontal
  * paging (white flash) while the child .pages-container carried the translate3d transform. */
@@ -191,6 +197,44 @@
     rgba(255, 255, 255, 0.4) 78%,
     rgba(255, 255, 255, 0) 100%
   );
+}
+
+/*
+ * Fixed above the media bar (z-index 48 < bar 50): fades scrolling lesson text into white.
+ * Must overlay the reader column, not live inside VideoModeBottomBar — otherwise padding + stacking
+ * only show a hard edge above the bar.
+ */
+.reader-lesson-fade-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 48;
+  pointer-events: none;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  height: 80px;
+  bottom: calc(var(--reader-lesson-bottom-fade-offset, 132px) + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(
+    to top,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.88) 18%,
+    rgba(255, 255, 255, 0.42) 48%,
+    rgba(255, 255, 255, 0.1) 78%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-lesson-fade-bottom {
+    height: 48px;
+    background: linear-gradient(
+      to top,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0.65) 40%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
 }
 
 /* Soft fade when entering video mode (View Transitions handles the player chrome) */

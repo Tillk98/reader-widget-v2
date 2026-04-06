@@ -1,0 +1,46 @@
+/*
+ * Shared interactive control tokens — icon buttons, pills, glass chrome, chips.
+ * Sizes stay in components; surface, border, shadow, motion are unified.
+ */
+
+:root {
+  --ui-ctrl-duration: 0.18s;
+  --ui-ctrl-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --ui-ctrl-radius-pill: 9999px;
+  --ui-ctrl-radius-md: 10px;
+  --ui-ctrl-radius-sm: 8px;
+  --ui-ctrl-radius-xs: 6px;
+
+  --ui-ctrl-border: rgba(15, 23, 42, 0.1);
+  --ui-ctrl-border-light: rgba(15, 23, 42, 0.07);
+  --ui-ctrl-surface: #ffffff;
+  --ui-ctrl-surface-muted: #f8fafc;
+  --ui-ctrl-surface-hover: #f1f5f9;
+  --ui-ctrl-surface-active: #e8edf3;
+
+  --ui-ctrl-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.06);
+  --ui-ctrl-shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 18px rgba(15, 23, 42, 0.08);
+  --ui-ctrl-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+
+  --ui-ctrl-transition: background var(--ui-ctrl-duration) var(--ui-ctrl-ease),
+    box-shadow var(--ui-ctrl-duration) var(--ui-ctrl-ease),
+    border-color var(--ui-ctrl-duration) var(--ui-ctrl-ease), opacity var(--ui-ctrl-duration) var(--ui-ctrl-ease),
+    transform 0.15s ease;
+
+  --ui-ctrl-press: scale(0.97);
+  --ui-focus-ring: 2px solid #2e75cd;
+
+  /* Frosted bars (reader chrome, video lesson transport) */
+  --ui-glass-bg: rgba(255, 255, 255, 0.76);
+  --ui-glass-bg-hover: rgba(255, 255, 255, 0.9);
+  --ui-glass-border: rgba(255, 255, 255, 0.52);
+  --ui-glass-outline: rgba(15, 23, 42, 0.07);
+  --ui-glass-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 22px rgba(15, 23, 42, 0.08);
+  --ui-glass-blur: blur(18px) saturate(1.12);
+
+  /* Controls on dark video / imagery */
+  --ui-on-media-bg: rgba(255, 255, 255, 0.15);
+  --ui-on-media-bg-hover: rgba(255, 255, 255, 0.26);
+  --ui-on-media-border: rgba(255, 255, 255, 0.3);
+  --ui-on-media-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}

@@ -14,6 +14,8 @@ export interface Lesson {
   sentences: Sentence[];
   hasVideo?: boolean;
   videoUrl?: string;
+  /** Reader bottom bar expanded chevron menu layout (e.g. from backend). */
+  expandedMenuLayout?: 'grid' | 'list';
 }
 
 // Translation map for French words to English
@@ -482,5 +484,6 @@ function parseLesson(text: string): Lesson {
 export const lesson: Lesson = {
   ...parseLesson(lessonText),
   source: 'La statistique expliquée à mon chat',
-  hasVideo: true,
+  hasVideo: false,
+  expandedMenuLayout: 'grid',
 };

@@ -48,12 +48,16 @@
   padding-bottom: 0;
 }
 
+/* Expanded (Figma 2483:7673): no card fill, no shadow — bottom text fade lives in Reader (reader-lesson-fade-bottom) */
 .video-mode-bottom-bar--expanded .video-mode-bottom-bar__inner {
   max-height: 320px;
-  border-radius: 12px 12px 0 0;
+  border-radius: 0;
   gap: 24px;
-  padding: 0 16px 16px;
-  padding-top: 0;
+  padding: 8px 16px 16px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  position: relative;
 }
 
 .video-mode-bottom-bar--collapsed .video-mode-bottom-bar__inner {
@@ -118,7 +122,24 @@
   pointer-events: none;
 }
 
-.video-mode-bottom-bar__transport-primary {
+.video-mode-bottom-bar--expanded .video-mode-bottom-bar__scrubber-thumb {
+  box-shadow: none;
+}
+
+/* Expanded (Figma 2493:2399 / 2493:2481): waveform | skip / play / skip | close */
+.video-mode-bottom-bar__media-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-shrink: 0;
+  padding-bottom: 8px;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.video-mode-bottom-bar__media-actions-center {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -208,7 +229,7 @@
   flex-shrink: 0;
 }
 
-/* Match .reader-bottom-bar-play-pill / .reader-bottom-bar-video-btn (ReaderBottomBar.css) */
+/* Glass icon buttons — tokens align with ReaderBottomBar chrome */
 .video-mode-bottom-bar__round-btn {
   display: flex;
   align-items: center;
@@ -216,23 +237,32 @@
   width: 40px;
   height: 40px;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0px 1px 4px 0px #e3e5e7;
+  border: 1px solid var(--ui-glass-border);
+  border-radius: var(--ui-ctrl-radius-pill);
+  background: var(--ui-glass-bg);
+  box-shadow: var(--ui-glass-shadow), var(--ui-ctrl-shadow-inset);
+  backdrop-filter: var(--ui-glass-blur);
+  -webkit-backdrop-filter: var(--ui-glass-blur);
   color: #1a1a1a;
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  transition: var(--ui-ctrl-transition);
 }
 
 .video-mode-bottom-bar__round-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--ui-glass-bg-hover);
+  box-shadow: var(--ui-ctrl-shadow-hover), var(--ui-ctrl-shadow-inset);
 }
 
 .video-mode-bottom-bar__round-btn:active {
-  transform: scale(0.98);
+  transform: var(--ui-ctrl-press);
+}
+
+.video-mode-bottom-bar--expanded .video-mode-bottom-bar__round-btn {
+  box-shadow: var(--ui-glass-shadow);
+}
+
+.video-mode-bottom-bar--expanded .video-mode-bottom-bar__round-btn:hover {
+  box-shadow: var(--ui-ctrl-shadow-hover);
 }
 
 .video-mode-bottom-bar__round-btn--sm {
@@ -253,27 +283,28 @@
   width: 32px;
   height: 32px;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0px 1px 4px 0px #e3e5e7;
+  border: 1px solid var(--ui-glass-border);
+  border-radius: var(--ui-ctrl-radius-pill);
+  background: var(--ui-glass-bg);
+  box-shadow: var(--ui-glass-shadow), var(--ui-ctrl-shadow-inset);
+  backdrop-filter: var(--ui-glass-blur);
+  -webkit-backdrop-filter: var(--ui-glass-blur);
   font-family: 'DM Sans', sans-serif;
   font-weight: 600;
   font-size: 14px;
   line-height: 18px;
   color: #1a1a1a;
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  transition: var(--ui-ctrl-transition);
 }
 
 .video-mode-bottom-bar__speed-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--ui-glass-bg-hover);
+  box-shadow: var(--ui-ctrl-shadow-hover), var(--ui-ctrl-shadow-inset);
 }
 
 .video-mode-bottom-bar__speed-btn:active {
-  transform: scale(0.98);
+  transform: var(--ui-ctrl-press);
 }
 
 .video-mode-bottom-bar__progress-edge {

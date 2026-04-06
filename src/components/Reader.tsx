@@ -9,11 +9,15 @@ import { VideoModeBottomBar } from './VideoModeBottomBar';
 import { VideoModeVideoPlayer } from './VideoModeVideoPlayer';
 import videoModeThumbnail from '../assets/video-mode-thumbnail.png';
 import lessonImage from '../assets/lesson-image.png';
+import { AudioMiniPlayer } from './AudioMiniPlayer';
+import { AudioSettingsSheet } from './AudioSettingsSheet';
 import { startViewTransition, supportsViewTransition } from '../utils/viewTransition';
 import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
 const SWIPE_THRESHOLD_RATIO = 0.15;
+
+type MediaMode = 'none' | 'video' | 'audio';
 
 interface Page {
   words: Word[];
@@ -39,16 +43,23 @@ export const Reader: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [contentWidthPx, setContentWidthPx] = useState(1);
-  const [mediaMode, setMediaMode] = useState<'none' | 'video'>('none');
+  const [mediaMode, setMediaMode] = useState<MediaMode>('none');
   const [videoBarExpanded, setVideoBarExpanded] = useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
-  const prevMediaModeRef = useRef<'none' | 'video'>(mediaMode);
+  const prevMediaModeRef = useRef<MediaMode>(mediaMode);
   /** Measured height of fixed VideoModeBottomBar — positions LingQ strip above it. */
   const [videoBarChromeHeightPx, setVideoBarChromeHeightPx] = useState(0);
   /** Measured height of fixed top video slot — offsets scrollable lesson text. */
   const [videoTopSlotHeightPx, setVideoTopSlotHeightPx] = useState(0);
   /** No View Transitions: slide audio bar out before leaving video mode. */
   const [videoBarExitAnimating, setVideoBarExitAnimating] = useState(false);
+  /** Audio-only: floating mini player while still in page mode (no video mini — legal / UX). */
+  const [audioMiniPlayerOpen, setAudioMiniPlayerOpen] = useState(false);
+  /** True while the mini player plays its slide-out + fade; keeps it mounted until complete. */
+  const [audioMiniExitAnimating, setAudioMiniExitAnimating] = useState(false);
+  /** Expanded lesson bar: Audio details sheet (video + audio lesson modes). */
+  const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
+  const [audioSettingsSheetHeightPx, setAudioSettingsSheetHeightPx] = useState(0);
 
   const knownWords = React.useMemo(() => {
     const s = new Set<string>();
@@ -126,8 +137,8 @@ export const Reader: React.FC = () => {
       return;
     }
 
-    /* Video mode: full lesson in one column; vertical scroll — no horizontal pagination. */
-    if (mediaMode === 'video') {
+    /* Video / audio lesson mode: full lesson in one column; vertical scroll — no horizontal pagination. */
+    if (mediaMode === 'video' || mediaMode === 'audio') {
       setPages(allWords.length > 0 ? [{ words: allWords }] : []);
       setCurrentPageIndex(0);
       return;
@@ -344,6 +355,14 @@ export const Reader: React.FC = () => {
           return newSet;
         });
       } else {
+        if (
+          audioMiniPlayerOpen &&
+          mediaMode === 'none' &&
+          lesson.hasVideo !== true &&
+          selectedWordId == null
+        ) {
+          setAudioMiniExitAnimating(true);
+        }
         setSelectedWordId(wordId);
         setWordStatusMap(prev => ({ ...prev, [wordId]: prev[wordId] ?? 'New' }));
         setClickedWords(prev => {
@@ -353,7 +372,7 @@ export const Reader: React.FC = () => {
         });
       }
     },
-    [selectedWordId, knownWords, ignoredWords]
+    [selectedWordId, knownWords, ignoredWords, audioMiniPlayerOpen, mediaMode, lesson.hasVideo]
   );
 
   const getWordById = useCallback((wordId: string): Word | undefined => {
@@ -441,11 +460,22 @@ export const Reader: React.FC = () => {
   const thumbProgress = fillProgress;
 
   const isPageMode = mediaMode === 'none';
-  const isVideoModeOpen = mediaMode === 'video';
+  const isLessonMediaMode = mediaMode === 'video' || mediaMode === 'audio';
+  /** Top slot player + fade + top padding (video lessons only). */
+  const isVideoChrome = mediaMode === 'video';
+
+  /** Audio mini replaces the default bottom bar (not stacked above it). */
+  const showAudioMiniAsBottomBar =
+    (audioMiniPlayerOpen || audioMiniExitAnimating) &&
+    mediaMode === 'none' &&
+    lesson.hasVideo !== true &&
+    (selectedWordId == null || audioMiniExitAnimating);
+
   const contentClassName = [
     'reader-content',
-    isVideoModeOpen && 'reader-content--video-mode',
-    isVideoModeOpen && videoBarExpanded && 'reader-content--video-expanded',
+    isLessonMediaMode && 'reader-content--video-mode',
+    isLessonMediaMode && videoBarExpanded && 'reader-content--video-expanded',
+    showAudioMiniAsBottomBar && 'reader-content--audio-mini',
   ]
     .filter(Boolean)
     .join(' ');
@@ -453,41 +483,62 @@ export const Reader: React.FC = () => {
   const videoChromeFallbackPx = 132;
   const effectiveVideoChromePx =
     videoBarChromeHeightPx > 0 ? videoBarChromeHeightPx : videoChromeFallbackPx;
+  /** Audio settings sheet replaces bar in layout metrics while open. */
+  const effectiveLessonBottomChromePx =
+    audioSettingsOpen && audioSettingsSheetHeightPx > 0
+      ? audioSettingsSheetHeightPx
+      : effectiveVideoChromePx;
   /** Fallback until ResizeObserver measures the video chrome (safe area + card + video). */
   const videoTopStackFallbackPx = 236;
 
-  const readerContentVideoStyle: React.CSSProperties | undefined = isVideoModeOpen
-    ? {
-        paddingBottom: `${effectiveVideoChromePx}px`,
-        paddingTop:
-          videoTopSlotHeightPx > 0
-            ? `${videoTopSlotHeightPx}px`
-            : `${videoTopStackFallbackPx}px`,
-      }
+  const readerContentVideoStyle: React.CSSProperties | undefined = isLessonMediaMode
+    ? isVideoChrome
+      ? {
+          paddingBottom: `${effectiveLessonBottomChromePx}px`,
+          paddingTop:
+            videoTopSlotHeightPx > 0
+              ? `${videoTopSlotHeightPx}px`
+              : `${videoTopStackFallbackPx}px`,
+        }
+      : {
+          paddingBottom: `${effectiveLessonBottomChromePx}px`,
+        }
     : undefined;
 
   const lingqStripAnchorAboveVideoBarPx =
-    isVideoModeOpen && selectedWordId != null ? effectiveVideoChromePx : undefined;
+    isLessonMediaMode && selectedWordId != null ? effectiveLessonBottomChromePx : undefined;
 
-  /** `--reader-video-top-stack` positions the top lesson fade below the fixed video slot. */
-  const readerRootStyle: React.CSSProperties | undefined = isVideoModeOpen
-    ? ({
-        '--reader-video-top-stack': `${videoTopSlotHeightPx > 0 ? videoTopSlotHeightPx : videoTopStackFallbackPx}px`,
-      } as React.CSSProperties)
-    : undefined;
-
-  useEffect(() => {
-    if (mediaMode !== 'video') {
-      setVideoBarExpanded(false);
-      setIsPlaybackPaused(false);
-      setVideoBarChromeHeightPx(0);
-      setVideoTopSlotHeightPx(0);
+  /** CSS vars: top stack for video chrome; bottom offset for lesson text fade above expanded media bar. */
+  const readerRootStyle: React.CSSProperties | undefined = (() => {
+    const vars: Record<string, string> = {};
+    if (isVideoChrome) {
+      vars['--reader-video-top-stack'] = `${videoTopSlotHeightPx > 0 ? videoTopSlotHeightPx : videoTopStackFallbackPx}px`;
     }
-  }, [mediaMode]);
+    if (isLessonMediaMode && videoBarExpanded) {
+      vars['--reader-lesson-bottom-fade-offset'] = `${effectiveLessonBottomChromePx}px`;
+    }
+    return Object.keys(vars).length ? (vars as unknown as React.CSSProperties) : undefined;
+  })();
 
-  /** Leaving video mode: restore default pagination layout and scroll position. */
   useEffect(() => {
-    if (prevMediaModeRef.current === 'video' && mediaMode === 'none') {
+    if (mediaMode !== 'none') return;
+    setVideoBarExpanded(false);
+    setVideoBarChromeHeightPx(0);
+    setVideoTopSlotHeightPx(0);
+    setAudioSettingsOpen(false);
+    if (!audioMiniPlayerOpen) {
+      setIsPlaybackPaused(false);
+    }
+  }, [mediaMode, audioMiniPlayerOpen]);
+
+  useEffect(() => {
+    if (!videoBarExpanded) setAudioSettingsOpen(false);
+  }, [videoBarExpanded]);
+
+  /** Leaving lesson media mode: restore default pagination layout and scroll position. */
+  useEffect(() => {
+    const prev = prevMediaModeRef.current;
+    if ((prev === 'video' || prev === 'audio') && mediaMode === 'none') {
       setCurrentPageIndex(0);
       const el = contentRef.current;
       if (el) el.scrollTop = 0;
@@ -495,47 +546,110 @@ export const Reader: React.FC = () => {
     prevMediaModeRef.current = mediaMode;
   }, [mediaMode]);
 
-  /** Pause / resume playback while staying in video mode (ReaderBottomBar mini controls when word selected). */
+  /** Pause / resume playback (lesson bar, mini player, ReaderBottomBar when word selected). */
   const handlePlaybackPauseToggle = useCallback(() => {
     setIsPlaybackPaused(p => !p);
   }, []);
 
-  /** Enter video mode from the default bottom bar play control. */
-  const handleEnterVideoMode = useCallback(() => {
+  /** Default Play: video → full expanded lesson mode; audio → mini player (or resume). */
+  const handleDefaultPlay = useCallback(() => {
+    if (lesson.hasVideo === true) {
     startViewTransition(() => {
       setMediaMode('video');
       setIsPlaybackPaused(false);
-      setVideoBarExpanded(false);
+      setVideoBarExpanded(true);
+      setAudioMiniPlayerOpen(false);
+      setAudioMiniExitAnimating(false);
+    });
+      return;
+    }
+    if (audioMiniPlayerOpen) {
+      setIsPlaybackPaused(false);
+      return;
+    }
+    startViewTransition(() => {
+      setAudioMiniPlayerOpen(true);
+      setAudioMiniExitAnimating(false);
+      setIsPlaybackPaused(false);
+    });
+  }, [lesson.hasVideo, audioMiniPlayerOpen]);
+
+  const handleExpandFromAudioMini = useCallback(() => {
+    startViewTransition(() => {
+      setAudioMiniPlayerOpen(false);
+      setAudioMiniExitAnimating(false);
+      setMediaMode('audio');
+      setVideoBarExpanded(true);
+      setIsPlaybackPaused(false);
+    });
+  }, []);
+
+  const handleAudioMiniExitAnimationComplete = useCallback(() => {
+    setAudioMiniPlayerOpen(false);
+    setAudioMiniExitAnimating(false);
+  }, []);
+
+  const handleDismissAudioMini = useCallback(() => {
+    setAudioMiniExitAnimating(true);
+    setIsPlaybackPaused(true);
+  }, []);
+
+  /** YouTube: always full video lesson mode (expanded bar + top player). */
+  const handleEnterVideoModeFromChrome = useCallback(() => {
+    startViewTransition(() => {
+      setMediaMode('video');
+      setIsPlaybackPaused(false);
+      setVideoBarExpanded(true);
+      setAudioMiniPlayerOpen(false);
+      setAudioMiniExitAnimating(false);
     });
   }, []);
 
   const handleVideoBarExitSlideComplete = useCallback(() => {
     setMediaMode('none');
     setVideoBarExitAnimating(false);
-  }, []);
+    if (lesson.hasVideo !== true) {
+      setAudioMiniPlayerOpen(true);
+      setAudioMiniExitAnimating(false);
+    } else {
+      setAudioMiniPlayerOpen(false);
+      setAudioMiniExitAnimating(false);
+    }
+  }, [lesson.hasVideo]);
 
-  const handleExitVideoMode = useCallback(() => {
+  /** Exit expanded lesson mode: audio → page + mini player; video → page only (no mini). */
+  const handleExitLessonMedia = useCallback(() => {
+    const resumeMini = lesson.hasVideo !== true;
     if (supportsViewTransition()) {
-      startViewTransition(() => setMediaMode('none'));
+      startViewTransition(() => {
+        setMediaMode('none');
+        if (resumeMini) {
+          setAudioMiniPlayerOpen(true);
+          setAudioMiniExitAnimating(false);
+        } else {
+          setAudioMiniPlayerOpen(false);
+          setAudioMiniExitAnimating(false);
+        }
+      });
       return;
     }
     setVideoBarExitAnimating(true);
-  }, []);
+  }, [lesson.hasVideo]);
 
-  /** Exit video mode (Escape matches sheet-dismiss habit). */
+  /** Exit lesson media mode (Escape matches sheet-dismiss habit). */
   useEffect(() => {
-    if (mediaMode !== 'video') return;
+    if (mediaMode !== 'video' && mediaMode !== 'audio') return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        handleExitVideoMode();
+        handleExitLessonMedia();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [mediaMode, handleExitVideoMode]);
+  }, [mediaMode, handleExitLessonMedia]);
 
   useEffect(() => {
-    if (mediaMode !== 'video') return;
+    if (mediaMode !== 'video' && mediaMode !== 'audio') return;
     const el = contentRef.current;
     if (el) el.scrollTop = 0;
   }, [mediaMode]);
@@ -544,8 +658,8 @@ export const Reader: React.FC = () => {
     <div
       className={[
         'reader',
-        isVideoModeOpen && 'reader--video-mode',
-        isVideoModeOpen && videoBarExpanded && 'reader--video-mode-expanded',
+        isLessonMediaMode && 'reader--video-mode',
+        isLessonMediaMode && videoBarExpanded && 'reader--video-mode-expanded',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -556,7 +670,7 @@ export const Reader: React.FC = () => {
         <div className="reader-loading">Loading...</div>
       ) : (
         <>
-          {isVideoModeOpen && (
+          {isVideoChrome && (
             <VideoModeVideoPlayer
               lessonTitle={lesson.title}
               lessonSource={lesson.source ?? ''}
@@ -568,7 +682,7 @@ export const Reader: React.FC = () => {
               onSlotHeightChange={setVideoTopSlotHeightPx}
             />
           )}
-          {isVideoModeOpen && <div className="reader-video-text-fade--top" aria-hidden />}
+          {isVideoChrome && <div className="reader-video-text-fade--top" aria-hidden />}
           {isPageMode && (
             <div className="reader-progress-container">
               <div
@@ -601,7 +715,7 @@ export const Reader: React.FC = () => {
             onPointerCancel={isPageMode ? handlePointerCancel : undefined}
           >
             <div className="reader-body-vt">
-              {isVideoModeOpen ? (
+              {isLessonMediaMode ? (
                 <div className="reader-video-scroll">
                   <PageComponent
                     words={allWords}
@@ -641,12 +755,17 @@ export const Reader: React.FC = () => {
               )}
             </div>
           </div>
-          {isVideoModeOpen && (
+          {isLessonMediaMode && videoBarExpanded && (
+            <div className="reader-lesson-fade-bottom" aria-hidden />
+          )}
+          {isLessonMediaMode && (
             <VideoModeBottomBar
               onChromeHeightChange={setVideoBarChromeHeightPx}
               expanded={videoBarExpanded}
               onExpandedChange={setVideoBarExpanded}
-              onExitVideoMode={handleExitVideoMode}
+              onExitVideoMode={handleExitLessonMedia}
+              onDismiss={handleExitLessonMedia}
+              lessonMedia={mediaMode === 'video' ? 'video' : 'audio'}
               exiting={videoBarExitAnimating}
               onExitSlideComplete={handleVideoBarExitSlideComplete}
               lessonTitle={lesson.title}
@@ -654,8 +773,14 @@ export const Reader: React.FC = () => {
               lessonImageSrc={lessonImage}
               isPaused={isPlaybackPaused}
               onTogglePause={handlePlaybackPauseToggle}
+              onAudioDetails={() => setAudioSettingsOpen(true)}
             />
           )}
+          <AudioSettingsSheet
+            open={audioSettingsOpen && isLessonMediaMode && videoBarExpanded}
+            onClose={() => setAudioSettingsOpen(false)}
+            onChromeHeightChange={setAudioSettingsSheetHeightPx}
+          />
           {selectedWordId && selectedWordData && (
             <ReaderPopUp
               key={selectedWordId}
@@ -671,10 +796,14 @@ export const Reader: React.FC = () => {
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
             />
           )}
-          {(mediaMode !== 'video' || selectedWordId != null) && (
+          {(!isLessonMediaMode || selectedWordId != null) && !showAudioMiniAsBottomBar && (
             <ReaderBottomBar
+              expandedMenuLayout={lesson.expandedMenuLayout ?? 'list'}
               mediaMode={mediaMode}
-              isVideoPlaying={mediaMode === 'video' && !isPlaybackPaused}
+              isVideoPlaying={
+                ((mediaMode === 'video' || mediaMode === 'audio') && !isPlaybackPaused) ||
+                (audioMiniPlayerOpen && !isPlaybackPaused)
+              }
               anchorAboveVideoBarPx={lingqStripAnchorAboveVideoBarPx}
               lessonImageSrc={lessonImage}
               wordDetailSheetOpen={wordDetailSheetOpen}
@@ -685,14 +814,32 @@ export const Reader: React.FC = () => {
                   ? status => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
                   : undefined
               }
-              onPlay={handleEnterVideoMode}
+              onPlay={handleDefaultPlay}
               onToggleVideoPlayback={handlePlaybackPauseToggle}
               onExpandVideoBar={() => {
-                setVideoBarExpanded(true);
+                if (lesson.hasVideo !== true && audioMiniPlayerOpen) {
+                  handleExpandFromAudioMini();
+                } else {
+                  setVideoBarExpanded(true);
+                }
               }}
-              hasVideo={false}
-              onVideoMode={handleEnterVideoMode}
+              hasVideo={lesson.hasVideo === true}
+              onVideoMode={handleEnterVideoModeFromChrome}
               onExit={() => {}}
+            />
+          )}
+          {showAudioMiniAsBottomBar && (
+            <AudioMiniPlayer
+              lessonTitle={lesson.title}
+              lessonSource={lesson.source ?? ''}
+              lessonImageSrc={lessonImage}
+              isPaused={isPlaybackPaused}
+              isExiting={audioMiniExitAnimating}
+              onTogglePause={handlePlaybackPauseToggle}
+              onExpand={handleExpandFromAudioMini}
+              onDismiss={handleDismissAudioMini}
+              onExitAnimationComplete={handleAudioMiniExitAnimationComplete}
+              playbackProgress={0.08}
             />
           )}
         </>

@@ -21,7 +21,7 @@ import reviewDefaultIcon from '../assets/review-default.png';
 import './ReaderBottomBar.css';
 
 export interface ReaderBottomBarProps {
-  mediaMode?: 'none' | 'video';
+  mediaMode?: 'none' | 'video' | 'audio';
   isVideoPlaying?: boolean;
   lessonImageSrc?: string;
   selectedWordId?: string | null;
@@ -48,6 +48,8 @@ export interface ReaderBottomBarProps {
   anchorAboveVideoBarPx?: number;
   /** Word detail (meanings) bottom sheet is open — after a short delay the LingQ strip yields to the default row. */
   wordDetailSheetOpen?: boolean;
+  /** Expanded chevron menu: `list` (default) or `grid`. */
+  expandedMenuLayout?: 'grid' | 'list';
 }
 
 /** After the sheet is open, wait this long before swapping the LingQ strip for the default play / menu row. */
@@ -62,6 +64,10 @@ const EXPANDED_SECONDARY_ITEMS: { id: string; label: string; icon: React.ReactNo
   { id: 'info', label: 'Info', icon: <Info size={20} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
+
+/** First six: two full rows of three. Last: Settings — goes in the bottom row with Refresh / Exit (also three across). */
+const EXPANDED_MENU_GRID_MAIN = EXPANDED_SECONDARY_ITEMS.slice(0, 6);
+const EXPANDED_MENU_SETTINGS_ITEM = EXPANDED_SECONDARY_ITEMS[6]!;
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   mediaMode = 'none',
@@ -89,6 +95,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onVideoMode,
   anchorAboveVideoBarPx,
   wordDetailSheetOpen = false,
+  expandedMenuLayout = 'list',
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
   const [defaultChromeAfterSheetDelay, setDefaultChromeAfterSheetDelay] = useState(false);
@@ -109,12 +116,13 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
 
   /**
    * Default play / menu row when no word selected, or after word-detail sheet delay in page mode.
-   * In video mode (inline lesson + video bar), the strip hides after the delay but is not replaced
+   * In video / audio lesson mode (inline lesson + media bar), the strip hides after the delay but is not replaced
    * by the default row — there is no separate default menu in that layout.
    */
+  const isLessonMediaMode = mediaMode === 'video' || mediaMode === 'audio';
   const showDefaultChrome =
     !hasWordSelected ||
-    (wordDetailSheetOpen && defaultChromeAfterSheetDelay && mediaMode !== 'video');
+    (wordDetailSheetOpen && defaultChromeAfterSheetDelay && !isLessonMediaMode);
   /** LingQ strip: word selected, and either sheet not open yet or still inside the pre-default delay while sheet is open. */
   const showActiveSelection =
     hasWordSelected &&
@@ -189,42 +197,45 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   .filter(Boolean)
                   .join(' ')}
               >
-                <button
-                  type="button"
-                  className="reader-bottom-bar-play-btn"
-                  onClick={() => {
-                    if (isVideoPlaying) {
-                      onToggleVideoPlayback?.();
-                    } else {
-                      onPlay?.();
-                    }
-                  }}
-                  aria-label={isVideoPlaying ? 'Pause' : 'Play'}
-                >
-                  {isVideoPlaying ? (
-                    <Pause size={24} className="reader-bottom-bar-play-pause-icon" />
-                  ) : (
-                    <Play size={24} className="reader-bottom-bar-play-pause-icon" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className={[
-                    'reader-bottom-bar-lesson-image-wrap',
-                    'reader-bottom-bar-lesson-image-wrap--morph',
-                    isVideoPlaying ? 'reader-bottom-bar-lesson-image-wrap--visible' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={onExpandVideoBar}
-                  aria-label="Open video player"
-                  tabIndex={isVideoPlaying ? 0 : -1}
-                  aria-hidden={!isVideoPlaying}
-                >
-                  {lessonImageSrc ? (
-                    <img src={lessonImageSrc} alt="" className="reader-bottom-bar-lesson-image" />
-                  ) : null}
-                </button>
+                {/* Inner clips morph animation; outer keeps overflow visible so hover box-shadow is not clipped. */}
+                <div className="reader-bottom-bar-play-pill__morph-inner">
+                  <button
+                    type="button"
+                    className="reader-bottom-bar-play-btn"
+                    onClick={() => {
+                      if (isVideoPlaying) {
+                        onToggleVideoPlayback?.();
+                      } else {
+                        onPlay?.();
+                      }
+                    }}
+                    aria-label={isVideoPlaying ? 'Pause' : 'Play'}
+                  >
+                    {isVideoPlaying ? (
+                      <Pause size={24} className="reader-bottom-bar-play-pause-icon" />
+                    ) : (
+                      <Play size={24} className="reader-bottom-bar-play-pause-icon" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className={[
+                      'reader-bottom-bar-lesson-image-wrap',
+                      'reader-bottom-bar-lesson-image-wrap--morph',
+                      isVideoPlaying ? 'reader-bottom-bar-lesson-image-wrap--visible' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={onExpandVideoBar}
+                    aria-label="Open video player"
+                    tabIndex={isVideoPlaying ? 0 : -1}
+                    aria-hidden={!isVideoPlaying}
+                  >
+                    {lessonImageSrc ? (
+                      <img src={lessonImageSrc} alt="" className="reader-bottom-bar-lesson-image" />
+                    ) : null}
+                  </button>
+                </div>
               </div>
               {hasVideo && (
                 <button
@@ -270,9 +281,22 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   <ChevronsUpDown size={24} />
                 </button>
               </div>
-              <div className="reader-bottom-bar-expanded-menu">
-                <div className="reader-bottom-bar-expanded-secondary">
-                  {EXPANDED_SECONDARY_ITEMS.map(({ id, label, icon }) => (
+              <div
+                className={[
+                  'reader-bottom-bar-expanded-menu',
+                  expandedMenuLayout === 'grid'
+                    ? 'reader-bottom-bar-expanded-menu--grid'
+                    : 'reader-bottom-bar-expanded-menu--list',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <div
+                  className="reader-bottom-bar-expanded-grid"
+                  role="group"
+                  aria-label="Tools"
+                >
+                  {EXPANDED_MENU_GRID_MAIN.map(({ id, label, icon }) => (
                     <button
                       key={id}
                       type="button"
@@ -286,25 +310,38 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   ))}
                 </div>
                 <div className="reader-bottom-bar-expanded-divider" role="separator" aria-hidden="true" />
-                <div className="reader-bottom-bar-expanded-primary">
+                <div
+                  className="reader-bottom-bar-expanded-grid"
+                  role="group"
+                  aria-label="Settings and session"
+                >
                   <button
                     type="button"
-                    className="reader-bottom-bar-expanded-item reader-bottom-bar-expanded-item--primary-refresh"
+                    className="reader-bottom-bar-expanded-item"
+                    onClick={() => expandedHandlers.settings?.()}
+                    aria-label={EXPANDED_MENU_SETTINGS_ITEM.label}
+                  >
+                    <span className="reader-bottom-bar-expanded-icon">{EXPANDED_MENU_SETTINGS_ITEM.icon}</span>
+                    <span className="reader-bottom-bar-expanded-label">{EXPANDED_MENU_SETTINGS_ITEM.label}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="reader-bottom-bar-expanded-item"
                     onClick={() => onRefresh?.()}
                     aria-label="Refresh"
                   >
-                    <span className="reader-bottom-bar-expanded-icon reader-bottom-bar-expanded-icon--primary-refresh">
+                    <span className="reader-bottom-bar-expanded-icon">
                       <RefreshCw size={20} />
                     </span>
                     <span className="reader-bottom-bar-expanded-label">Refresh</span>
                   </button>
                   <button
                     type="button"
-                    className="reader-bottom-bar-expanded-item reader-bottom-bar-expanded-item--primary-exit"
+                    className="reader-bottom-bar-expanded-item"
                     onClick={() => onExit?.()}
                     aria-label="Exit"
                   >
-                    <span className="reader-bottom-bar-expanded-icon reader-bottom-bar-expanded-icon--primary-exit">
+                    <span className="reader-bottom-bar-expanded-icon">
                       <LogOut size={20} />
                     </span>
                     <span className="reader-bottom-bar-expanded-label">Exit</span>
