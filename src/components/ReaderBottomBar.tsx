@@ -5,7 +5,6 @@ import {
   Youtube,
   FileText,
   ChevronsUpDown,
-  Bot,
   PictureInPicture,
   CaseSensitive,
   ChartColumn,
@@ -17,6 +16,7 @@ import {
 import type { LingQStatusType } from './LingQStatusBar';
 import { ActiveSelectionBar } from './ActiveSelectionBar';
 import sentenceDefaultIcon from '../assets/sentence-default.png';
+import lynxDefaultIcon from '../assets/lynx-default.png';
 import reviewDefaultIcon from '../assets/review-default.png';
 import './ReaderBottomBar.css';
 
@@ -56,7 +56,11 @@ export interface ReaderBottomBarProps {
 const WORD_DETAIL_DEFAULT_CHROME_DELAY_MS = 1000;
 
 const EXPANDED_SECONDARY_ITEMS: { id: string; label: string; icon: React.ReactNode }[] = [
-  { id: 'lynx', label: 'Lynx AI', icon: <Bot size={20} /> },
+  {
+    id: 'review',
+    label: 'Review',
+    icon: <img src={reviewDefaultIcon} alt="" className="reader-bottom-bar-expanded-tool-img" />,
+  },
   { id: 'simplify', label: 'Simplify', icon: <PictureInPicture size={20} /> },
   { id: 'theme', label: 'Theme', icon: <CaseSensitive size={20} /> },
   { id: 'grammar', label: 'Grammar', icon: <FileText size={20} /> },
@@ -65,7 +69,7 @@ const EXPANDED_SECONDARY_ITEMS: { id: string; label: string; icon: React.ReactNo
   { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
 
-/** First six: two full rows of three. Last: Settings — goes in the bottom row with Refresh / Exit (also three across). */
+/** First six: Review … Info (3-column grid). Settings sits with Refresh / Exit in the next group. */
 const EXPANDED_MENU_GRID_MAIN = EXPANDED_SECONDARY_ITEMS.slice(0, 6);
 const EXPANDED_MENU_SETTINGS_ITEM = EXPANDED_SECONDARY_ITEMS[6]!;
 
@@ -151,7 +155,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   };
 
   const expandedHandlers: Record<string, (() => void) | undefined> = {
-    lynx: onLynxAI,
+    review: onReview,
     simplify: onSimplify,
     theme: onTheme,
     grammar: onGrammar,
@@ -266,10 +270,10 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                 <button
                   type="button"
                   className="reader-bottom-bar-menu-btn"
-                  onClick={onReview}
-                  aria-label="Review"
+                  onClick={onLynxAI}
+                  aria-label="Lynx AI"
                 >
-                  <img src={reviewDefaultIcon} alt="" className="reader-bottom-bar-custom-icon" />
+                  <img src={lynxDefaultIcon} alt="" className="reader-bottom-bar-custom-icon" />
                 </button>
                 <button
                   type="button"

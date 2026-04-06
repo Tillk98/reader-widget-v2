@@ -453,6 +453,20 @@
   display: block;
 }
 
+.reader-bottom-bar-expanded-menu--grid .reader-bottom-bar-expanded-icon .reader-bottom-bar-expanded-tool-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+.reader-bottom-bar-expanded-menu--list .reader-bottom-bar-expanded-icon .reader-bottom-bar-expanded-tool-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+}
+
 @media (max-width: 480px) {
   .reader-bottom-bar-expanded-menu--grid .reader-bottom-bar-expanded-grid {
     gap: 10px 8px;
@@ -1013,6 +1027,11 @@
   }
 
   .reader-bottom-bar-expanded-menu--grid .reader-bottom-bar-expanded-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .reader-bottom-bar-expanded-menu--grid .reader-bottom-bar-expanded-icon .reader-bottom-bar-expanded-tool-img {
     width: 18px;
     height: 18px;
   }
