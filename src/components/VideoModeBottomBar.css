@@ -126,6 +126,21 @@
   box-shadow: none;
 }
 
+/* Expanded playback time labels (Figma 3187:4792) */
+.video-mode-bottom-bar__playback-time {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6d7680;
+}
+
 /* Expanded (Figma 2493:2399 / 2493:2481): waveform | skip / play / skip | close */
 .video-mode-bottom-bar__media-actions {
   display: flex;
@@ -274,6 +289,12 @@
 .video-mode-bottom-bar__round-btn--lg {
   width: 40px;
   height: 40px;
+}
+
+.video-mode-bottom-bar__round-btn--xl {
+  width: 56px;
+  height: 56px;
+  padding: 14px;
 }
 
 .video-mode-bottom-bar__speed-btn {

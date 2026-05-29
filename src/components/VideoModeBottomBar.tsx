@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useLayoutEffect } from 'react';
-import { AudioLines, ChevronDown, Pause, Play } from 'lucide-react';
+import { Menu, ChevronDown, Pause, Play } from 'lucide-react';
 import playerBack from '../assets/player-back.png';
 import playerForward from '../assets/player-forward.png';
 import './VideoModeBottomBar.css';
@@ -23,6 +23,9 @@ export interface VideoModeBottomBarProps {
   onTogglePause: () => void;
   /** 0–1 playback position (stub until real media engine). */
   playbackProgress?: number;
+  /** Expanded scrubber time labels (stub until real media engine). */
+  currentTimeLabel?: string;
+  durationLabel?: string;
   onSkipBack?: () => void;
   onSkipForward?: () => void;
   /** Collapsed only: drag down past threshold to leave video mode and return to default reader. */
@@ -49,6 +52,8 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
   isPaused,
   onTogglePause,
   playbackProgress = 0.08,
+  currentTimeLabel = '0:00',
+  durationLabel = '11:00',
   onSkipBack,
   onSkipForward,
   onExitVideoMode,
@@ -231,16 +236,20 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
                   style={{ left: `${progressPct}%` }}
                 />
               </div>
+              <div className="video-mode-bottom-bar__playback-time">
+                <span>{currentTimeLabel}</span>
+                <span>{durationLabel}</span>
+              </div>
             </div>
 
             <div className="video-mode-bottom-bar__media-actions" role="group" aria-label="Playback">
               <button
                 type="button"
                 className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
-                aria-label="Audio details"
+                aria-label="Audio controls menu"
                 onClick={() => onAudioDetails?.()}
               >
-                <AudioLines size={18} strokeWidth={2} />
+                <Menu size={20} strokeWidth={2} />
               </button>
               <div className="video-mode-bottom-bar__media-actions-center">
                 <button
@@ -253,11 +262,11 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--lg"
+                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--xl"
                   aria-label={isPaused ? 'Play' : 'Pause'}
                   onClick={onTogglePause}
                 >
-                  {isPaused ? <Play size={24} /> : <Pause size={24} />}
+                  {isPaused ? <Play size={28} /> : <Pause size={28} />}
                 </button>
                 <button
                   type="button"
