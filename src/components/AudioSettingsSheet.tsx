@@ -1,16 +1,21 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Moon, Play, Repeat2 } from 'lucide-react';
+import { StepForward, Rabbit, Timer, Repeat2, Settings, ChevronsUpDown, ChevronRight } from 'lucide-react';
+import lynxIcon from '../assets/lynx-default.png';
 import './AudioSettingsSheet.css';
 
 const DRAG_DISMISS_PX = 40;
+const ICON_STROKE = 2;
 
-const PLAYBACK_SPEEDS = ['0.75x', '1x', '1.25x', '1.5x', '2x'] as const;
-const SLEEP_TIMER_LABELS = ['Off', '5 min', '10 min', '30 min'] as const;
-export type RepeatMode = 'off' | 'lesson' | 'sentence';
+const PLAYBACK_SPEEDS = ['0.5x', '0.75x', '1.0x', '1.25x', '1.5x', '2.0x'] as const;
+const TIMER_LABELS = ['Off', '5 min', '10 min', '30 min'] as const;
+const LOOP_LABELS = ['Off', 'Lesson', 'Sentence'] as const;
 
 export interface AudioSettingsSheetProps {
   open: boolean;
   onClose: () => void;
+  lessonTitle?: string;
+  lessonSource?: string;
+  lessonImageSrc?: string;
   /** Fixed bottom chrome for lesson layout / LingQ (sheet + safe area). */
   onChromeHeightChange?: (heightPx: number) => void;
 }
@@ -18,14 +23,18 @@ export interface AudioSettingsSheetProps {
 export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
   open,
   onClose,
+  lessonTitle,
+  lessonSource,
+  lessonImageSrc,
   onChromeHeightChange,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const dragY0 = useRef<number | null>(null);
 
-  const [playbackSpeedIndex, setPlaybackSpeedIndex] = useState(1);
-  const [sleepTimerIndex, setSleepTimerIndex] = useState(0);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
+  const [autoAdvance, setAutoAdvance] = useState(true);
+  const [playbackSpeedIndex, setPlaybackSpeedIndex] = useState(2);
+  const [timerIndex, setTimerIndex] = useState(0);
+  const [loopIndex, setLoopIndex] = useState(0);
 
   useLayoutEffect(() => {
     if (!onChromeHeightChange) return;
@@ -60,8 +69,12 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
     setPlaybackSpeedIndex(i => (i + 1) % PLAYBACK_SPEEDS.length);
   }, []);
 
-  const cycleSleepTimer = useCallback(() => {
-    setSleepTimerIndex(i => (i + 1) % SLEEP_TIMER_LABELS.length);
+  const cycleTimer = useCallback(() => {
+    setTimerIndex(i => (i + 1) % TIMER_LABELS.length);
+  }, []);
+
+  const cycleLoop = useCallback(() => {
+    setLoopIndex(i => (i + 1) % LOOP_LABELS.length);
   }, []);
 
   const handleDragPointerDown = useCallback((e: React.PointerEvent) => {
@@ -109,64 +122,98 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
             <span className="audio-settings-sheet__drag-bar" />
           </button>
 
-          <div className="audio-settings-sheet__header">
-            <h2 className="audio-settings-sheet__title">Audio</h2>
-          </div>
+          {(lessonTitle || lessonImageSrc) && (
+            <div className="audio-settings-sheet__lesson">
+              {lessonImageSrc ? (
+                <span className="audio-settings-sheet__lesson-thumb-wrap">
+                  <img src={lessonImageSrc} alt="" className="audio-settings-sheet__lesson-thumb" />
+                </span>
+              ) : null}
+              <span className="audio-settings-sheet__lesson-text">
+                {lessonTitle ? (
+                  <span className="audio-settings-sheet__lesson-title">{lessonTitle}</span>
+                ) : null}
+                {lessonSource ? (
+                  <span className="audio-settings-sheet__lesson-source">{lessonSource}</span>
+                ) : null}
+              </span>
+            </div>
+          )}
 
-          <div className="audio-settings-sheet__content">
-            <button
-              type="button"
-              className="audio-settings-sheet__row"
-              onClick={cyclePlaybackSpeed}
-            >
+          <section className="audio-settings-sheet__section">
+            <p className="audio-settings-sheet__section-header">AUDIO MODE</p>
+
+            <div className="audio-settings-sheet__item">
+              <span className="audio-settings-sheet__label audio-settings-sheet__label--stacked">
+                <StepForward size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
+                <span className="audio-settings-sheet__item-text">
+                  <span className="audio-settings-sheet__item-title">Auto-Advance</span>
+                  <span className="audio-settings-sheet__item-desc">Play without page/sentence breaks.</span>
+                </span>
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={autoAdvance}
+                aria-label="Auto-Advance"
+                className={`audio-settings-sheet__toggle ${autoAdvance ? 'audio-settings-sheet__toggle--on' : ''}`}
+                onClick={() => setAutoAdvance(v => !v)}
+              >
+                <span className="audio-settings-sheet__toggle-knob" />
+              </button>
+            </div>
+
+            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button" onClick={cyclePlaybackSpeed}>
               <span className="audio-settings-sheet__label">
-                <Play className="audio-settings-sheet__row-icon" size={16} strokeWidth={2} aria-hidden />
-                Playback Speed
+                <Rabbit size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
+                <span className="audio-settings-sheet__item-title">Playback Speed</span>
               </span>
               <span className="audio-settings-sheet__value">{PLAYBACK_SPEEDS[playbackSpeedIndex]}</span>
             </button>
 
-            <button type="button" className="audio-settings-sheet__row" onClick={cycleSleepTimer}>
+            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button" onClick={cycleTimer}>
               <span className="audio-settings-sheet__label">
-                <Moon className="audio-settings-sheet__row-icon" size={16} strokeWidth={2} aria-hidden />
-                Sleep Timer
+                <Timer size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
+                <span className="audio-settings-sheet__item-title">Timer</span>
               </span>
-              <span className="audio-settings-sheet__value">{SLEEP_TIMER_LABELS[sleepTimerIndex]}</span>
+              <span className="audio-settings-sheet__value">{TIMER_LABELS[timerIndex]}</span>
             </button>
 
-            <div className="audio-settings-sheet__row audio-settings-sheet__row--repeat">
+            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button" onClick={cycleLoop}>
               <span className="audio-settings-sheet__label">
-                <Repeat2 className="audio-settings-sheet__row-icon" size={16} strokeWidth={2} aria-hidden />
-                Repeat
+                <Repeat2 size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
+                <span className="audio-settings-sheet__item-title">Loop Audio</span>
               </span>
-              <div
-                className="audio-settings-sheet__segments"
-                role="group"
-                aria-label="Repeat mode"
-              >
-                {(
-                  [
-                    { id: 'off' as const, label: 'Off' },
-                    { id: 'lesson' as const, label: 'Lesson' },
-                    { id: 'sentence' as const, label: 'Sentence' },
-                  ] as const
-                ).map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={
-                      repeatMode === id
-                        ? 'audio-settings-sheet__segment audio-settings-sheet__segment--active'
-                        : 'audio-settings-sheet__segment'
-                    }
-                    onClick={() => setRepeatMode(id)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+              <span className="audio-settings-sheet__value audio-settings-sheet__value--select">
+                {LOOP_LABELS[loopIndex]}
+                <ChevronsUpDown size={16} strokeWidth={ICON_STROKE} aria-hidden />
+              </span>
+            </button>
+          </section>
+
+          <div className="audio-settings-sheet__divider" aria-hidden />
+
+          <section className="audio-settings-sheet__section">
+            <p className="audio-settings-sheet__section-header">APP</p>
+
+            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button">
+              <span className="audio-settings-sheet__label">
+                <Settings size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
+                <span className="audio-settings-sheet__item-title">Settings</span>
+              </span>
+            </button>
+
+            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button">
+              <span className="audio-settings-sheet__label">
+                <img src={lynxIcon} alt="" className="audio-settings-sheet__item-icon audio-settings-sheet__item-icon--img" aria-hidden />
+                <span className="audio-settings-sheet__item-title">Help</span>
+              </span>
+              <span className="audio-settings-sheet__value audio-settings-sheet__value--select">
+                Chat with Lynx
+                <ChevronRight size={16} strokeWidth={ICON_STROKE} aria-hidden />
+              </span>
+            </button>
+          </section>
         </div>
       </div>
     </div>

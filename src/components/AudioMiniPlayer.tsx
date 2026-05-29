@@ -1,5 +1,5 @@
 import React, { useRef, useLayoutEffect, useEffect } from 'react';
-import { Pause, Play, X } from 'lucide-react';
+import { Pause, Play, X, Menu } from 'lucide-react';
 import playerBack from '../assets/player-back.png';
 import './AudioMiniPlayer.css';
 
@@ -12,6 +12,8 @@ export interface AudioMiniPlayerProps {
   onSkipBack?: () => void;
   /** Tap lesson row: expand to full audio mode. */
   onExpand: () => void;
+  /** Open the audio controls menu. */
+  onMenu?: () => void;
   onDismiss: () => void;
   /** Parent-driven exit animation (slide down + fade). */
   isExiting?: boolean;
@@ -29,6 +31,7 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
   onTogglePause,
   onSkipBack,
   onExpand,
+  onMenu,
   onDismiss,
   isExiting = false,
   onExitAnimationComplete,
@@ -76,46 +79,50 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
         <div className="audio-mini-player__row">
           <button
             type="button"
+            className="audio-mini-player__icon-btn audio-mini-player__icon-btn--lg"
+            aria-label={isPaused ? 'Play' : 'Pause'}
+            onClick={e => {
+              e.stopPropagation();
+              onTogglePause();
+            }}
+          >
+            {isPaused ? <Play size={24} strokeWidth={2} /> : <Pause size={24} strokeWidth={2} />}
+          </button>
+
+          <button
+            type="button"
             className="audio-mini-player__expand-hit"
             onClick={onExpand}
-            aria-label="Open expanded audio mode"
+            aria-label={`Open expanded audio mode — ${lessonTitle}`}
           >
             <span className="audio-mini-player__thumb-wrap">
               <img src={lessonImageSrc} alt="" className="audio-mini-player__thumb" />
             </span>
-            <span className="audio-mini-player__text">
-              <span className="audio-mini-player__title">{lessonTitle}</span>
-              {lessonSource ? (
-                <span className="audio-mini-player__source">{lessonSource}</span>
-              ) : null}
-            </span>
           </button>
 
           <div className="audio-mini-player__controls">
-            <div className="audio-mini-player__control-group">
-              <button
-                type="button"
-                className="audio-mini-player__icon-btn audio-mini-player__icon-btn--sm"
-                aria-label="Skip back 5 seconds"
-                onClick={e => {
-                  e.stopPropagation();
-                  onSkipBack?.();
-                }}
-              >
-                <img src={playerBack} alt="" width={19} height={19} />
-              </button>
-              <button
-                type="button"
-                className="audio-mini-player__icon-btn audio-mini-player__icon-btn--lg"
-                aria-label={isPaused ? 'Play' : 'Pause'}
-                onClick={e => {
-                  e.stopPropagation();
-                  onTogglePause();
-                }}
-              >
-                {isPaused ? <Play size={24} strokeWidth={2} /> : <Pause size={24} strokeWidth={2} />}
-              </button>
-            </div>
+            <button
+              type="button"
+              className="audio-mini-player__icon-btn audio-mini-player__icon-btn--md"
+              aria-label="Audio controls menu"
+              onClick={e => {
+                e.stopPropagation();
+                onMenu?.();
+              }}
+            >
+              <Menu size={20} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              className="audio-mini-player__icon-btn audio-mini-player__icon-btn--md"
+              aria-label="Skip back 5 seconds"
+              onClick={e => {
+                e.stopPropagation();
+                onSkipBack?.();
+              }}
+            >
+              <img src={playerBack} alt="" width={19} height={19} />
+            </button>
             <button
               type="button"
               className="audio-mini-player__icon-btn audio-mini-player__icon-btn--sm audio-mini-player__dismiss"
@@ -125,7 +132,7 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
                 onDismiss();
               }}
             >
-              <X size={18} strokeWidth={2} />
+              <X size={16} strokeWidth={2} />
             </button>
           </div>
         </div>
