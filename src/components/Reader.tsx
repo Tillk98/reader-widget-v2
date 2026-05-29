@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { X } from 'lucide-react';
 import { lesson } from '../data/lesson';
 import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
 import { ReaderBottomBar } from './ReaderBottomBar';
+import { SentenceMode } from './SentenceMode';
 import { VideoModeBottomBar } from './VideoModeBottomBar';
 import { VideoModeVideoPlayer } from './VideoModeVideoPlayer';
 import videoModeThumbnail from '../assets/video-mode-thumbnail.png';
 import lessonImage from '../assets/lesson-image.png';
+import streakIcon from '../assets/streak-icon.png';
 import { AudioMiniPlayer } from './AudioMiniPlayer';
 import { AudioSettingsSheet } from './AudioSettingsSheet';
 import { startViewTransition, supportsViewTransition } from '../utils/viewTransition';
@@ -44,6 +47,8 @@ export const Reader: React.FC = () => {
   const [dragOffset, setDragOffset] = useState(0);
   const [contentWidthPx, setContentWidthPx] = useState(1);
   const [mediaMode, setMediaMode] = useState<MediaMode>('none');
+  const [sentenceMode, setSentenceMode] = useState(false);
+  const [sentenceIndex, setSentenceIndex] = useState(0);
   const [videoBarExpanded, setVideoBarExpanded] = useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const prevMediaModeRef = useRef<MediaMode>(mediaMode);
@@ -120,7 +125,7 @@ export const Reader: React.FC = () => {
     } else {
       /* Loading shell: .reader-content not mounted yet — approximate with legacy reserves */
       const titleHeight = 80;
-      const topReserved = 32; /* matches .reader-content margin-top (page mode) */
+      const topReserved = 80; /* matches .reader-content margin-top (page mode) */
       const bottomReserved = 64; /* matches .reader-content padding-bottom (page mode) */
       availableHeight =
         readerEl.clientHeight -
@@ -423,10 +428,16 @@ export const Reader: React.FC = () => {
       const rect = e.currentTarget.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const percentage = clickX / rect.width;
+      if (mediaMode === 'none' && sentenceMode) {
+        const count = lesson.sentences.length;
+        const idx = Math.min(Math.max(0, Math.floor(percentage * count)), count - 1);
+        setSentenceIndex(idx);
+        return;
+      }
       const pageIndex = Math.min(Math.max(0, Math.floor(percentage * pages.length)), pages.length - 1);
       setCurrentPageIndex(pageIndex);
     },
-    [pages.length]
+    [pages.length, mediaMode, sentenceMode]
   );
 
   const handleProgressBarMouseMove = useCallback(
@@ -444,13 +455,27 @@ export const Reader: React.FC = () => {
     setHoveredPageIndex(null);
   }, []);
 
+  /** Header close (X): closes the lesson — interaction wired in a later step. */
+  const handleCloseLesson = useCallback(() => {}, []);
+
+  /** Header stats button: opens lesson stats — interaction wired in a later step. */
+  const handleOpenStats = useCallback(() => {}, []);
+
   const pageColumnPx = Math.max(1, contentWidthPx);
   const trackWidthPx = pages.length * pageColumnPx;
   /** Pixel translate: one column = pageColumnPx; dragOffset is pointer delta in px (same as measure). */
   const pageTranslatePx =
     pages.length === 0 ? 0 : -currentPageIndex * pageColumnPx + dragOffset;
 
-  const fillProgress = pages.length > 0 ? Math.min(100, ((currentPageIndex + 1) / pages.length) * 100) : 0;
+  const isSentenceView = mediaMode === 'none' && sentenceMode;
+  const totalSentences = lesson.sentences.length;
+  const fillProgress = isSentenceView
+    ? totalSentences > 0
+      ? Math.min(100, ((sentenceIndex + 1) / totalSentences) * 100)
+      : 0
+    : pages.length > 0
+      ? Math.min(100, ((currentPageIndex + 1) / pages.length) * 100)
+      : 0;
   const thumbProgress = fillProgress;
 
   const isPageMode = mediaMode === 'none';
@@ -470,6 +495,7 @@ export const Reader: React.FC = () => {
     isLessonMediaMode && 'reader-content--video-mode',
     isLessonMediaMode && videoBarExpanded && 'reader-content--video-expanded',
     showAudioMiniAsBottomBar && 'reader-content--audio-mini',
+    isSentenceView && 'reader-content--sentence-mode',
   ]
     .filter(Boolean)
     .join(' ');
@@ -680,37 +706,65 @@ export const Reader: React.FC = () => {
           {isVideoChrome && <div className="reader-video-text-fade--top" aria-hidden />}
           {isPageMode && (
             <div className="reader-progress-container">
-              <div
-                className="reader-progress-bar"
-                onClick={handleProgressBarClick}
-                onMouseMove={handleProgressBarMouseMove}
-                onMouseLeave={handleProgressBarMouseLeave}
+              <button
+                type="button"
+                className="reader-header-button"
+                aria-label="Close lesson"
+                onClick={handleCloseLesson}
               >
-                <div className="reader-progress-fill" style={{ width: `${fillProgress}%` }} />
-                <div className="reader-progress-thumb" style={{ left: `${thumbProgress}%` }} />
-                {hoveredPageIndex !== null && (
-                  <div
-                    className="reader-progress-tooltip"
-                    style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
-                  >
-                    Page {hoveredPageIndex + 1}
-                  </div>
-                )}
+                <X size={24} strokeWidth={2} />
+              </button>
+              <div className="reader-progress-bar-wrap">
+                <div
+                  className="reader-progress-bar"
+                  onClick={handleProgressBarClick}
+                  onMouseMove={handleProgressBarMouseMove}
+                  onMouseLeave={handleProgressBarMouseLeave}
+                >
+                  <div className="reader-progress-fill" style={{ width: `${fillProgress}%` }} />
+                  <div className="reader-progress-thumb" style={{ left: `${thumbProgress}%` }} />
+                  {hoveredPageIndex !== null && (
+                    <div
+                      className="reader-progress-tooltip"
+                      style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
+                    >
+                      Page {hoveredPageIndex + 1}
+                    </div>
+                  )}
+                </div>
               </div>
+              <button
+                type="button"
+                className="reader-header-button"
+                aria-label="Lesson stats"
+                onClick={handleOpenStats}
+              >
+                <img className="reader-header-stats-icon" src={streakIcon} alt="" />
+              </button>
             </div>
           )}
           <div
             className={contentClassName}
             style={readerContentVideoStyle}
             ref={contentRef}
-            onPointerDown={isPageMode ? handlePointerDown : undefined}
-            onPointerMove={isPageMode ? handlePointerMove : undefined}
-            onPointerUp={isPageMode ? e => handlePointerUp(e) : undefined}
-            onPointerLeave={isPageMode ? () => handlePointerUp() : undefined}
-            onPointerCancel={isPageMode ? handlePointerCancel : undefined}
+            onPointerDown={isPageMode && !sentenceMode ? handlePointerDown : undefined}
+            onPointerMove={isPageMode && !sentenceMode ? handlePointerMove : undefined}
+            onPointerUp={isPageMode && !sentenceMode ? e => handlePointerUp(e) : undefined}
+            onPointerLeave={isPageMode && !sentenceMode ? () => handlePointerUp() : undefined}
+            onPointerCancel={isPageMode && !sentenceMode ? handlePointerCancel : undefined}
           >
             <div className="reader-body-vt">
-              {isLessonMediaMode ? (
+              {isSentenceView ? (
+                <SentenceMode
+                  sentences={lesson.sentences}
+                  index={sentenceIndex}
+                  onIndexChange={setSentenceIndex}
+                  wordStatusMap={wordStatusMap}
+                  onWordStatusChange={(wordId, status) =>
+                    setWordStatusMap(prev => ({ ...prev, [wordId]: status }))
+                  }
+                />
+              ) : isLessonMediaMode ? (
                 <div className="reader-video-scroll">
                   <PageComponent
                     words={allWords}
@@ -772,8 +826,14 @@ export const Reader: React.FC = () => {
             />
           )}
           <AudioSettingsSheet
-            open={audioSettingsOpen && isLessonMediaMode && videoBarExpanded}
+            open={
+              audioSettingsOpen &&
+              ((isLessonMediaMode && videoBarExpanded) || showAudioMiniAsBottomBar)
+            }
             onClose={() => setAudioSettingsOpen(false)}
+            lessonTitle={lesson.title}
+            lessonSource={lesson.source ?? ''}
+            lessonImageSrc={lessonImage}
             onChromeHeightChange={setAudioSettingsSheetHeightPx}
           />
           {selectedWordId && selectedWordData && (
@@ -819,6 +879,8 @@ export const Reader: React.FC = () => {
                     }
                   : undefined
               }
+              sentenceModeActive={sentenceMode}
+              onSentence={() => setSentenceMode(v => !v)}
               onPlay={handleDefaultPlay}
               onToggleVideoPlayback={handlePlaybackPauseToggle}
               onExpandVideoBar={() => {
@@ -833,6 +895,8 @@ export const Reader: React.FC = () => {
               onExit={() => {}}
               menuHeaderTitle={lesson.lessonMenuTitle ?? lesson.title}
               menuHeaderSubtitle={lesson.lessonMenuSubtitle}
+              lessonTitle={lesson.title}
+              lessonSource={lesson.source}
               onShowTranslation={() => {}}
               onMenuPreviousLesson={() => {}}
               onMenuNextLesson={() => {}}
@@ -847,6 +911,7 @@ export const Reader: React.FC = () => {
               isExiting={audioMiniExitAnimating}
               onTogglePause={handlePlaybackPauseToggle}
               onExpand={handleExpandFromAudioMini}
+              onMenu={() => setAudioSettingsOpen(true)}
               onDismiss={handleDismissAudioMini}
               onExitAnimationComplete={handleAudioMiniExitAnimationComplete}
               playbackProgress={0.08}

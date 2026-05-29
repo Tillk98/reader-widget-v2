@@ -19,9 +19,13 @@ import {
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ActiveSelectionBar } from './ActiveSelectionBar';
+import { ReaderMenuSheet } from './ReaderMenuSheet';
+import { CourseInfoSheet } from './CourseInfoSheet';
 import sentenceDefaultIcon from '../assets/sentence-default.png';
+import sentenceActiveIcon from '../assets/sentence-active.png';
 import lynxDefaultIcon from '../assets/lynx-default.png';
 import reviewDefaultIcon from '../assets/review-default.png';
+import reviewActiveIcon from '../assets/review-active.png';
 import simplifyDefaultIcon from '../assets/simplify-default.png';
 import './ReaderBottomBar.css';
 
@@ -36,6 +40,8 @@ export interface ReaderBottomBarProps {
   onToggleVideoPlayback?: () => void;
   onExpandVideoBar?: () => void;
   onSentence?: () => void;
+  /** Controlled sentence-mode toggle state. When provided, the sentence button reflects this. */
+  sentenceModeActive?: boolean;
   onReview?: () => void;
   onChevrons?: () => void;
   onLynxAI?: () => void;
@@ -59,6 +65,10 @@ export interface ReaderBottomBarProps {
   menuHeaderTitle?: string;
   /** Expanded list menu subtitle (e.g. lesson progress). */
   menuHeaderSubtitle?: string;
+  /** Reader menu sheet: lesson title / course / position. */
+  lessonTitle?: string;
+  lessonSource?: string;
+  lessonPageLabel?: string;
   onMenuPreviousLesson?: () => void;
   onMenuNextLesson?: () => void;
   onShowTranslation?: () => void;
@@ -101,6 +111,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onToggleVideoPlayback,
   onExpandVideoBar,
   onSentence,
+  sentenceModeActive,
   onReview,
   onChevrons,
   onLynxAI,
@@ -119,13 +130,20 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   expandedMenuLayout = 'list',
   menuHeaderTitle,
   menuHeaderSubtitle,
+  lessonTitle,
+  lessonSource,
+  lessonPageLabel,
   onMenuPreviousLesson,
   onMenuNextLesson,
   onShowTranslation,
   audioMiniActive = false,
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
+  const [menuSheetOpen, setMenuSheetOpen] = useState(false);
+  const [courseInfoOpen, setCourseInfoOpen] = useState(false);
   const [defaultChromeAfterSheetDelay, setDefaultChromeAfterSheetDelay] = useState(false);
+  /** Mutually exclusive reader tool toggle (Figma SentenceActive / ReviewActive states). */
+  const [activeTool, setActiveTool] = useState<'none' | 'review' | 'sentence'>('none');
   const actionsContainerRef = useRef<HTMLDivElement>(null);
 
   const hasWordSelected = selectedWordId != null;
@@ -179,8 +197,25 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   }, [isActionsExpanded]);
 
   const handleChevronClick = () => {
-    setIsActionsExpanded(prev => !prev);
+    setMenuSheetOpen(true);
     onChevrons?.();
+  };
+
+  const handleReviewClick = () => {
+    setActiveTool(prev => (prev === 'review' ? 'none' : 'review'));
+    onReview?.();
+  };
+
+  /** Sentence mode is controlled by the Reader when `sentenceModeActive` is provided. */
+  const sentenceActive = sentenceModeActive ?? activeTool === 'sentence';
+
+  const handleSentenceClick = () => {
+    if (sentenceModeActive === undefined) {
+      setActiveTool(prev => (prev === 'sentence' ? 'none' : 'sentence'));
+    } else if (activeTool === 'sentence') {
+      setActiveTool('none');
+    }
+    onSentence?.();
   };
 
   const expandedHandlers: Record<string, (() => void) | undefined> = {
@@ -290,19 +325,39 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
               <div className="reader-bottom-bar-pill">
                 <button
                   type="button"
-                  className="reader-bottom-bar-menu-btn"
-                  onClick={onSentence}
-                  aria-label="Sentence"
+                  className={[
+                    'reader-bottom-bar-menu-btn',
+                    activeTool === 'review' && 'reader-bottom-bar-menu-btn--active-review',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={handleReviewClick}
+                  aria-label="Review"
+                  aria-pressed={activeTool === 'review'}
                 >
-                  <img src={sentenceDefaultIcon} alt="" className="reader-bottom-bar-custom-icon" />
+                  <img
+                    src={activeTool === 'review' ? reviewActiveIcon : reviewDefaultIcon}
+                    alt=""
+                    className="reader-bottom-bar-custom-icon"
+                  />
                 </button>
                 <button
                   type="button"
-                  className="reader-bottom-bar-menu-btn"
-                  onClick={onLynxAI}
-                  aria-label="Lynx AI"
+                  className={[
+                    'reader-bottom-bar-menu-btn',
+                    sentenceActive && 'reader-bottom-bar-menu-btn--active-sentence',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={handleSentenceClick}
+                  aria-label="Sentence"
+                  aria-pressed={sentenceActive}
                 >
-                  <img src={lynxDefaultIcon} alt="" className="reader-bottom-bar-custom-icon" />
+                  <img
+                    src={sentenceActive ? sentenceActiveIcon : sentenceDefaultIcon}
+                    alt=""
+                    className="reader-bottom-bar-custom-icon"
+                  />
                 </button>
                 <button
                   type="button"
@@ -521,6 +576,14 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                 )}
               </div>
             </div>
+            <button
+              type="button"
+              className="reader-bottom-bar-side-btn"
+              onClick={onLynxAI}
+              aria-label="Lynx AI"
+            >
+              <img src={lynxDefaultIcon} alt="" className="reader-bottom-bar-side-btn-icon" />
+            </button>
           </div>
         )}
 
@@ -530,11 +593,48 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
             selectedWordId={selectedWordId}
             selectedWordStatus={selectedWordStatus}
             onSelectedWordStatusChange={onSelectedWordStatusChange!}
+            onLynx={onLynxAI}
           />
         )}
       </div>
     </div>
   );
 
-  return bar;
+  return (
+    <>
+      {bar}
+      <ReaderMenuSheet
+        open={menuSheetOpen}
+        onClose={() => setMenuSheetOpen(false)}
+        sentenceMode={sentenceActive}
+        lessonTitle={lessonTitle ?? menuHeaderTitle ?? ''}
+        lessonSource={lessonSource}
+        lessonImageSrc={lessonImageSrc}
+        lessonPageLabel={lessonPageLabel}
+        onPreviousLesson={onMenuPreviousLesson}
+        onNextLesson={onMenuNextLesson}
+        onShowTranslationChange={() => onShowTranslation?.()}
+        onRefresh={onRefresh}
+        onTheme={onTheme}
+        onSettings={onSettings}
+        onHelp={onLynxAI}
+        onExpand={() => {
+          // Bring up the full-page sheet first; it rises over the menu and
+          // covers it, so the menu can unmount behind it without a visible
+          // slide-off-screen.
+          setCourseInfoOpen(true);
+          window.setTimeout(() => setMenuSheetOpen(false), 320);
+        }}
+      />
+      <CourseInfoSheet
+        open={courseInfoOpen}
+        onClose={() => setCourseInfoOpen(false)}
+        courseTitle={lessonSource ?? lessonTitle ?? menuHeaderTitle ?? ''}
+        heroImageSrc={lessonImageSrc}
+        lessonImageSrc={lessonImageSrc}
+        lessonCourse={lessonSource ?? ''}
+        lessonTitle={lessonTitle ?? menuHeaderTitle ?? ''}
+      />
+    </>
+  );
 };

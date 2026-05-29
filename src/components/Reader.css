@@ -25,11 +25,11 @@
 }
 
 /*
- * Page progress: same track / fill / thumb as expanded video scrubber, reading green. No card chrome —
- * only padding around the bar.
+ * Reader header (Figma 2804:15981): close button | lesson progress | stats button.
+ * Two white pill buttons flank a centered progress bar.
  */
 .reader-progress-container {
-  --reader-progress-accent: #02a723;
+  --reader-progress-accent: #42a564;
 
   position: fixed;
   top: 0;
@@ -38,10 +38,56 @@
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  padding: 12px 16px;
+  padding: 16px;
   box-sizing: border-box;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
   view-transition-name: reader-progress;
+}
+
+/* White circular pill buttons (close / stats) — Figma ReaderButton 3439:7051. */
+.reader-header-button {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 999px;
+  background-color: #fff;
+  color: #1c1c1e;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.reader-header-button:hover {
+  background-color: #f4f5f6;
+}
+
+.reader-header-button:active {
+  transform: scale(0.94);
+}
+
+.reader-header-stats-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  object-fit: contain;
+}
+
+/* Centered progress fills the space between the two pill buttons. */
+.reader-progress-bar-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
 /* Mirrors .video-mode-bottom-bar__scrubber-track */
@@ -49,8 +95,8 @@
   position: relative;
   width: 100%;
   height: 4px;
-  background-color: #d5d8dc;
-  border-radius: 2px;
+  background-color: #e3e5e7;
+  border-radius: 999px;
   cursor: pointer;
   overflow: visible;
 }
@@ -62,7 +108,7 @@
   left: 0;
   height: 100%;
   background: var(--reader-progress-accent);
-  border-radius: 2px;
+  border-radius: 999px;
   transition: width 0.2s ease;
 }
 
@@ -113,7 +159,7 @@
   min-height: 0;
   overflow: hidden;
   width: 100%;
-  margin-top: 32px; /* Space for fixed progress bar */
+  margin-top: 80px; /* Space for fixed reader header (close | progress | stats) */
   padding-bottom: 64px; /* Space for bottom bar + safe area (tighter than before — more page text) */
   margin-right: 0;
   /* Page mode: pointer-driven paging — pan-x steals horizontal swipes from our transform */
@@ -255,6 +301,19 @@
 
 .reader-content--video-mode.reader-content--video-expanded {
   padding-bottom: 260px;
+}
+
+/* Sentence mode: vertical scroll through the sentence + its vocabulary list. */
+.reader-content--sentence-mode {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+.reader-content--sentence-mode .reader-body-vt {
+  overflow: visible;
 }
 
 .reader-content.panel-open {

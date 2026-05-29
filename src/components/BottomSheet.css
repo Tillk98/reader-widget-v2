@@ -1,0 +1,117 @@
+/* Reusable floating bottom sheet — scrim + rounded card sliding up from the bottom. */
+
+.bottom-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.bottom-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.36);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.bottom-sheet--visible .bottom-sheet__backdrop {
+  opacity: 1;
+}
+
+.bottom-sheet__backdrop:focus-visible {
+  outline: none;
+}
+
+.bottom-sheet__panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  pointer-events: none;
+}
+
+.bottom-sheet__card {
+  pointer-events: auto;
+  width: 100%;
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.18), 0px 0px 4px rgba(209, 214, 217, 0.9);
+  transform: translateY(110%);
+  transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.bottom-sheet--visible .bottom-sheet__card {
+  transform: translateY(0);
+}
+
+.bottom-sheet__card--dragging {
+  transition: none;
+}
+
+/* Whole-card drag (menu sheet): suppress browser touch scrolling/gestures during drag. */
+.bottom-sheet__card--draggable {
+  touch-action: none;
+}
+
+/* Full-page variant: full width, near-full height, rounded top only, flush to bottom. */
+.bottom-sheet--full .bottom-sheet__panel {
+  padding: 0;
+}
+
+.bottom-sheet--full .bottom-sheet__card {
+  height: calc(100dvh - 24px);
+  max-height: calc(100dvh - 24px);
+  border-radius: 12px 12px 0 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bottom-sheet__drag-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+  padding: 12px 16px 6px;
+  box-sizing: border-box;
+  cursor: grab;
+  touch-action: none;
+}
+
+.bottom-sheet__drag-area:active {
+  cursor: grabbing;
+}
+
+.bottom-sheet__drag-bar {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: #d1d6d9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-sheet__backdrop,
+  .bottom-sheet__card {
+    transition: none;
+  }
+}

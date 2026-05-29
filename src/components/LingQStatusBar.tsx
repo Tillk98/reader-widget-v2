@@ -58,8 +58,11 @@ interface LingQStatusBarProps {
   onStatusChange: (status: LingQStatusType) => void;
   /** When true, only the learning statuses (1–4) are shown; Ignored and Known are hidden. Used in bottom bar expanded state. */
   learningOnly?: boolean;
-  /** Word detail bottom sheet: full-width Ignored | 1–4 | Known bar (Figma 2181:47905). */
-  variant?: 'default' | 'sheet';
+  /**
+   * `sheet`  — word detail bottom sheet: sliding-highlight Ignored | 1–4 | Known (Figma 2181:47905).
+   * `segmented` — reader bottom bar word-selected state: per-segment bordered highlight (Figma 2812:55682).
+   */
+  variant?: 'default' | 'sheet' | 'segmented';
 }
 
 export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
@@ -131,6 +134,40 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
   };
+
+  if (variant === 'segmented') {
+    return (
+      <div
+        className="lingq-status-bar lingq-status-bar--segmented"
+        role="group"
+        aria-label="Word status"
+      >
+        {SHEET_SEGMENT_ORDER.map((seg) => {
+          const active = status === seg;
+          const tone =
+            seg === 'Ignored' ? 'ignored' : seg === 'Known' ? 'known' : 'learning';
+          return (
+            <button
+              key={seg}
+              type="button"
+              className={`lingq-status-bar__seg lingq-status-bar__seg--${tone} ${active ? 'lingq-status-bar__seg--active' : ''}`}
+              onClick={() => onStatusChange(seg)}
+              aria-pressed={active}
+              aria-label={LEARNING_LABELS[seg]}
+            >
+              {seg === 'Ignored' ? (
+                <EyeOff size={20} aria-hidden />
+              ) : seg === 'Known' ? (
+                <Check size={20} aria-hidden />
+              ) : (
+                <span>{LEARNING_NUMBERS[seg]}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   if (variant === 'sheet') {
     return (

@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { Volume2, Copy, ArrowUpRight } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import { Play, Copy, ArrowUpRight, ChevronUp } from 'lucide-react';
 
 export type WordDetailSentenceContextEntry = {
   lessonTitle: string;
@@ -24,6 +24,9 @@ function copySentenceClipboardText(entry: WordDetailSentenceContextEntry): strin
 }
 
 export const SentenceBlock: React.FC<SentenceBlockProps> = ({ entry, onAudio, onGoToLesson }) => {
+  /** Current lesson sentence opens expanded; stored sentences start collapsed and expand on click. */
+  const [expanded, setExpanded] = useState(entry.variant === 'current');
+
   const handleCopy = useCallback(async () => {
     const text = copySentenceClipboardText(entry);
     try {
@@ -32,6 +35,21 @@ export const SentenceBlock: React.FC<SentenceBlockProps> = ({ entry, onAudio, on
       // Clipboard may be unavailable (e.g. non-secure context); host can still wire copy.
     }
   }, [entry]);
+
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        className="word-detail-sentence-block word-detail-sentence-block--collapsed"
+        aria-expanded={false}
+        aria-label={`Expand stored sentence: ${entry.originalSentence.trim()}`}
+        onClick={() => setExpanded(true)}
+      >
+        <span className="word-detail-sentence-block__quote-bar" aria-hidden />
+        <span className="word-detail-sentence-block__original-text">{entry.originalSentence}</span>
+      </button>
+    );
+  }
 
   const variantClass =
     entry.variant === 'current'
@@ -54,13 +72,23 @@ export const SentenceBlock: React.FC<SentenceBlockProps> = ({ entry, onAudio, on
         </div>
       </div>
       <div className="word-detail-sentence-block__actions">
+        {entry.variant === 'archived' ? (
+          <button
+            type="button"
+            className="word-detail-sheet-icon-btn"
+            aria-label="Collapse sentence"
+            onClick={() => setExpanded(false)}
+          >
+            <ChevronUp size={18} aria-hidden />
+          </button>
+        ) : null}
         <button
           type="button"
           className="word-detail-sheet-icon-btn"
           aria-label="Play sentence audio"
           onClick={() => onAudio?.(entry)}
         >
-          <Volume2 size={18} aria-hidden />
+          <Play size={18} aria-hidden />
         </button>
         <button type="button" className="word-detail-sheet-icon-btn" aria-label="Copy sentence" onClick={handleCopy}>
           <Copy size={18} aria-hidden />

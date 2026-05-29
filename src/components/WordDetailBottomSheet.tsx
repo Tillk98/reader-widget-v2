@@ -1,15 +1,14 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { Volume2, Plus, Tags, Coins } from 'lucide-react';
+import { Volume2, Plus, Tags, Coins, ChevronDown } from 'lucide-react';
+import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
 import sentenceTabActive from '../assets/sentence-active.png';
 import sentenceTabInactive from '../assets/sentence-inactive.png';
-import explainTabActive from '../assets/explain-this-active.png';
-import explainTabInactive from '../assets/explain-this-inactive.png';
 import dictionariesTabActive from '../assets/dictionaries-active.png';
 import dictionariesTabInactive from '../assets/dictionaries-inactive.png';
-import notesTabActive from '../assets/notes-active.png';
-import notesTabInactive from '../assets/notes-inactive.png';
+import notesTabActive from '../assets/lynx-notes-active.png';
+import notesTabInactive from '../assets/lynx-notes.png';
 import dictionaryGlosbe from '../assets/dictionary-glosbe.png';
 import dictionaryWordReference from '../assets/dictionary-wordreference.png';
 import dictionaryLinguee from '../assets/dictionary-linguee.png';
@@ -19,6 +18,7 @@ import { LingQStatusBar } from './LingQStatusBar';
 import { SentenceBlock } from './SentenceBlock';
 import type { WordDetailSentenceContextEntry } from './SentenceBlock';
 import { LynxMessageActions } from './LynxMessageActions';
+import { NoteField } from './NoteField';
 import './WordDetailBottomSheet.css';
 
 export type { WordDetailSentenceContextEntry } from './SentenceBlock';
@@ -46,8 +46,8 @@ const DEFAULT_SENTENCE_CONTEXTS: WordDetailSentenceContextEntry[] = [
   },
   {
     lessonTitle: 'Felix im Büro',
-    translation: 'Sie rannte durch den Regen und Ihre Frisur war aufgelöst.',
-    originalSentence: 'She ran through the rain and her hair was disheveled. ',
+    translation: 'She ran through the rain and her hair was disheveled.',
+    originalSentence: 'Sie rannte durch den Regen und Ihre Frisur war aufgelöst. ',
     variant: 'archived',
   },
 ];
@@ -154,6 +154,8 @@ export interface WordDetailBottomSheetProps {
   wordNote?: WordDetailWordNote;
   /** Called when the user edits the primary meaning in the header field. */
   onWordTranslationChange?: (value: string) => void;
+  /** Footer Lynx button — opens the Lynx explanation/chat for this word. */
+  onLynx?: () => void;
 }
 
 export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
@@ -178,6 +180,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   dictionaryProviders = DEFAULT_DICTIONARY_PROVIDERS,
   wordNote = DEFAULT_WORD_NOTE,
   onWordTranslationChange,
+  onLynx,
 }) => {
   const handleDragStartYRef = useRef<number | null>(null);
   const onCloseRef = useRef(onClose);
@@ -343,6 +346,15 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     return deriveSavedMeanings(wordTranslation);
   }, [savedMeaningsProp, wordTranslation]);
 
+  /** Saved meanings are now editable input fields (Figma 2806:55446). */
+  const [savedDrafts, setSavedDrafts] = React.useState<string[]>(resolvedSavedMeanings);
+  useEffect(() => {
+    setSavedDrafts(resolvedSavedMeanings);
+  }, [resolvedSavedMeanings]);
+
+  /** Suggested meanings is a collapsible section (collapsed by default). */
+  const [suggestedOpen, setSuggestedOpen] = React.useState(false);
+
   return (
     <div
       className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''}`}
@@ -428,24 +440,6 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
             </button>
             <button
               type="button"
-              id="word-detail-tab-explain"
-              role="tab"
-              className={`word-detail-sheet-tab ${explainActive ? 'word-detail-sheet-tab--active' : 'word-detail-sheet-tab--icon-only'}`}
-              aria-selected={explainActive}
-              onClick={() => setActiveTab('explain')}
-            >
-              <img
-                src={explainActive ? explainTabActive : explainTabInactive}
-                alt=""
-                className="word-detail-sheet-tab-img"
-                aria-hidden
-              />
-              <span className="word-detail-sheet-tab__label" aria-hidden={!explainActive}>
-                Explain This
-              </span>
-            </button>
-            <button
-              type="button"
               id="word-detail-tab-dictionaries"
               role="tab"
               className={`word-detail-sheet-tab ${dictionariesActive ? 'word-detail-sheet-tab--active' : 'word-detail-sheet-tab--icon-only'}`}
@@ -492,13 +486,11 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
               ? 'word-detail-tab-meanings'
               : activeTab === 'sentence'
                 ? 'word-detail-tab-sentence'
-                : activeTab === 'explain'
-                  ? 'word-detail-tab-explain'
-                  : activeTab === 'dictionaries'
-                    ? 'word-detail-tab-dictionaries'
-                    : activeTab === 'notes'
-                      ? 'word-detail-tab-notes'
-                      : undefined
+                : activeTab === 'dictionaries'
+                  ? 'word-detail-tab-dictionaries'
+                  : activeTab === 'notes'
+                    ? 'word-detail-tab-notes'
+                    : undefined
           }
           aria-busy={lynxBusy || undefined}
           aria-live={explainActive ? 'polite' : undefined}
@@ -508,50 +500,63 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           >
             {meaningsActive ? (
               <>
-                {resolvedSavedMeanings.length > 0 ? (
-                  <section className="word-detail-sheet-block" aria-labelledby="word-detail-saved-heading">
-                    <h2 id="word-detail-saved-heading" className="word-detail-sheet-section-label">
-                      SAVED MEANINGS
-                    </h2>
-                    <div className="word-detail-sheet-saved-list">
-                      {resolvedSavedMeanings.map((text, i) => (
-                        <div
-                          key={`${i}-${text}`}
-                          className="word-detail-sheet-saved-meaning-card"
-                          role="group"
+                {savedDrafts.length > 0 ? (
+                  <div className="word-detail-sheet-saved-fields">
+                    {savedDrafts.map((text, i) => (
+                      <div key={i} className="word-detail-sheet-meaning-field">
+                        <input
+                          type="text"
+                          className="word-detail-sheet-meaning-input"
+                          value={text}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setSavedDrafts((prev) =>
+                              prev.map((p, idx) => (idx === i ? v : p))
+                            );
+                          }}
                           aria-label={`Saved meaning ${i + 1}`}
-                        >
-                          <p className="word-detail-sheet-saved-meaning-text">{text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                          autoComplete="off"
+                          spellCheck
+                        />
+                      </div>
+                    ))}
+                  </div>
                 ) : null}
 
-                <section className="word-detail-sheet-block" aria-labelledby="word-detail-suggested-heading">
-                  <h2 id="word-detail-suggested-heading" className="word-detail-sheet-section-label">
-                    SUGGESTED MEANINGS
-                  </h2>
-                  <ul className="word-detail-sheet-suggested-list">
-                    {suggestedMeanings.map((text, i) => (
-                      <li key={`${i}-${text}`}>
-                        <button type="button" className="word-detail-sheet-suggested-row">
-                          <span className="word-detail-sheet-suggested-text">{text}</span>
-                          <Plus size={18} aria-hidden className="word-detail-sheet-suggested-plus" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                <section className="word-detail-sheet-block">
+                  <button
+                    type="button"
+                    className="word-detail-sheet-collapse-header"
+                    aria-expanded={suggestedOpen}
+                    aria-controls="word-detail-suggested-list"
+                    onClick={() => setSuggestedOpen((o) => !o)}
+                  >
+                    <span className="word-detail-sheet-section-label">SUGGESTED MEANINGS</span>
+                    <ChevronDown
+                      size={18}
+                      aria-hidden
+                      className={`word-detail-sheet-collapse-chevron${suggestedOpen ? ' word-detail-sheet-collapse-chevron--open' : ''}`}
+                    />
+                  </button>
+                  {suggestedOpen ? (
+                    <ul id="word-detail-suggested-list" className="word-detail-sheet-suggested-list">
+                      {suggestedMeanings.map((text, i) => (
+                        <li key={`${i}-${text}`}>
+                          <button type="button" className="word-detail-sheet-suggested-row">
+                            <span className="word-detail-sheet-suggested-text">{text}</span>
+                            <Plus size={18} aria-hidden className="word-detail-sheet-suggested-plus" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </section>
 
-                <section className="word-detail-sheet-block" aria-labelledby="word-detail-related-heading">
-                  <h2 id="word-detail-related-heading" className="word-detail-sheet-section-label">
-                    RELATED PHRASES
-                  </h2>
-                  <div className="word-detail-sheet-related-card">
-                    <p>{relatedPhrase}</p>
-                  </div>
-                </section>
+                <div className="word-detail-sheet-divider" aria-hidden />
+
+                <div className="word-detail-sheet-related-card">
+                  <p>{relatedPhrase}</p>
+                </div>
               </>
             ) : null}
 
@@ -645,10 +650,10 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
             {notesActive ? (
               <div className="word-detail-sheet-notes">
-                <article className="word-detail-sheet-note-card">
-                  <p className="word-detail-sheet-note-card__meta">{wordNote.meta}</p>
-                  <p className="word-detail-sheet-note-card__body">{wordNote.body}</p>
-                </article>
+                <NoteField
+                  initialNote={wordNote.body}
+                  initialUpdatedAt={wordNote.meta.replace(/^Updated\s+/i, '')}
+                />
               </div>
             ) : null}
           </div>
@@ -713,25 +718,32 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
               </div>
             ) : null}
 
-            {notesActive ? (
-              <div className="word-detail-sheet-note-actions">
-                <button type="button" className="word-detail-sheet-new-note-btn">
-                  <Plus size={18} aria-hidden className="word-detail-sheet-new-note-btn__icon" />
-                  <span>New Note</span>
-                </button>
-              </div>
-            ) : null}
           </div>
         </div>
 
         <footer className="word-detail-sheet-footer">
-          {onWordStatusChange ? (
-            <LingQStatusBar
-              variant="sheet"
-              status={wordStatus}
-              onStatusChange={onWordStatusChange}
-            />
-          ) : null}
+          <div className="word-detail-sheet-footer-row">
+            {onWordStatusChange ? (
+              <LingQStatusBar
+                variant="sheet"
+                status={wordStatus}
+                onStatusChange={onWordStatusChange}
+              />
+            ) : (
+              <span className="word-detail-sheet-footer-spacer" />
+            )}
+            <button
+              type="button"
+              className="word-detail-sheet-lynx-btn"
+              aria-label="Ask Lynx"
+              onClick={() => {
+                onLynx?.();
+                setActiveTab('explain');
+              }}
+            >
+              <img src={lynxFooterIcon} alt="" className="word-detail-sheet-lynx-btn__icon" aria-hidden />
+            </button>
+          </div>
         </footer>
       </div>
     </div>

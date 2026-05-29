@@ -85,6 +85,7 @@
 .reader-bottom-bar-active-row {
   display: flex;
   align-items: center;
+  gap: 8px;
   width: 100%;
   position: relative;
   z-index: 1;
@@ -97,6 +98,40 @@
   align-items: center;
   width: 100%;
   height: 48px;
+}
+
+/* Standalone white pill button (Lynx) — Figma ReaderButton (shared by default + word-selected rows). */
+.reader-bottom-bar-side-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.reader-bottom-bar-side-btn:hover {
+  background: #f4f5f6;
+}
+
+.reader-bottom-bar-side-btn:active {
+  transform: scale(0.94);
+}
+
+.reader-bottom-bar-side-btn-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
 }
 
 /*
@@ -164,6 +199,11 @@
 .reader-bottom-bar-actions-container.collapsed {
   max-height: 48px;
   border-radius: 24px;
+  background: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .reader-bottom-bar-actions-container.expanded {
@@ -190,7 +230,7 @@
 }
 
 .reader-bottom-bar-actions-container:hover:not(.expanded) {
-  background: rgba(255, 255, 255, 0.15);
+  background: #fff;
 }
 
 .reader-bottom-bar-actions-container.expanded:hover {
@@ -233,19 +273,28 @@
   align-items: center;
   justify-content: center;
   width: 64px;
-  height: 100%;
+  height: 40px;
   min-width: 64px;
   padding: 0;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
   color: #000;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.reader-bottom-bar-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+.reader-bottom-bar-menu-btn:hover:not(.reader-bottom-bar-menu-btn--active-review):not(.reader-bottom-bar-menu-btn--active-sentence) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Active reader tool (Figma ReviewActive / SentenceActive) */
+.reader-bottom-bar-menu-btn--active-review {
+  background: #f1f7fe;
+}
+
+.reader-bottom-bar-menu-btn--active-sentence {
+  background: #f4f7fb;
 }
 
 .reader-bottom-bar-menu-btn:active,
@@ -606,12 +655,10 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid var(--ui-glass-border);
+  border: none;
   border-radius: var(--ui-ctrl-radius-pill);
-  background: var(--ui-glass-bg);
-  backdrop-filter: var(--ui-glass-blur);
-  -webkit-backdrop-filter: var(--ui-glass-blur);
-  box-shadow: var(--ui-glass-shadow), var(--ui-ctrl-shadow-inset);
+  background: #fff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
   transition: var(--ui-ctrl-transition);
 }
 
@@ -622,8 +669,8 @@
 }
 
 .reader-bottom-bar-play-pill:hover {
-  background: var(--ui-glass-bg-hover);
-  box-shadow: var(--ui-ctrl-shadow-hover), var(--ui-ctrl-shadow-inset);
+  background: #f4f5f6;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.2);
 }
 
 .reader-bottom-bar-play-pill--morph {
@@ -674,8 +721,8 @@
 }
 
 .reader-bottom-bar-video-btn:hover {
-  background: var(--ui-glass-bg-hover);
-  box-shadow: var(--ui-ctrl-shadow-hover), var(--ui-ctrl-shadow-inset);
+  background: #f4f5f6;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.2);
 }
 
 .reader-bottom-bar-video-btn:active {

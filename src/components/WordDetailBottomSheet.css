@@ -199,6 +199,50 @@
   color: var(--typography-muted, #6d7680);
 }
 
+/* Saved meanings — editable bordered input fields (Figma 2806:55446) */
+.word-detail-sheet-saved-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-spacing-sm, 12px);
+  width: 100%;
+}
+
+/* Collapsible section header (Figma 2940:3417): label + chevron toggle */
+.word-detail-sheet-collapse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-spacing-sm, 12px);
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.word-detail-sheet-collapse-header:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.word-detail-sheet-collapse-chevron {
+  flex-shrink: 0;
+  color: var(--typography-muted, #6d7680);
+  transition: transform 0.22s ease;
+}
+
+.word-detail-sheet-collapse-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Section divider (Figma 3652:7699) */
+.word-detail-sheet-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-default, #e3e5e7);
+}
+
 /* Saved meanings — read-only bordered cards (Figma 2177:35914) */
 .word-detail-sheet-saved-list {
   display: flex;
@@ -474,11 +518,42 @@
 }
 
 .word-detail-sentence-block--current {
-  background: var(--color-blue-50, #f4fbfe);
+  background: var(--color-blue-50, #f1f7fe);
 }
 
 .word-detail-sentence-block--archived {
-  background: var(--backgrounds-page, #f8f9fa);
+  background: var(--backgrounds-elevated, #f8f9fa);
+}
+
+/* Collapsed stored sentence — only the original line; expands on click (Figma 2354:1328) */
+.word-detail-sentence-block--collapsed {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: var(--spacing-spacing-md, 16px);
+  border: none;
+  background: var(--backgrounds-page, #ffffff);
+  border-radius: var(--radius-sm, 8px);
+  box-sizing: border-box;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.18s ease;
+}
+
+.word-detail-sentence-block--collapsed:hover {
+  background: var(--backgrounds-accent, #f4f7fb);
+}
+
+.word-detail-sentence-block--collapsed:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.word-detail-sentence-block--collapsed .word-detail-sentence-block__original-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .word-detail-sentence-block__caption {
@@ -911,7 +986,7 @@
   color: var(--typography-default, #000000);
 }
 
-/* Notes tab (Figma 2195:5939) */
+/* Notes tab — editable note field with empty / focus / saved states (Figma 3200:5461) */
 .word-detail-sheet-notes {
   display: flex;
   flex-direction: column;
@@ -919,19 +994,82 @@
   width: 100%;
 }
 
-.word-detail-sheet-note-card {
+.note-field {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-spacing-xs, 8px);
-  padding: var(--spacing-spacing-md, 16px);
-  border-radius: var(--radius-sm, 8px);
-  background: var(--backgrounds-elevated, #f8f9fa);
-  box-sizing: border-box;
+  gap: var(--spacing-spacing-sm, 12px);
   width: 100%;
 }
 
-.word-detail-sheet-note-card__meta {
+.note-field__box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-spacing-xs, 8px);
+  width: 100%;
+  padding: var(--spacing-spacing-md, 16px);
+  border: 1px solid var(--border-default, #e3e5e7);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--backgrounds-page, #ffffff);
+  box-sizing: border-box;
+  text-align: left;
+}
+
+button.note-field__box {
+  cursor: text;
+  font: inherit;
+  color: inherit;
+}
+
+.note-field__box--focus {
+  border-color: var(--typography-action-secondary, #2e75cd);
+}
+
+.note-field__box:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.note-field__placeholder {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--typography-muted, #6d7680);
+}
+
+.note-field__textarea {
+  display: block;
+  width: 100%;
   margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+  field-sizing: content;
+  min-height: 20px;
+}
+
+.note-field__textarea:focus {
+  outline: none;
+}
+
+.note-field__textarea::placeholder {
+  color: var(--typography-muted, #6d7680);
+  font-weight: 500;
+}
+
+.note-field__saved-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--spacing-spacing-2xs, 4px);
+  width: 100%;
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
   font-weight: 400;
@@ -939,72 +1077,170 @@
   color: var(--typography-muted, #6d7680);
 }
 
-.word-detail-sheet-note-card__body {
-  margin: 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 20px;
-  color: var(--typography-default, #000000);
+.note-field__saved-header-time {
+  flex: 1;
+  min-width: 0;
 }
 
-.word-detail-sheet-note-actions {
+.note-field__saved-body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+  white-space: pre-wrap;
+}
+
+.note-field__buttons {
   display: flex;
   flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
+  gap: 12px;
   width: 100%;
 }
 
-.word-detail-sheet-new-note-btn {
+.note-field__btn {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-md, 16px);
+  border: none;
+  border-radius: var(--radius-2xs, 4px);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+  transition: var(--ui-ctrl-transition);
+}
+
+.note-field__btn:active {
+  transform: var(--ui-ctrl-press);
+}
+
+.note-field__btn:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.note-field__btn--secondary {
+  background: var(--surfaces-default, #f1f3f4);
+  color: var(--typography-default, #000000);
+}
+
+.note-field__btn--secondary:hover {
+  background: #e7eaec;
+}
+
+.note-field__btn--primary {
+  background: var(--typography-action-secondary, #2e75cd);
+  color: #ffffff;
+}
+
+.note-field__btn--primary:hover {
+  background: #2a6abc;
+}
+
+.note-field__generate {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-spacing-xs, 8px);
-  padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-md, 16px);
-  border: 1px solid rgba(46, 117, 205, 0.22);
-  border-radius: var(--ui-ctrl-radius-md);
-  background: rgba(46, 117, 205, 0.08);
-  box-shadow: var(--ui-ctrl-shadow);
+  width: 100%;
+  padding: var(--spacing-spacing-sm, 12px) var(--spacing-spacing-md, 16px);
+  border: 1px solid var(--typography-action-secondary, #2e75cd);
+  border-radius: var(--radius-2xs, 4px);
+  background: var(--color-blue-50, #f1f7fe);
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 18px;
   color: var(--typography-action-secondary, #2e75cd);
   transition: var(--ui-ctrl-transition);
 }
 
-.word-detail-sheet-new-note-btn:hover {
-  background: rgba(46, 117, 205, 0.12);
-  box-shadow: var(--ui-ctrl-shadow-hover);
+.note-field__generate:hover {
+  background: #e6f0fd;
 }
 
-.word-detail-sheet-new-note-btn:active {
+.note-field__generate:active {
   transform: var(--ui-ctrl-press);
 }
 
-.word-detail-sheet-new-note-btn__icon {
-  flex-shrink: 0;
-  color: var(--typography-action-secondary, #2e75cd);
-}
-
-.word-detail-sheet-new-note-btn:focus-visible {
+.note-field__generate:focus-visible {
   outline: var(--ui-focus-ring);
   outline-offset: 2px;
 }
 
-/* Footer */
-.word-detail-sheet-footer {
+.note-field__generate-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
   flex-shrink: 0;
-  padding: var(--spacing-spacing-md, 16px) var(--spacing-spacing-md, 16px)
-    var(--spacing-spacing-lg, 24px);
-  padding-bottom: calc(var(--spacing-spacing-lg, 24px) + env(safe-area-inset-bottom, 0px));
-  background: #f9fcff;
-  border-top: 1px solid var(--color-grey-100, #f1f3f4);
 }
 
-.word-detail-sheet-footer .lingq-status-bar {
+/* Footer — status bar + Lynx button (Figma 3518:5968) */
+.word-detail-sheet-footer {
+  flex-shrink: 0;
+  padding: var(--spacing-spacing-lg, 16px) var(--spacing-spacing-lg, 16px)
+    var(--spacing-spacing-xl, 24px);
+  padding-bottom: calc(var(--spacing-spacing-xl, 24px) + env(safe-area-inset-bottom, 0px));
+  background: var(--backgrounds-accent, #f4f7fb);
+  border-top: 1px solid var(--border-default, #e3e5e7);
+}
+
+.word-detail-sheet-footer-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--spacing-spacing-md, 16px);
   width: 100%;
+}
+
+.word-detail-sheet-footer-row .lingq-status-bar {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-detail-sheet-footer-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-detail-sheet-lynx-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  background: #ffffff;
+  box-shadow: 0 1px 2px 0 var(--color-grey-200, #e3e5e7);
+  cursor: pointer;
+  transition: var(--ui-ctrl-transition);
+}
+
+.word-detail-sheet-lynx-btn:hover {
+  box-shadow: var(--ui-ctrl-shadow-hover);
+}
+
+.word-detail-sheet-lynx-btn:active {
+  transform: var(--ui-ctrl-press);
+}
+
+.word-detail-sheet-lynx-btn:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.word-detail-sheet-lynx-btn__icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
