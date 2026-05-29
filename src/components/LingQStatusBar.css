@@ -111,7 +111,7 @@
   box-sizing: border-box;
 }
 
-/* Inner row: highlight + segments. Bottom bar applies clip-path unfurl here only — track keeps fill + shadow. */
+/* Inner row: highlight + segments (bottom bar animates the outer wrap, not this row). */
 .lingq-status-bar__sheet-track-unfurl {
   position: relative;
   display: flex;

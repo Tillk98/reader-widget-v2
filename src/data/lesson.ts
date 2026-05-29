@@ -16,6 +16,10 @@ export interface Lesson {
   videoUrl?: string;
   /** Reader bottom bar expanded chevron menu layout (e.g. from backend). */
   expandedMenuLayout?: 'grid' | 'list';
+  /** Course or collection title shown in the expanded menu header (falls back to `title`). */
+  lessonMenuTitle?: string;
+  /** e.g. "Lesson 1/30" under the menu header title. */
+  lessonMenuSubtitle?: string;
 }
 
 // Translation map for French words to English
@@ -485,5 +489,6 @@ export const lesson: Lesson = {
   ...parseLesson(lessonText),
   source: 'La statistique expliquée à mon chat',
   hasVideo: false,
-  expandedMenuLayout: 'grid',
+  lessonMenuTitle: 'Emil und Die Detektive',
+  lessonMenuSubtitle: 'Lesson 1/30',
 };

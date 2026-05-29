@@ -355,14 +355,8 @@ export const Reader: React.FC = () => {
           return newSet;
         });
       } else {
-        if (
-          audioMiniPlayerOpen &&
-          mediaMode === 'none' &&
-          lesson.hasVideo !== true &&
-          selectedWordId == null
-        ) {
-          setAudioMiniExitAnimating(true);
-        }
+        /** Do not start audio mini exit here — LingQ uses ReaderBottomBar while a word is selected, but
+         * `audioMiniPlayerOpen` stays true so the collapsed mini returns when selection clears (see `showAudioMiniAsBottomBar`). */
         setSelectedWordId(wordId);
         setWordStatusMap(prev => ({ ...prev, [wordId]: prev[wordId] ?? 'New' }));
         setClickedWords(prev => {
@@ -372,7 +366,7 @@ export const Reader: React.FC = () => {
         });
       }
     },
-    [selectedWordId, knownWords, ignoredWords, audioMiniPlayerOpen, mediaMode, lesson.hasVideo]
+    [selectedWordId, knownWords, ignoredWords, mediaMode, lesson.hasVideo]
   );
 
   const getWordById = useCallback((wordId: string): Word | undefined => {
@@ -587,11 +581,12 @@ export const Reader: React.FC = () => {
   const handleAudioMiniExitAnimationComplete = useCallback(() => {
     setAudioMiniPlayerOpen(false);
     setAudioMiniExitAnimating(false);
+    /** Pause after exit so the default bar shows Play, but not during the mini dismiss animation (avoids Pause→Play on the mini). */
+    setIsPlaybackPaused(true);
   }, []);
 
   const handleDismissAudioMini = useCallback(() => {
     setAudioMiniExitAnimating(true);
-    setIsPlaybackPaused(true);
   }, []);
 
   /** YouTube: always full video lesson mode (expanded bar + top player). */
@@ -798,6 +793,7 @@ export const Reader: React.FC = () => {
           )}
           {(!isLessonMediaMode || selectedWordId != null) && !showAudioMiniAsBottomBar && (
             <ReaderBottomBar
+              audioMiniActive={audioMiniPlayerOpen}
               expandedMenuLayout={lesson.expandedMenuLayout ?? 'list'}
               mediaMode={mediaMode}
               isVideoPlaying={
@@ -811,7 +807,16 @@ export const Reader: React.FC = () => {
               selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
               onSelectedWordStatusChange={
                 selectedWordId
-                  ? status => setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
+                  ? status => {
+                      const wordId = selectedWordId;
+                      setWordStatusMap(prev => ({ ...prev, [wordId]: status }));
+                      setClickedWords(prev => {
+                        const next = new Set(prev);
+                        next.delete(wordId);
+                        return next;
+                      });
+                      setSelectedWordId(null);
+                    }
                   : undefined
               }
               onPlay={handleDefaultPlay}
@@ -826,6 +831,11 @@ export const Reader: React.FC = () => {
               hasVideo={lesson.hasVideo === true}
               onVideoMode={handleEnterVideoModeFromChrome}
               onExit={() => {}}
+              menuHeaderTitle={lesson.lessonMenuTitle ?? lesson.title}
+              menuHeaderSubtitle={lesson.lessonMenuSubtitle}
+              onShowTranslation={() => {}}
+              onMenuPreviousLesson={() => {}}
+              onMenuNextLesson={() => {}}
             />
           )}
           {showAudioMiniAsBottomBar && (

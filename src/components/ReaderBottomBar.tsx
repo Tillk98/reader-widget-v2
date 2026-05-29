@@ -12,12 +12,17 @@ import {
   RefreshCw,
   Settings,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Languages,
+  LineChart,
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ActiveSelectionBar } from './ActiveSelectionBar';
 import sentenceDefaultIcon from '../assets/sentence-default.png';
 import lynxDefaultIcon from '../assets/lynx-default.png';
 import reviewDefaultIcon from '../assets/review-default.png';
+import simplifyDefaultIcon from '../assets/simplify-default.png';
 import './ReaderBottomBar.css';
 
 export interface ReaderBottomBarProps {
@@ -50,10 +55,22 @@ export interface ReaderBottomBarProps {
   wordDetailSheetOpen?: boolean;
   /** Expanded chevron menu: `list` (default) or `grid`. */
   expandedMenuLayout?: 'grid' | 'list';
+  /** Expanded list menu header (e.g. course name). */
+  menuHeaderTitle?: string;
+  /** Expanded list menu subtitle (e.g. lesson progress). */
+  menuHeaderSubtitle?: string;
+  onMenuPreviousLesson?: () => void;
+  onMenuNextLesson?: () => void;
+  onShowTranslation?: () => void;
+  /** When true, collapsed audio mini was the bottom bar — skip the default play/menu morph into LingQ (avoids a one-frame flash of default chrome). */
+  audioMiniActive?: boolean;
 }
 
 /** After the sheet is open, wait this long before swapping the LingQ strip for the default play / menu row. */
 const WORD_DETAIL_DEFAULT_CHROME_DELAY_MS = 1000;
+
+/** Lucide stroke width for expanded list menu (Figma 1.5px). */
+const MENU_ICON_STROKE = 1.5;
 
 const EXPANDED_SECONDARY_ITEMS: { id: string; label: string; icon: React.ReactNode }[] = [
   {
@@ -100,6 +117,12 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   anchorAboveVideoBarPx,
   wordDetailSheetOpen = false,
   expandedMenuLayout = 'list',
+  menuHeaderTitle,
+  menuHeaderSubtitle,
+  onMenuPreviousLesson,
+  onMenuNextLesson,
+  onShowTranslation,
+  audioMiniActive = false,
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
   const [defaultChromeAfterSheetDelay, setDefaultChromeAfterSheetDelay] = useState(false);
@@ -132,11 +155,17 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     hasWordSelected &&
     (!wordDetailSheetOpen || !defaultChromeAfterSheetDelay);
 
-  /** Keep default chrome in DOM while morphing out so the pill can transition into the LingQ strip (page mode only). */
+  /** Keep default chrome in DOM while morphing out so the pill can transition into the LingQ strip (page mode only).
+   * Skip morph when opening LingQ from collapsed audio mini — there is no default row to morph from. */
   const renderDefaultChromeLayer =
-    showDefaultChrome || (hasWordSelected && showActiveSelection && mediaMode === 'none');
+    showDefaultChrome ||
+    (hasWordSelected && showActiveSelection && mediaMode === 'none' && !audioMiniActive);
   const isDefaultChromeMorphingOut =
-    hasWordSelected && showActiveSelection && mediaMode === 'none' && !showDefaultChrome;
+    hasWordSelected &&
+    showActiveSelection &&
+    mediaMode === 'none' &&
+    !showDefaultChrome &&
+    !audioMiniActive;
 
   useEffect(() => {
     if (!isActionsExpanded) return;
@@ -295,62 +324,201 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   .filter(Boolean)
                   .join(' ')}
               >
-                <div
-                  className="reader-bottom-bar-expanded-grid"
-                  role="group"
-                  aria-label="Tools"
-                >
-                  {EXPANDED_MENU_GRID_MAIN.map(({ id, label, icon }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className="reader-bottom-bar-expanded-item"
-                      onClick={() => expandedHandlers[id]?.()}
-                      aria-label={label}
+                {expandedMenuLayout === 'list' ? (
+                  <div className="reader-bottom-bar-menu-list">
+                    <div className="reader-bottom-bar-menu-list__header">
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-nav-btn reader-bottom-bar-menu-nav-btn--sm"
+                        onClick={() => onMenuPreviousLesson?.()}
+                        aria-label="Previous lesson"
+                      >
+                        <ChevronLeft size={18} strokeWidth={MENU_ICON_STROKE} />
+                      </button>
+                      <div className="reader-bottom-bar-menu-list__header-text">
+                        {menuHeaderTitle ? (
+                          <p className="reader-bottom-bar-menu-list__title">{menuHeaderTitle}</p>
+                        ) : null}
+                        {menuHeaderSubtitle ? (
+                          <p className="reader-bottom-bar-menu-list__subtitle">{menuHeaderSubtitle}</p>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-nav-btn reader-bottom-bar-menu-nav-btn--sm"
+                        onClick={() => onMenuNextLesson?.()}
+                        aria-label="Next lesson"
+                      >
+                        <ChevronRight size={18} strokeWidth={MENU_ICON_STROKE} />
+                      </button>
+                    </div>
+                    <div
+                      className="reader-bottom-bar-menu-list__divider"
+                      role="separator"
+                      aria-hidden="true"
+                    />
+                    <div className="reader-bottom-bar-menu-list__section reader-bottom-bar-menu-list__section--body">
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onShowTranslation?.()}
+                        aria-label="Show Translation"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <Languages size={18} strokeWidth={MENU_ICON_STROKE} />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Show Translation</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onSimplify?.()}
+                        aria-label="Simplify"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <img
+                            src={simplifyDefaultIcon}
+                            alt=""
+                            className="reader-bottom-bar-menu-list__icon-img"
+                          />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Simplify</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onTheme?.()}
+                        aria-label="Theme"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <CaseSensitive size={18} strokeWidth={MENU_ICON_STROKE} />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Theme</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onGrammar?.()}
+                        aria-label="Grammar Guide"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <FileText size={18} strokeWidth={MENU_ICON_STROKE} />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Grammar Guide</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onStatistics?.()}
+                        aria-label="Statistics"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <LineChart size={18} strokeWidth={MENU_ICON_STROKE} />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Statistics</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onRefresh?.()}
+                        aria-label="Refresh Lesson"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <RefreshCw size={18} strokeWidth={MENU_ICON_STROKE} />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Refresh Lesson</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onInfo?.()}
+                        aria-label="Lesson Info"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <Info size={18} strokeWidth={MENU_ICON_STROKE} />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Lesson Info</span>
+                      </button>
+                    </div>
+                    <div
+                      className="reader-bottom-bar-menu-list__divider"
+                      role="separator"
+                      aria-hidden="true"
+                    />
+                    <div className="reader-bottom-bar-menu-list__section reader-bottom-bar-menu-list__section--footer">
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-menu-list__row"
+                        onClick={() => onExit?.()}
+                        aria-label="Exit Lesson"
+                      >
+                        <span className="reader-bottom-bar-menu-list__icon" aria-hidden="true">
+                          <LogOut size={18} strokeWidth={MENU_ICON_STROKE} />
+                        </span>
+                        <span className="reader-bottom-bar-menu-list__label">Exit Lesson</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className="reader-bottom-bar-expanded-grid"
+                      role="group"
+                      aria-label="Tools"
                     >
-                      <span className="reader-bottom-bar-expanded-icon">{icon}</span>
-                      <span className="reader-bottom-bar-expanded-label">{label}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="reader-bottom-bar-expanded-divider" role="separator" aria-hidden="true" />
-                <div
-                  className="reader-bottom-bar-expanded-grid"
-                  role="group"
-                  aria-label="Settings and session"
-                >
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-expanded-item"
-                    onClick={() => expandedHandlers.settings?.()}
-                    aria-label={EXPANDED_MENU_SETTINGS_ITEM.label}
-                  >
-                    <span className="reader-bottom-bar-expanded-icon">{EXPANDED_MENU_SETTINGS_ITEM.icon}</span>
-                    <span className="reader-bottom-bar-expanded-label">{EXPANDED_MENU_SETTINGS_ITEM.label}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-expanded-item"
-                    onClick={() => onRefresh?.()}
-                    aria-label="Refresh"
-                  >
-                    <span className="reader-bottom-bar-expanded-icon">
-                      <RefreshCw size={20} />
-                    </span>
-                    <span className="reader-bottom-bar-expanded-label">Refresh</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="reader-bottom-bar-expanded-item"
-                    onClick={() => onExit?.()}
-                    aria-label="Exit"
-                  >
-                    <span className="reader-bottom-bar-expanded-icon">
-                      <LogOut size={20} />
-                    </span>
-                    <span className="reader-bottom-bar-expanded-label">Exit</span>
-                  </button>
-                </div>
+                      {EXPANDED_MENU_GRID_MAIN.map(({ id, label, icon }) => (
+                        <button
+                          key={id}
+                          type="button"
+                          className="reader-bottom-bar-expanded-item"
+                          onClick={() => expandedHandlers[id]?.()}
+                          aria-label={label}
+                        >
+                          <span className="reader-bottom-bar-expanded-icon">{icon}</span>
+                          <span className="reader-bottom-bar-expanded-label">{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="reader-bottom-bar-expanded-divider" role="separator" aria-hidden="true" />
+                    <div
+                      className="reader-bottom-bar-expanded-grid"
+                      role="group"
+                      aria-label="Settings and session"
+                    >
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-expanded-item"
+                        onClick={() => expandedHandlers.settings?.()}
+                        aria-label={EXPANDED_MENU_SETTINGS_ITEM.label}
+                      >
+                        <span className="reader-bottom-bar-expanded-icon">{EXPANDED_MENU_SETTINGS_ITEM.icon}</span>
+                        <span className="reader-bottom-bar-expanded-label">{EXPANDED_MENU_SETTINGS_ITEM.label}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-expanded-item"
+                        onClick={() => onRefresh?.()}
+                        aria-label="Refresh"
+                      >
+                        <span className="reader-bottom-bar-expanded-icon">
+                          <RefreshCw size={20} />
+                        </span>
+                        <span className="reader-bottom-bar-expanded-label">Refresh</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reader-bottom-bar-expanded-item"
+                        onClick={() => onExit?.()}
+                        aria-label="Exit"
+                      >
+                        <span className="reader-bottom-bar-expanded-icon">
+                          <LogOut size={20} />
+                        </span>
+                        <span className="reader-bottom-bar-expanded-label">Exit</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
