@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { X } from 'lucide-react';
-import { lesson } from '../data/lesson';
+import { Library, ListFilter } from 'lucide-react';
+import { lesson, reviewTerms, buildReviewTerms } from '../data/lesson';
 import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
+import { WordDetailBottomSheet } from './WordDetailBottomSheet';
 import { ReaderBottomBar } from './ReaderBottomBar';
 import { SentenceMode } from './SentenceMode';
+import { ReviewMode } from './ReviewMode';
+import {
+  ReviewFilterSheet,
+  DEFAULT_REVIEW_STATUS,
+  type ReviewFilterValue,
+  type ReviewStatusKey,
+} from './ReviewFilterSheet';
 import { VideoModeBottomBar } from './VideoModeBottomBar';
 import { VideoModeVideoPlayer } from './VideoModeVideoPlayer';
 import videoModeThumbnail from '../assets/video-mode-thumbnail.png';
@@ -31,7 +39,18 @@ export const Reader: React.FC = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [clickedWords, setClickedWords] = useState<Set<string>>(new Set());
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
-  const [wordStatusMap, setWordStatusMap] = useState<Record<string, LingQStatusType>>({});
+  // Seed a mix of existing LingQ statuses so Review mode shows both saved terms and
+  // unsaved ("+") terms out of the box (these words also read as LingQs in the lesson).
+  const [wordStatusMap, setWordStatusMap] = useState<Record<string, LingQStatusType>>(() => {
+    const seed: Record<string, LingQStatusType> = {};
+    const cycle: LingQStatusType[] = ['New', 'Learned', 'Familiar', 'Recognized'];
+    // Pre-save a few terms near the top of the list so Review opens on a realistic mix of
+    // saved (numbered) and unsaved ("+") terms, without flooding the reading view with LingQs.
+    reviewTerms.slice(0, 16).forEach((term, i) => {
+      if (i % 3 === 1) seed[term.id] = cycle[i % cycle.length];
+    });
+    return seed;
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef<number>(0);
@@ -49,6 +68,13 @@ export const Reader: React.FC = () => {
   const [mediaMode, setMediaMode] = useState<MediaMode>('none');
   const [sentenceMode, setSentenceMode] = useState(false);
   const [sentenceIndex, setSentenceIndex] = useState(0);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewFilterOpen, setReviewFilterOpen] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilterValue>({
+    method: 'list',
+    scope: 'lesson',
+    status: DEFAULT_REVIEW_STATUS,
+  });
   const [videoBarExpanded, setVideoBarExpanded] = useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const prevMediaModeRef = useRef<MediaMode>(mediaMode);
@@ -374,6 +400,46 @@ export const Reader: React.FC = () => {
     [selectedWordId, knownWords, ignoredWords, mediaMode, lesson.hasVideo]
   );
 
+  /** In sentence mode the meaning popup only appears for words tapped in the sentence,
+   * not for selections made from the vocabulary list (which already show meanings). */
+  const [sentencePopupSuppressed, setSentencePopupSuppressed] = useState(false);
+
+  const handleSentenceWordSelect = useCallback(
+    (wordId: string) => {
+      setSentencePopupSuppressed(false);
+      handleWordClick(wordId);
+    },
+    [handleWordClick]
+  );
+
+  const handleSentenceListSelect = useCallback(
+    (wordId: string) => {
+      setSentencePopupSuppressed(true);
+      handleWordClick(wordId);
+    },
+    [handleWordClick]
+  );
+
+  /** Review mode: tap a term to surface its LingQ status bar (no meaning popup). */
+  const handleReviewSelect = useCallback(
+    (wordId: string) => {
+      handleWordClick(wordId);
+    },
+    [handleWordClick]
+  );
+
+  /** Review mode "+": save an untracked word as a LingQ (status "New") and surface the
+   * status bar so the user can immediately adjust the level if desired. */
+  const handleReviewAdd = useCallback((wordId: string) => {
+    setWordStatusMap(prev => ({ ...prev, [wordId]: 'New' }));
+    setClickedWords(prev => {
+      const next = new Set(prev);
+      next.add(wordId);
+      return next;
+    });
+    setSelectedWordId(wordId);
+  }, []);
+
   const getWordById = useCallback((wordId: string): Word | undefined => {
     for (const sentence of lesson.sentences) {
       const word = sentence.words.find(w => w.id === wordId);
@@ -387,6 +453,8 @@ export const Reader: React.FC = () => {
   }, []);
 
   const [wordDetailSheetOpen, setWordDetailSheetOpen] = useState(false);
+  /** Word detail sheet opened directly from a vocabulary list item (Review / Sentence mode). */
+  const [listDetailOpen, setListDetailOpen] = useState(false);
 
   useEffect(() => {
     setWordDetailSheetOpen(false);
@@ -394,6 +462,7 @@ export const Reader: React.FC = () => {
 
   const handleClosePopup = useCallback(() => {
     setWordDetailSheetOpen(false);
+    setListDetailOpen(false);
     if (selectedWordId) {
       setClickedWords(prev => {
         const newSet = new Set(prev);
@@ -403,6 +472,13 @@ export const Reader: React.FC = () => {
     }
     setSelectedWordId(null);
   }, [selectedWordId]);
+
+  /** Tap a vocabulary list item (term): open the full word detail sheet (no status bar / popup). */
+  const handleListOpenDetail = useCallback((wordId: string) => {
+    setSentencePopupSuppressed(true);
+    setSelectedWordId(wordId);
+    setListDetailOpen(true);
+  }, []);
 
   const selectedWordData = React.useMemo(() => {
     if (!selectedWordId) return null;
@@ -461,6 +537,9 @@ export const Reader: React.FC = () => {
   /** Header stats button: opens lesson stats — interaction wired in a later step. */
   const handleOpenStats = useCallback(() => {}, []);
 
+  /** Review mode filter pill ("Lesson • All") — opens the method / scope / status filter. */
+  const handleOpenReviewFilter = useCallback(() => setReviewFilterOpen(true), []);
+
   const pageColumnPx = Math.max(1, contentWidthPx);
   const trackWidthPx = pages.length * pageColumnPx;
   /** Pixel translate: one column = pageColumnPx; dragOffset is pointer delta in px (same as measure). */
@@ -468,6 +547,76 @@ export const Reader: React.FC = () => {
     pages.length === 0 ? 0 : -currentPageIndex * pageColumnPx + dragOffset;
 
   const isSentenceView = mediaMode === 'none' && sentenceMode;
+  const isReviewView = mediaMode === 'none' && reviewMode;
+
+  /** Entering sentence mode always lands at the top, where the current sentence is. */
+  useEffect(() => {
+    if (isSentenceView && contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, [isSentenceView]);
+
+  /** Map a term to the status category used by the Review filter status bar. */
+  const reviewStatusKeyForId = useCallback(
+    (id: string): ReviewStatusKey => {
+      if (!(id in wordStatusMap)) return 'untracked';
+      switch (wordStatusMap[id]) {
+        case 'Recognized':
+          return '2';
+        case 'Familiar':
+          return '3';
+        case 'Learned':
+          return '4';
+        case 'Known':
+          return 'known';
+        case 'Ignored':
+          return 'ignored';
+        case 'New':
+        default:
+          return '1';
+      }
+    },
+    [wordStatusMap]
+  );
+
+  /** Review terms for the current scope (whole lesson / current page / current sentence). */
+  const reviewScopedTerms = React.useMemo(() => {
+    switch (reviewFilter.scope) {
+      case 'page':
+        return buildReviewTerms(pages[currentPageIndex]?.words ?? []);
+      case 'sentence':
+        return buildReviewTerms(lesson.sentences[sentenceIndex]?.words ?? []);
+      case 'lesson':
+      default:
+        return reviewTerms;
+    }
+  }, [reviewFilter.scope, pages, currentPageIndex, sentenceIndex]);
+
+  /** Scoped terms narrowed to the selected status categories. */
+  const reviewVisibleTerms = React.useMemo(() => {
+    const allowed = new Set(reviewFilter.status);
+    return reviewScopedTerms.filter(t => allowed.has(reviewStatusKeyForId(t.id)));
+  }, [reviewScopedTerms, reviewFilter.status, reviewStatusKeyForId]);
+
+  /** Visible review terms not yet saved as LingQs → blue "+". */
+  const reviewUntrackedIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const term of reviewVisibleTerms) {
+      if (!(term.id in wordStatusMap)) ids.add(term.id);
+    }
+    return ids;
+  }, [reviewVisibleTerms, wordStatusMap]);
+
+  /** Header filter pill label: scope • status ("All" when the default range is selected). */
+  const reviewFilterLabel = React.useMemo(() => {
+    const scopeLabel =
+      reviewFilter.scope.charAt(0).toUpperCase() + reviewFilter.scope.slice(1);
+    const isDefaultStatus =
+      reviewFilter.status.length === DEFAULT_REVIEW_STATUS.length &&
+      DEFAULT_REVIEW_STATUS.every(s => reviewFilter.status.includes(s));
+    return `${scopeLabel} • ${isDefaultStatus ? 'All' : 'Custom'}`;
+  }, [reviewFilter]);
+
   const totalSentences = lesson.sentences.length;
   const fillProgress = isSentenceView
     ? totalSentences > 0
@@ -495,7 +644,7 @@ export const Reader: React.FC = () => {
     isLessonMediaMode && 'reader-content--video-mode',
     isLessonMediaMode && videoBarExpanded && 'reader-content--video-expanded',
     showAudioMiniAsBottomBar && 'reader-content--audio-mini',
-    isSentenceView && 'reader-content--sentence-mode',
+    (isSentenceView || isReviewView) && 'reader-content--sentence-mode',
   ]
     .filter(Boolean)
     .join(' ');
@@ -712,27 +861,39 @@ export const Reader: React.FC = () => {
                 aria-label="Close lesson"
                 onClick={handleCloseLesson}
               >
-                <X size={24} strokeWidth={2} />
+                <Library size={24} strokeWidth={2} />
               </button>
-              <div className="reader-progress-bar-wrap">
-                <div
-                  className="reader-progress-bar"
-                  onClick={handleProgressBarClick}
-                  onMouseMove={handleProgressBarMouseMove}
-                  onMouseLeave={handleProgressBarMouseLeave}
+              {isReviewView ? (
+                <button
+                  type="button"
+                  className="reader-header-filter"
+                  aria-label="Review filter"
+                  onClick={handleOpenReviewFilter}
                 >
-                  <div className="reader-progress-fill" style={{ width: `${fillProgress}%` }} />
-                  <div className="reader-progress-thumb" style={{ left: `${thumbProgress}%` }} />
-                  {hoveredPageIndex !== null && (
-                    <div
-                      className="reader-progress-tooltip"
-                      style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
-                    >
-                      Page {hoveredPageIndex + 1}
-                    </div>
-                  )}
+                  <ListFilter size={20} strokeWidth={2} />
+                  <span className="reader-header-filter-label">{reviewFilterLabel}</span>
+                </button>
+              ) : (
+                <div className="reader-progress-bar-wrap">
+                  <div
+                    className="reader-progress-bar"
+                    onClick={handleProgressBarClick}
+                    onMouseMove={handleProgressBarMouseMove}
+                    onMouseLeave={handleProgressBarMouseLeave}
+                  >
+                    <div className="reader-progress-fill" style={{ width: `${fillProgress}%` }} />
+                    <div className="reader-progress-thumb" style={{ left: `${thumbProgress}%` }} />
+                    {hoveredPageIndex !== null && (
+                      <div
+                        className="reader-progress-tooltip"
+                        style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
+                      >
+                        Page {hoveredPageIndex + 1}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
               <button
                 type="button"
                 className="reader-header-button"
@@ -747,22 +908,35 @@ export const Reader: React.FC = () => {
             className={contentClassName}
             style={readerContentVideoStyle}
             ref={contentRef}
-            onPointerDown={isPageMode && !sentenceMode ? handlePointerDown : undefined}
-            onPointerMove={isPageMode && !sentenceMode ? handlePointerMove : undefined}
-            onPointerUp={isPageMode && !sentenceMode ? e => handlePointerUp(e) : undefined}
-            onPointerLeave={isPageMode && !sentenceMode ? () => handlePointerUp() : undefined}
-            onPointerCancel={isPageMode && !sentenceMode ? handlePointerCancel : undefined}
+            onPointerDown={isPageMode && !sentenceMode && !reviewMode ? handlePointerDown : undefined}
+            onPointerMove={isPageMode && !sentenceMode && !reviewMode ? handlePointerMove : undefined}
+            onPointerUp={isPageMode && !sentenceMode && !reviewMode ? e => handlePointerUp(e) : undefined}
+            onPointerLeave={isPageMode && !sentenceMode && !reviewMode ? () => handlePointerUp() : undefined}
+            onPointerCancel={isPageMode && !sentenceMode && !reviewMode ? handlePointerCancel : undefined}
           >
             <div className="reader-body-vt">
-              {isSentenceView ? (
+              {isReviewView ? (
+                <ReviewMode
+                  terms={reviewVisibleTerms}
+                  wordStatusMap={wordStatusMap}
+                  untrackedIds={reviewUntrackedIds}
+                  selectedWordId={selectedWordId}
+                  onSelect={handleReviewSelect}
+                  onOpenDetail={handleListOpenDetail}
+                  onAdd={handleReviewAdd}
+                  onDeselect={handleClosePopup}
+                />
+              ) : isSentenceView ? (
                 <SentenceMode
                   sentences={lesson.sentences}
                   index={sentenceIndex}
                   onIndexChange={setSentenceIndex}
                   wordStatusMap={wordStatusMap}
-                  onWordStatusChange={(wordId, status) =>
-                    setWordStatusMap(prev => ({ ...prev, [wordId]: status }))
-                  }
+                  selectedWordId={selectedWordId}
+                  onWordSelect={handleSentenceWordSelect}
+                  onListWordSelect={handleSentenceListSelect}
+                  onListWordOpenDetail={handleListOpenDetail}
+                  onDeselect={handleClosePopup}
                 />
               ) : isLessonMediaMode ? (
                 <div className="reader-video-scroll">
@@ -836,7 +1010,13 @@ export const Reader: React.FC = () => {
             lessonImageSrc={lessonImage}
             onChromeHeightChange={setAudioSettingsSheetHeightPx}
           />
-          {selectedWordId && selectedWordData && (
+          <ReviewFilterSheet
+            open={reviewFilterOpen}
+            onClose={() => setReviewFilterOpen(false)}
+            value={reviewFilter}
+            onApply={setReviewFilter}
+          />
+          {selectedWordId && selectedWordData && !isReviewView && !(isSentenceView && sentencePopupSuppressed) && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
@@ -851,6 +1031,23 @@ export const Reader: React.FC = () => {
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
             />
           )}
+          {listDetailOpen && selectedWordId && (() => {
+            const word = getWordById(selectedWordId);
+            if (!word) return null;
+            const wordId = selectedWordId;
+            return (
+              <WordDetailBottomSheet
+                key={wordId}
+                wordText={word.text}
+                wordTranslation={word.translation}
+                wordStatus={wordStatusMap[wordId] ?? 'New'}
+                onWordStatusChange={status =>
+                  setWordStatusMap(prev => ({ ...prev, [wordId]: status }))
+                }
+                onClose={handleClosePopup}
+              />
+            );
+          })()}
           {(!isLessonMediaMode || selectedWordId != null) && !showAudioMiniAsBottomBar && (
             <ReaderBottomBar
               audioMiniActive={audioMiniPlayerOpen}
@@ -862,7 +1059,7 @@ export const Reader: React.FC = () => {
               }
               anchorAboveVideoBarPx={lingqStripAnchorAboveVideoBarPx}
               lessonImageSrc={lessonImage}
-              wordDetailSheetOpen={wordDetailSheetOpen}
+              wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen}
               selectedWordId={selectedWordId}
               selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
               onSelectedWordStatusChange={
@@ -880,7 +1077,21 @@ export const Reader: React.FC = () => {
                   : undefined
               }
               sentenceModeActive={sentenceMode}
-              onSentence={() => setSentenceMode(v => !v)}
+              onSentence={() =>
+                setSentenceMode(v => {
+                  const next = !v;
+                  if (next) setReviewMode(false);
+                  return next;
+                })
+              }
+              reviewModeActive={reviewMode}
+              onReview={() =>
+                setReviewMode(v => {
+                  const next = !v;
+                  if (next) setSentenceMode(false);
+                  return next;
+                })
+              }
               onPlay={handleDefaultPlay}
               onToggleVideoPlayback={handlePlaybackPauseToggle}
               onExpandVideoBar={() => {

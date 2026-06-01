@@ -9,8 +9,6 @@ import {
   Play,
   CaseSensitive,
   Settings,
-  Coins,
-  Flame,
 } from 'lucide-react';
 import { BottomSheet } from './BottomSheet';
 import lynxDefaultIcon from '../assets/lynx-default.png';
@@ -25,8 +23,6 @@ export interface ReaderMenuSheetProps {
   lessonImageSrc?: string;
   /** Lesson position within course, e.g. "1/5". */
   lessonPageLabel?: string;
-  coins?: string;
-  streak?: string;
   onPreviousLesson?: () => void;
   onNextLesson?: () => void;
   onShowTranslationChange?: (on: boolean) => void;
@@ -50,8 +46,6 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
   lessonSource,
   lessonImageSrc,
   lessonPageLabel = '1/5',
-  coins = '37/100',
-  streak = '30',
   onPreviousLesson,
   onNextLesson,
   onShowTranslationChange,
@@ -76,7 +70,7 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
   };
 
   return (
-    <BottomSheet open={open} onClose={onClose} onSwipeUp={onExpand} dragWholeCard ariaLabel="Lesson menu">
+    <BottomSheet open={open} onClose={onClose} dragWholeCard ariaLabel="Lesson menu">
       <div className="reader-menu">
         <div className="reader-menu__header">
           <button
@@ -87,7 +81,12 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
           >
             <ChevronLeft size={16} strokeWidth={ICON_STROKE} />
           </button>
-          <div className="reader-menu__lesson">
+          <button
+            type="button"
+            className="reader-menu__lesson"
+            onClick={onExpand}
+            aria-label="Open course details"
+          >
             <div className="reader-menu__lesson-image">
               {lessonImageSrc ? <img src={lessonImageSrc} alt="" /> : null}
             </div>
@@ -102,7 +101,7 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
                 ) : null}
               </div>
             </div>
-          </div>
+          </button>
           <button
             type="button"
             className="reader-menu__nav-btn"
@@ -110,25 +109,6 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
             aria-label="Next lesson"
           >
             <ChevronRight size={16} strokeWidth={ICON_STROKE} />
-          </button>
-        </div>
-
-        <div className="reader-menu__stats">
-          <div className="reader-menu__stats-left">
-            <span className="reader-menu__tag">
-              <span className="reader-menu__tag-value">{coins}</span>
-              <Coins size={18} className="reader-menu__tag-icon reader-menu__tag-icon--coin" aria-hidden />
-              <span className="reader-menu__tag-label">Coins</span>
-            </span>
-            <span className="reader-menu__tag">
-              <span className="reader-menu__tag-value">{streak}</span>
-              <Flame size={18} className="reader-menu__tag-icon reader-menu__tag-icon--streak" aria-hidden />
-              <span className="reader-menu__tag-label">Streak</span>
-            </span>
-          </div>
-          <button type="button" className="reader-menu__tag reader-menu__tag--button reader-menu__all-tag">
-            <span className="reader-menu__all-label">All</span>
-            <ChevronRight size={16} strokeWidth={ICON_STROKE} aria-hidden />
           </button>
         </div>
 

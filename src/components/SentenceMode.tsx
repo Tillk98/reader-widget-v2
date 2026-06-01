@@ -1,21 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, EyeOff, Volume2, Check } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import type { Sentence, Word } from '../data/lesson';
 import type { LingQStatusType } from './LingQStatusBar';
+import { VocabTermList } from './VocabTermList';
 import './SentenceMode.css';
 
 const SWIPE_PX = 60;
-
-/** Learning statuses map to the 1–4 badge shown on the vocabulary tile. */
-const LEARNING_NUMBER: Partial<Record<LingQStatusType, number>> = {
-  New: 1,
-  Recognized: 2,
-  Familiar: 3,
-  Learned: 4,
-};
-
-/** Tapping the status badge cycles through these. */
-const STATUS_CYCLE: LingQStatusType[] = ['New', 'Recognized', 'Familiar', 'Learned', 'Known'];
 
 const PUNCTUATION_ONLY = /^[^\p{L}\p{N}]+$/u;
 
@@ -42,7 +32,16 @@ export interface SentenceModeProps {
   index: number;
   onIndexChange: (i: number) => void;
   wordStatusMap: Record<string, LingQStatusType>;
-  onWordStatusChange: (wordId: string, status: LingQStatusType) => void;
+  /** Currently selected word (drives the LingQ status bar) — null when none. */
+  selectedWordId: string | null;
+  /** Tap a word in the sentence: surfaces the meaning popup + LingQ status bar. */
+  onWordSelect: (wordId: string) => void;
+  /** Tap the status badge of a vocabulary list item: surfaces the LingQ status bar only. */
+  onListWordSelect: (wordId: string) => void;
+  /** Tap a vocabulary list item (word + gloss): opens the full word detail sheet. */
+  onListWordOpenDetail: (wordId: string) => void;
+  /** Clear the current selection (e.g. tapping the page background). */
+  onDeselect: () => void;
 }
 
 export const SentenceMode: React.FC<SentenceModeProps> = ({
@@ -50,12 +49,14 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
   index,
   onIndexChange,
   wordStatusMap,
-  onWordStatusChange,
+  selectedWordId,
+  onWordSelect,
+  onListWordSelect,
+  onListWordOpenDetail,
+  onDeselect,
 }) => {
   const [showTranslation, setShowTranslation] = useState(false);
-  const [activeWordId, setActiveWordId] = useState<string | null>(null);
 
-  const listRef = useRef<HTMLDivElement>(null);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
 
@@ -71,18 +72,6 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     () => (sentence ? buildSentenceTranslation(sentence.words) : ''),
     [sentence]
   );
-
-  // Reset the followed word when the sentence changes.
-  useEffect(() => {
-    setActiveWordId(null);
-  }, [safeIndex]);
-
-  // Vocabulary list follows the tapped word (annotation: keep the current word in view).
-  useEffect(() => {
-    if (!activeWordId || !listRef.current) return;
-    const tile = listRef.current.querySelector<HTMLElement>(`[data-word-id="${activeWordId}"]`);
-    tile?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [activeWordId]);
 
   const goTo = useCallback(
     (next: number) => {
@@ -118,16 +107,30 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     }
   };
 
+  /** Tap a word in the sentence: meaning popup + LingQ status bar. */
   const handleWordTap = (wordId: string) => {
     if (suppressClick.current) return;
-    setActiveWordId(prev => (prev === wordId ? null : wordId));
+    onWordSelect(wordId);
   };
 
-  const cycleStatus = (wordId: string) => {
-    const current = wordStatusMap[wordId] ?? 'New';
-    const i = STATUS_CYCLE.indexOf(current);
-    const next = STATUS_CYCLE[(i + 1) % STATUS_CYCLE.length];
-    onWordStatusChange(wordId, next);
+  /** Tap a list item's status badge: LingQ status bar only. */
+  const handleListStatus = (wordId: string) => {
+    if (suppressClick.current) return;
+    onListWordSelect(wordId);
+  };
+
+  /** Tap a list item's term: open the full word detail sheet. */
+  const handleListDetail = (wordId: string) => {
+    if (suppressClick.current) return;
+    onListWordOpenDetail(wordId);
+  };
+
+  /** Tapping empty page background (not a word, tile, or control) clears selection. */
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    if (suppressClick.current) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.sentence-mode__word, .vocab-list__tile, button')) return;
+    onDeselect();
   };
 
   if (!sentence) return null;
@@ -137,6 +140,7 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
       className="sentence-mode"
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
+      onClick={handleBackgroundClick}
     >
       <div className="sentence-mode__inner">
         <p className="sentence-mode__sentence">
@@ -149,9 +153,10 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
                   <span className="sentence-mode__punct">{w.text}</span>
                 ) : (
                   <span
+                    id={w.id}
                     className={[
                       'sentence-mode__word',
-                      activeWordId === w.id && 'sentence-mode__word--active',
+                      selectedWordId === w.id && 'sentence-mode__word--active',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -177,54 +182,14 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
 
         {showTranslation && <p className="sentence-mode__sentence-translation">{sentenceTranslation}</p>}
 
-        <div className="sentence-mode__vocab" ref={listRef}>
-          {vocabWords.map((w, i) => {
-            const status = wordStatusMap[w.id] ?? 'New';
-            const number = LEARNING_NUMBER[status];
-            return (
-              <React.Fragment key={w.id}>
-                {i > 0 && <div className="sentence-mode__vocab-divider" aria-hidden />}
-                <div
-                  className={[
-                    'sentence-mode__tile',
-                    activeWordId === w.id && 'sentence-mode__tile--active',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  data-word-id={w.id}
-                >
-                  <div className="sentence-mode__term">
-                    <button
-                      type="button"
-                      className={[
-                        'sentence-mode__status',
-                        status === 'Known' && 'sentence-mode__status--known',
-                        status === 'Ignored' && 'sentence-mode__status--ignored',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      onClick={() => cycleStatus(w.id)}
-                      aria-label={`Word status: ${status}`}
-                    >
-                      {status === 'Known' ? (
-                        <Check size={16} strokeWidth={2.25} />
-                      ) : (
-                        <span className="sentence-mode__status-num">{number ?? ''}</span>
-                      )}
-                    </button>
-                    <div className="sentence-mode__term-text">
-                      <p className="sentence-mode__term-word">{w.text}</p>
-                      <p className="sentence-mode__term-gloss">{w.translation ?? w.text}</p>
-                    </div>
-                  </div>
-                  <button type="button" className="sentence-mode__audio" aria-label={`Play ${w.text}`}>
-                    <Volume2 size={20} strokeWidth={1.75} />
-                  </button>
-                </div>
-              </React.Fragment>
-            );
-          })}
-        </div>
+        <VocabTermList
+          className="sentence-mode__vocab"
+          items={vocabWords}
+          wordStatusMap={wordStatusMap}
+          selectedWordId={selectedWordId}
+          onSelect={handleListStatus}
+          onOpenDetail={handleListDetail}
+        />
       </div>
     </div>
   );

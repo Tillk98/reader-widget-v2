@@ -32,10 +32,8 @@
   bottom: 0;
   display: flex;
   justify-content: center;
-  /* Match .audio-mini-player / lesson chrome: horizontal inset on narrow viewports */
-  padding: 0 20px;
-  /* Match ReaderBottomBar: inset above home indicator, not flush to screen edge */
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  /* Full-width, flush to the bottom edge — matches the word detail sheet. */
+  padding: 0;
   box-sizing: border-box;
   max-width: 600px;
   margin: 0 auto;
@@ -47,13 +45,13 @@
 .audio-settings-sheet__card {
   pointer-events: auto;
   width: 100%;
-  padding: 0 4px 12px;
+  padding: 0 0 calc(12px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 
 .audio-settings-sheet__card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
 }
 

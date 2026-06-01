@@ -47,6 +47,26 @@
   gap: 8px;
   flex: 1 1 0;
   min-width: 0;
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid #e3e5e7;
+  border-radius: 10px;
+  background: #f4f7fb;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.reader-menu__lesson:hover {
+  background: #e9eff7;
+  border-color: #d3dded;
+}
+
+.reader-menu__lesson:active {
+  transform: scale(0.99);
+  background: #e1e9f4;
 }
 
 .reader-menu__lesson-image {
@@ -106,23 +126,6 @@
   flex-shrink: 0;
 }
 
-/* --- Stats row: coins / streak / all --- */
-.reader-menu__stats {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 8px 8px;
-  box-sizing: border-box;
-}
-
-.reader-menu__stats-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
 .reader-menu__tag {
   display: inline-flex;
   align-items: center;
@@ -131,60 +134,6 @@
   border-radius: 999px;
   background: #f4f7fb;
   white-space: nowrap;
-}
-
-.reader-menu__tag-value {
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 18px;
-  color: #000;
-}
-
-.reader-menu__tag-icon {
-  flex-shrink: 0;
-}
-
-.reader-menu__tag-icon--coin {
-  color: #e8a33d;
-}
-
-.reader-menu__tag-icon--streak {
-  color: #f5712c;
-  fill: #f5712c;
-}
-
-.reader-menu__tag-label {
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 16px;
-  color: #6d7680;
-}
-
-.reader-menu__tag--button {
-  border: none;
-  cursor: pointer;
-  font: inherit;
-  transition: background 0.15s ease;
-}
-
-.reader-menu__all-tag {
-  padding: 4px 8px;
-  background: #f4f7fb;
-}
-
-.reader-menu__all-tag:hover {
-  background: #e9eef5;
-}
-
-.reader-menu__all-label {
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 16px;
-  color: #000;
-}
-
-.reader-menu__all-tag svg {
-  color: #6d7680;
 }
 
 /* --- Sections --- */

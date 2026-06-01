@@ -1,0 +1,19 @@
+/* Review mode — lesson vocabulary list for review (Figma 2830:64728). */
+
+.review-mode {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.review-mode__inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  padding: 8px 16px 24px;
+  box-sizing: border-box;
+}

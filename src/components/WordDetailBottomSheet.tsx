@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { Volume2, Plus, Tags, Coins, ChevronDown } from 'lucide-react';
+import { Volume2, Plus, Tags, Coins, ChevronDown, BookA } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -19,6 +19,8 @@ import { SentenceBlock } from './SentenceBlock';
 import type { WordDetailSentenceContextEntry } from './SentenceBlock';
 import { LynxMessageActions } from './LynxMessageActions';
 import { NoteField } from './NoteField';
+import { DictionaryMenuSheet } from './DictionaryMenuSheet';
+import type { DictionaryMenuItem } from './DictionaryMenuSheet';
 import './WordDetailBottomSheet.css';
 
 export type { WordDetailSentenceContextEntry } from './SentenceBlock';
@@ -109,6 +111,15 @@ const DEFAULT_DICTIONARY_PROVIDERS: WordDetailDictionaryProvider[] = [
   { id: 'word-reference', label: 'Word Reference', iconSrc: dictionaryWordReference },
   { id: 'linguee', label: 'Linguee', iconSrc: dictionaryLinguee },
   { id: 'deepl', label: 'DeepL', iconSrc: dictionaryDeepL },
+];
+
+/** Dictionaries available to add from the "Manage Your Dictionaries" menu (Figma 3424:6571). */
+const DEFAULT_MORE_DICTIONARIES: DictionaryMenuItem[] = [
+  { id: 'google-search', label: 'Google Search' },
+  { id: 'beolingus', label: 'BeoLingus' },
+  { id: 'leo', label: 'Leo' },
+  { id: 'babla', label: 'bab.la' },
+  { id: 'forvo', label: 'Forvo' },
 ];
 
 export type WordDetailWordNote = {
@@ -354,6 +365,53 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
   /** Suggested meanings is a collapsible section (collapsed by default). */
   const [suggestedOpen, setSuggestedOpen] = React.useState(false);
+
+  /** Dictionaries shown in the horizontal strip; editable via the manage menu. */
+  const [activeDictionaries, setActiveDictionaries] =
+    React.useState<WordDetailDictionaryProvider[]>(dictionaryProviders);
+  useEffect(() => {
+    setActiveDictionaries(dictionaryProviders);
+  }, [dictionaryProviders]);
+  const [moreDictionaries, setMoreDictionaries] =
+    React.useState<DictionaryMenuItem[]>(DEFAULT_MORE_DICTIONARIES);
+  const [dictMenuOpen, setDictMenuOpen] = React.useState(false);
+
+  const handleDictReorder = useCallback((from: number, to: number) => {
+    setActiveDictionaries((prev) => {
+      if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) {
+        return prev;
+      }
+      const next = prev.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
+
+  const handleDictRemove = useCallback((id: string) => {
+    setActiveDictionaries((prev) => {
+      const found = prev.find((p) => p.id === id);
+      if (found) {
+        setMoreDictionaries((m) =>
+          m.some((x) => x.id === id) ? m : [...m, { id: found.id, label: found.label }]
+        );
+      }
+      return prev.filter((p) => p.id !== id);
+    });
+  }, []);
+
+  const handleDictAdd = useCallback(
+    (id: string) => {
+      const found = moreDictionaries.find((p) => p.id === id);
+      setMoreDictionaries((prev) => prev.filter((p) => p.id !== id));
+      if (found) {
+        setActiveDictionaries((prev) =>
+          prev.some((x) => x.id === id) ? prev : [...prev, { id: found.id, label: found.label }]
+        );
+      }
+    },
+    [moreDictionaries]
+  );
 
   return (
     <div
@@ -700,21 +758,31 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
             ) : null}
 
             {dictionariesActive ? (
-              <div className="word-detail-sheet-dictionary-list" role="list" aria-label="Dictionary sources">
-                {dictionaryProviders.map((p) => (
-                  <div key={p.id} role="listitem" className="word-detail-sheet-dictionary-list__item">
-                    <button type="button" className="word-detail-sheet-dictionary-card">
-                      <span className="word-detail-sheet-dictionary-card__icon-wrap" aria-hidden>
-                        {p.iconSrc ? (
-                          <img src={p.iconSrc} alt="" className="word-detail-sheet-dictionary-card__icon" />
-                        ) : (
-                          <span className="word-detail-sheet-dictionary-card__icon-placeholder" />
-                        )}
-                      </span>
-                      <span className="word-detail-sheet-dictionary-card__label">{p.label}</span>
-                    </button>
-                  </div>
-                ))}
+              <div className="word-detail-sheet-dictionary-bar">
+                <button
+                  type="button"
+                  className="word-detail-sheet-dictionary-manage"
+                  aria-label="Manage dictionaries"
+                  onClick={() => setDictMenuOpen(true)}
+                >
+                  <BookA size={24} aria-hidden />
+                </button>
+                <div className="word-detail-sheet-dictionary-list" role="list" aria-label="Dictionary sources">
+                  {activeDictionaries.map((p) => (
+                    <div key={p.id} role="listitem" className="word-detail-sheet-dictionary-list__item">
+                      <button type="button" className="word-detail-sheet-dictionary-card">
+                        <span className="word-detail-sheet-dictionary-card__icon-wrap" aria-hidden>
+                          {p.iconSrc ? (
+                            <img src={p.iconSrc} alt="" className="word-detail-sheet-dictionary-card__icon" />
+                          ) : (
+                            <span className="word-detail-sheet-dictionary-card__icon-placeholder" />
+                          )}
+                        </span>
+                        <span className="word-detail-sheet-dictionary-card__label">{p.label}</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 
@@ -746,6 +814,16 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           </div>
         </footer>
       </div>
+
+      <DictionaryMenuSheet
+        open={dictMenuOpen}
+        onClose={() => setDictMenuOpen(false)}
+        active={activeDictionaries.map((d) => ({ id: d.id, label: d.label }))}
+        more={moreDictionaries}
+        onReorder={handleDictReorder}
+        onRemove={handleDictRemove}
+        onAdd={handleDictAdd}
+      />
     </div>
   );
 };

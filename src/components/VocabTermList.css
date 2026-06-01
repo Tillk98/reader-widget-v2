@@ -1,0 +1,144 @@
+/* Shared vocabulary term list — Sentence mode & Review mode (Figma 2812:56925 / 2830:64728). */
+
+.vocab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.vocab-list__divider {
+  height: 1px;
+  width: 100%;
+  background: #e3e5e7;
+}
+
+.vocab-list__tile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: #fff;
+  transition: background 0.15s ease;
+}
+
+.vocab-list__tile--active {
+  background: #f4f7fb;
+}
+
+.vocab-list__term {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.vocab-list__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0.8px solid #42a564;
+  border-radius: 50px;
+  background: #fff;
+  color: #42a564;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.vocab-list__status:active {
+  transform: scale(0.92);
+}
+
+.vocab-list__status-num {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 16px;
+  color: #42a564;
+}
+
+.vocab-list__status--known {
+  background: #42a564;
+  border-color: #42a564;
+  color: #fff;
+}
+
+.vocab-list__status--ignored {
+  border-color: #c4c8cc;
+  color: #6d7680;
+}
+
+/* Untracked word (Review mode): blue "+" to add it as a LingQ. */
+.vocab-list__status--add {
+  border-color: #2e75cd;
+  color: #2e75cd;
+}
+
+.vocab-list__status--add:hover {
+  background: #f1f7fe;
+}
+
+.vocab-list__term-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.vocab-list__term-word {
+  margin: 0;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
+  color: #000;
+}
+
+.vocab-list__term-gloss {
+  margin: 0;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 18px;
+  color: #6d7680;
+}
+
+.vocab-list__audio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 10px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #1c1c1e;
+  box-shadow: 0 0.833px 1.667px #e3e5e7;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.vocab-list__audio:hover {
+  background: #f4f5f6;
+}
+
+.vocab-list__audio:active {
+  transform: scale(0.94);
+}

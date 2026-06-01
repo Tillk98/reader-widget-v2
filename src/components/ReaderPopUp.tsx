@@ -97,7 +97,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
 
       /* Another lesson word: don't close on mousedown so word-to-word selection
          doesn't briefly clear and re-trigger toolbar expand animation. */
-      if (hitEl?.closest('.reader .blue-word, .reader .yellow-word')) return false;
+      if (hitEl?.closest('.reader .blue-word, .reader .yellow-word, .sentence-mode__word')) return false;
 
       return true;
     };

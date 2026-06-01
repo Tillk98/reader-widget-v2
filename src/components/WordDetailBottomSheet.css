@@ -902,13 +902,48 @@
   box-sizing: border-box;
 }
 
+/* Row: fixed manage button + horizontally scrolling dictionary strip. */
+.word-detail-sheet-dictionary-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.word-detail-sheet-dictionary-manage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #1c1c1e;
+  box-shadow: 0px 1px 2px var(--color-grey-200, #e3e5e7);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.word-detail-sheet-dictionary-manage:hover {
+  background: #f4f5f6;
+}
+
+.word-detail-sheet-dictionary-manage:active {
+  transform: scale(0.94);
+}
+
 .word-detail-sheet-dictionary-list {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: stretch;
   gap: 12px;
-  width: 100%;
+  flex: 1 1 0;
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;

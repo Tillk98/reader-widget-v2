@@ -35,8 +35,8 @@
   bottom: 0;
   display: flex;
   justify-content: center;
-  padding: 0 16px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  /* Full-width, flush to the bottom edge — matches the word detail sheet. */
+  padding: 0;
   box-sizing: border-box;
   max-width: 600px;
   margin: 0 auto;
@@ -50,10 +50,11 @@
   max-height: calc(100dvh - 64px);
   overflow-y: auto;
   box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   display: flex;
   flex-direction: column;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.18), 0px 0px 4px rgba(209, 214, 217, 0.9);
   transform: translateY(110%);
   transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);

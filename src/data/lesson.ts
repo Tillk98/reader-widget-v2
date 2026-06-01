@@ -492,3 +492,27 @@ export const lesson: Lesson = {
   lessonMenuTitle: 'Emil und Die Detektive',
   lessonMenuSubtitle: 'Lesson 1/30',
 };
+
+const REVIEW_PUNCTUATION = /[.,!?;:«»"'()€]/g;
+
+/**
+ * Unique, translatable vocabulary terms from a set of words — the term rows used by Review
+ * mode. Deduped by normalized text; the first occurrence's `id` represents the term so its
+ * status stays in sync with the shared `wordStatusMap`.
+ */
+export function buildReviewTerms(words: Word[]): Word[] {
+  const seen = new Set<string>();
+  const terms: Word[] = [];
+  for (const word of words) {
+    const clean = word.text.replace(REVIEW_PUNCTUATION, '').trim().toLowerCase();
+    if (!clean || seen.has(clean)) continue;
+    // Skip words we couldn't translate (proper nouns, numbers, symbols).
+    if (!word.translation || word.translation.toLowerCase() === word.text.toLowerCase()) continue;
+    seen.add(clean);
+    terms.push(word);
+  }
+  return terms;
+}
+
+/** Whole-lesson review terms ("Lesson" scope). */
+export const reviewTerms: Word[] = buildReviewTerms(lesson.sentences.flatMap(s => s.words));

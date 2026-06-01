@@ -82,6 +82,35 @@
   object-fit: contain;
 }
 
+/* Review mode header filter pill ("Lesson • All") — Figma ViewFilter 2830:64483. */
+.reader-header-filter {
+  margin: 0 auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #1c1c1e;
+  box-shadow: 0 0 4px #d1d6d9;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.reader-header-filter:active {
+  transform: scale(0.96);
+}
+
+.reader-header-filter-label {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
 /* Centered progress fills the space between the two pill buttons. */
 .reader-progress-bar-wrap {
   flex: 1 1 0;

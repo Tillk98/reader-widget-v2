@@ -1,0 +1,201 @@
+/* Manage Your Dictionaries — content inside the floating BottomSheet (Figma 3424:6571). */
+
+/* Layer above the word-detail sheet (z-index 1001) when opened from the Dictionaries tab. */
+.dictionary-menu-sheet {
+  z-index: 1200;
+}
+
+.dictionary-menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-bottom: 8px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* --- Header: title + subtitle | close --- */
+.dictionary-menu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px 4px;
+  box-sizing: border-box;
+}
+
+.dictionary-menu__title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.dictionary-menu__title-text {
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: #000;
+}
+
+.dictionary-menu__subtitle {
+  margin: 0;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6d7680;
+}
+
+/* --- Sections --- */
+.dictionary-menu__section {
+  display: flex;
+  flex-direction: column;
+}
+
+.dictionary-menu__section-header {
+  margin: 0;
+  padding: 4px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #6d7680;
+}
+
+.dictionary-menu__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dictionary-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  margin: 0;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: #000;
+}
+
+.dictionary-menu__item--dragging {
+  background: #f4f5f6;
+}
+
+.dictionary-menu__item--button {
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.dictionary-menu__item--button:hover {
+  background: #f4f5f6;
+}
+
+.dictionary-menu__item--button:active {
+  transform: scale(0.99);
+}
+
+.dictionary-menu__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dictionary-menu__item-icon {
+  flex-shrink: 0;
+  color: #000;
+}
+
+.dictionary-menu__item-text {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dictionary-menu__grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: #6d7680;
+  cursor: grab;
+  touch-action: none;
+}
+
+.dictionary-menu__grip:active {
+  cursor: grabbing;
+}
+
+.dictionary-menu__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  color: #6d7680;
+}
+
+.dictionary-menu__value svg {
+  color: #6d7680;
+}
+
+/* --- Action buttons (trash / add) --- */
+.dictionary-menu__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.dictionary-menu__action:active {
+  transform: scale(0.92);
+}
+
+.dictionary-menu__action--remove {
+  background: #f1f3f4;
+  color: #6d7680;
+}
+
+.dictionary-menu__action--remove:hover {
+  background: #e6e9eb;
+}
+
+.dictionary-menu__action--add {
+  background: #f1f7fe;
+  color: #2e75cd;
+}
+
+.dictionary-menu__action--add:hover {
+  background: #e2eefc;
+}
+
+.dictionary-menu__divider {
+  height: 1px;
+  width: 100%;
+  margin: 8px 0;
+  background: #e3e5e7;
+}

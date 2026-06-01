@@ -43,6 +43,8 @@ export interface ReaderBottomBarProps {
   /** Controlled sentence-mode toggle state. When provided, the sentence button reflects this. */
   sentenceModeActive?: boolean;
   onReview?: () => void;
+  /** Controlled review-mode toggle state. When provided, the review button reflects this. */
+  reviewModeActive?: boolean;
   onChevrons?: () => void;
   onLynxAI?: () => void;
   onSimplify?: () => void;
@@ -113,6 +115,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onSentence,
   sentenceModeActive,
   onReview,
+  reviewModeActive,
   onChevrons,
   onLynxAI,
   onSimplify,
@@ -201,8 +204,15 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     onChevrons?.();
   };
 
+  /** Review mode is controlled by the Reader when `reviewModeActive` is provided. */
+  const reviewActive = reviewModeActive ?? activeTool === 'review';
+
   const handleReviewClick = () => {
-    setActiveTool(prev => (prev === 'review' ? 'none' : 'review'));
+    if (reviewModeActive === undefined) {
+      setActiveTool(prev => (prev === 'review' ? 'none' : 'review'));
+    } else if (activeTool === 'review') {
+      setActiveTool('none');
+    }
     onReview?.();
   };
 
@@ -327,16 +337,16 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   type="button"
                   className={[
                     'reader-bottom-bar-menu-btn',
-                    activeTool === 'review' && 'reader-bottom-bar-menu-btn--active-review',
+                    reviewActive && 'reader-bottom-bar-menu-btn--active-review',
                   ]
                     .filter(Boolean)
                     .join(' ')}
                   onClick={handleReviewClick}
                   aria-label="Review"
-                  aria-pressed={activeTool === 'review'}
+                  aria-pressed={reviewActive}
                 >
                   <img
-                    src={activeTool === 'review' ? reviewActiveIcon : reviewDefaultIcon}
+                    src={reviewActive ? reviewActiveIcon : reviewDefaultIcon}
                     alt=""
                     className="reader-bottom-bar-custom-icon"
                   />

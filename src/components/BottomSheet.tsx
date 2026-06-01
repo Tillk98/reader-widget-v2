@@ -32,6 +32,8 @@ export interface BottomSheetProps {
   dragWholeCard?: boolean;
   /** Extra class on the card element. */
   cardClassName?: string;
+  /** Extra class on the root element (e.g. to raise z-index above another sheet). */
+  className?: string;
 }
 
 /**
@@ -48,6 +50,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   onSwipeUp,
   dragWholeCard = false,
   cardClassName,
+  className,
 }) => {
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(false);
@@ -55,6 +58,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   const [dragging, setDragging] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const dragStarted = useRef(false);
+  /** Set after a real drag so the trailing click on the drag bar doesn't also close. */
+  const suppressTapClose = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -86,6 +91,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     if (e.button !== 0) return;
     dragStartY.current = e.clientY;
     dragStarted.current = false;
+    suppressTapClose.current = false;
   }, []);
 
   const handleDragPointerMove = useCallback(
@@ -117,7 +123,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       const dy = dragStartY.current !== null ? e.clientY - dragStartY.current : 0;
       dragStartY.current = null;
       dragStarted.current = false;
-      if (!started) return; // was a tap — let the click through
+      if (!started) return; // was a tap — let the drag-bar click close it
+      suppressTapClose.current = true;
       setDragging(false);
       if (dy >= DRAG_DISMISS_PX) {
         onClose();
@@ -131,6 +138,14 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     [onClose, onSwipeUp]
   );
 
+  const handleDragAreaClick = useCallback(() => {
+    if (suppressTapClose.current) {
+      suppressTapClose.current = false;
+      return;
+    }
+    onClose();
+  }, [onClose]);
+
   if (!mounted) return null;
 
   return (
@@ -139,6 +154,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         'bottom-sheet',
         variant === 'full' && 'bottom-sheet--full',
         visible && 'bottom-sheet--visible',
+        className,
       ]
         .filter(Boolean)
         .join(' ')}
@@ -172,8 +188,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             <div
               className="bottom-sheet__drag-area"
               role="button"
-              aria-label="Drag to expand or close"
+              aria-label="Tap or drag down to close"
               tabIndex={-1}
+              onClick={handleDragAreaClick}
               onPointerDown={dragWholeCard ? undefined : handleDragPointerDown}
               onPointerMove={dragWholeCard ? undefined : handleDragPointerMove}
               onPointerUp={dragWholeCard ? undefined : endDrag}

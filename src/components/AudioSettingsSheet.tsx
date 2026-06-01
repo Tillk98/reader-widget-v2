@@ -30,6 +30,8 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const dragY0 = useRef<number | null>(null);
+  /** Tap (no real movement) on the drag bar closes; a drag gesture does not also tap-close. */
+  const wasTap = useRef(true);
 
   const [autoAdvance, setAutoAdvance] = useState(true);
   const [playbackSpeedIndex, setPlaybackSpeedIndex] = useState(2);
@@ -80,7 +82,13 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
   const handleDragPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
     dragY0.current = e.clientY;
+    wasTap.current = true;
     (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const handleDragPointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragY0.current === null) return;
+    if (Math.abs(e.clientY - dragY0.current) > 6) wasTap.current = false;
   }, []);
 
   const handleDragPointerUp = useCallback(
@@ -93,6 +101,10 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
     },
     [onClose]
   );
+
+  const handleDragClick = useCallback(() => {
+    if (wasTap.current) onClose();
+  }, [onClose]);
 
   const handleDragPointerCancel = useCallback((e: React.PointerEvent) => {
     (e.currentTarget as HTMLButtonElement).releasePointerCapture?.(e.pointerId);
@@ -114,10 +126,12 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
           <button
             type="button"
             className="audio-settings-sheet__drag-area"
-            aria-label="Drag down to close"
+            aria-label="Tap or drag down to close"
             onPointerDown={handleDragPointerDown}
+            onPointerMove={handleDragPointerMove}
             onPointerUp={handleDragPointerUp}
             onPointerCancel={handleDragPointerCancel}
+            onClick={handleDragClick}
           >
             <span className="audio-settings-sheet__drag-bar" />
           </button>
