@@ -1,0 +1,64 @@
+import React, { useEffect } from 'react';
+import { X } from 'lucide-react';
+import './ExitLessonPopup.css';
+
+export interface ExitLessonPopupProps {
+  open: boolean;
+  /** Dismiss the popup (Go Back / X / overlay / Escape). */
+  onClose: () => void;
+  /** Confirm exit — wired in a later step (no-op in this prototype). */
+  onExit?: () => void;
+}
+
+export const ExitLessonPopup: React.FC<ExitLessonPopupProps> = ({ open, onClose, onExit }) => {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="exit-lesson-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="exit-lesson-popup" role="dialog" aria-modal="true" aria-label="Exit lesson">
+        <div className="exit-lesson-popup__header">
+          <p className="exit-lesson-popup__title">Are you sure you want to exit this lesson?</p>
+          <p className="exit-lesson-popup__subtitle">You will be taken back to the library.</p>
+        </div>
+
+        <div className="exit-lesson-popup__actions">
+          <button
+            type="button"
+            className="exit-lesson-popup__btn exit-lesson-popup__btn--secondary"
+            onClick={onClose}
+          >
+            Go Back
+          </button>
+          <button
+            type="button"
+            className="exit-lesson-popup__btn exit-lesson-popup__btn--primary"
+            onClick={onExit}
+          >
+            Exit Lesson
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="exit-lesson-popup__close"
+          aria-label="Close"
+          onClick={onClose}
+        >
+          <X size={16} strokeWidth={2} />
+        </button>
+      </div>
+    </div>
+  );
+};

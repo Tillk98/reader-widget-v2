@@ -1,0 +1,125 @@
+.exit-lesson-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.4);
+  animation: exit-lesson-fade 0.15s ease;
+}
+
+.exit-lesson-popup {
+  position: relative;
+  width: 100%;
+  max-width: 368px;
+  box-sizing: border-box;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 12px 12px;
+  border-radius: 12px;
+  background: var(--backgrounds-page, #ffffff);
+  box-shadow: 0px 4px 24px -4px rgba(0, 0, 0, 0.15);
+  animation: exit-lesson-pop 0.18s ease;
+}
+
+.exit-lesson-popup__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+}
+
+.exit-lesson-popup__title {
+  margin: 0;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 24px;
+  color: #000;
+}
+
+.exit-lesson-popup__subtitle {
+  margin: 0;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--text-muted, #6d7680);
+}
+
+.exit-lesson-popup__actions {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.exit-lesson-popup__btn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.1s ease;
+}
+
+.exit-lesson-popup__btn:active {
+  transform: scale(0.98);
+}
+
+.exit-lesson-popup__btn--secondary {
+  background: var(--surfaces-default, #f1f3f4);
+  color: #000;
+}
+
+.exit-lesson-popup__btn--primary {
+  background: var(--surfaces-primary, #42a564);
+  color: #fff;
+}
+
+.exit-lesson-popup__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #1c1c1e;
+  box-shadow: 0px 1px 4px -2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+@keyframes exit-lesson-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes exit-lesson-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exit-lesson-overlay,
+  .exit-lesson-popup {
+    animation-duration: 0.01ms;
+  }
+}

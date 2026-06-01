@@ -89,13 +89,6 @@ export const DictionaryMenuSheet: React.FC<DictionaryMenuSheetProps> = ({
       className="dictionary-menu-sheet"
     >
       <div className="dictionary-menu">
-        <div className="dictionary-menu__header">
-          <div className="dictionary-menu__title">
-            <p className="dictionary-menu__title-text">Manage Your Dictionaries</p>
-            <p className="dictionary-menu__subtitle">Remove, add, and reorder your dictionaries.</p>
-          </div>
-        </div>
-
         <section className="dictionary-menu__section">
           <p className="dictionary-menu__section-header">Your Dictionaries</p>
           <div className="dictionary-menu__list" ref={listRef}>

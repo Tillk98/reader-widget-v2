@@ -14,38 +14,6 @@
 }
 
 /* --- Header: title + subtitle | close --- */
-.dictionary-menu__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 12px 4px;
-  box-sizing: border-box;
-}
-
-.dictionary-menu__title {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-.dictionary-menu__title-text {
-  margin: 0;
-  font-weight: 600;
-  font-size: 16px;
-  line-height: 20px;
-  color: #000;
-}
-
-.dictionary-menu__subtitle {
-  margin: 0;
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 16px;
-  color: #6d7680;
-}
-
 /* --- Sections --- */
 .dictionary-menu__section {
   display: flex;
