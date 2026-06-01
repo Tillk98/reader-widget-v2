@@ -9,6 +9,7 @@ import { PhrasePopUp, type PhraseWordItem } from './PhrasePopUp';
 import { countWords, isPunctuation, joinWordsText, joinWordsTranslation, MAX_PHRASE_WORDS } from '../utils/phrase';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
 import { ExitLessonPopup } from './ExitLessonPopup';
+import { LynxChatMode } from './LynxChatMode';
 import { ReaderBottomBar } from './ReaderBottomBar';
 import { SentenceMode } from './SentenceMode';
 import { ReviewMode } from './ReviewMode';
@@ -25,6 +26,7 @@ import lessonImage from '../assets/lesson-image.png';
 import streakIcon from '../assets/streak-icon.png';
 import { AudioMiniPlayer } from './AudioMiniPlayer';
 import { AudioSettingsSheet } from './AudioSettingsSheet';
+import { CourseInfoSheet } from './CourseInfoSheet';
 import { startViewTransition, supportsViewTransition } from '../utils/viewTransition';
 import './Reader.css';
 
@@ -78,6 +80,10 @@ export const Reader: React.FC = () => {
   const [phraseStatusMap, setPhraseStatusMap] = useState<Record<string, LingQStatusType>>({});
   /** "Exit lesson?" confirmation popup, opened from the header Library button. */
   const [exitPopupOpen, setExitPopupOpen] = useState(false);
+  /** Course info sheet opened from the audio settings lesson header. */
+  const [courseInfoOpen, setCourseInfoOpen] = useState(false);
+  /** Full-screen Lynx chat mode, opened from the bottom bar Lynx button. */
+  const [lynxChatOpen, setLynxChatOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef<number>(0);
@@ -1248,6 +1254,10 @@ export const Reader: React.FC = () => {
             lessonTitle={lesson.title}
             lessonSource={lesson.source ?? ''}
             lessonImageSrc={lessonImage}
+            onLessonClick={() => {
+              setCourseInfoOpen(true);
+              window.setTimeout(() => setAudioSettingsOpen(false), 320);
+            }}
             onChromeHeightChange={setAudioSettingsSheetHeightPx}
           />
           <ReviewFilterSheet
@@ -1374,6 +1384,7 @@ export const Reader: React.FC = () => {
               }}
               hasVideo={lesson.hasVideo === true}
               onVideoMode={handleEnterVideoModeFromChrome}
+              onLynxAI={() => setLynxChatOpen(true)}
               onExit={() => {}}
               menuHeaderTitle={lesson.lessonMenuTitle ?? lesson.title}
               menuHeaderSubtitle={lesson.lessonMenuSubtitle}
@@ -1402,6 +1413,24 @@ export const Reader: React.FC = () => {
         </>
       )}
       <ExitLessonPopup open={exitPopupOpen} onClose={() => setExitPopupOpen(false)} />
+      <CourseInfoSheet
+        open={courseInfoOpen}
+        onClose={() => setCourseInfoOpen(false)}
+        courseTitle={lesson.source ?? lesson.title}
+        heroImageSrc={lessonImage}
+        lessonImageSrc={lessonImage}
+        lessonCourse={lesson.source ?? ''}
+        lessonTitle={lesson.title}
+      />
+      <LynxChatMode
+        open={lynxChatOpen}
+        onClose={() => setLynxChatOpen(false)}
+        onLibrary={handleCloseLesson}
+        onLessonClick={() => setCourseInfoOpen(true)}
+        lessonTitle={lesson.title}
+        lessonSource={lesson.source ?? ''}
+        lessonImageSrc={lessonImage}
+      />
     </div>
   );
 };

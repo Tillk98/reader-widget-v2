@@ -16,6 +16,10 @@ export interface AudioSettingsSheetProps {
   lessonTitle?: string;
   lessonSource?: string;
   lessonImageSrc?: string;
+  /** Lesson position within course, e.g. "1/5". */
+  lessonPageLabel?: string;
+  /** Tapping the lesson header opens the course info sheet. */
+  onLessonClick?: () => void;
   /** Fixed bottom chrome for lesson layout / LingQ (sheet + safe area). */
   onChromeHeightChange?: (heightPx: number) => void;
 }
@@ -26,6 +30,8 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
   lessonTitle,
   lessonSource,
   lessonImageSrc,
+  lessonPageLabel = '1/5',
+  onLessonClick,
   onChromeHeightChange,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -137,20 +143,30 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
           </button>
 
           {(lessonTitle || lessonImageSrc) && (
-            <div className="audio-settings-sheet__lesson">
-              {lessonImageSrc ? (
-                <span className="audio-settings-sheet__lesson-thumb-wrap">
-                  <img src={lessonImageSrc} alt="" className="audio-settings-sheet__lesson-thumb" />
-                </span>
-              ) : null}
-              <span className="audio-settings-sheet__lesson-text">
-                {lessonTitle ? (
-                  <span className="audio-settings-sheet__lesson-title">{lessonTitle}</span>
-                ) : null}
-                {lessonSource ? (
-                  <span className="audio-settings-sheet__lesson-source">{lessonSource}</span>
-                ) : null}
-              </span>
+            <div className="audio-settings-sheet__lesson-row">
+              <button
+                type="button"
+                className="audio-settings-sheet__lesson"
+                onClick={onLessonClick}
+                aria-label="Open course details"
+              >
+                <div className="audio-settings-sheet__lesson-image">
+                  {lessonImageSrc ? <img src={lessonImageSrc} alt="" /> : null}
+                </div>
+                <div className="audio-settings-sheet__lesson-meta">
+                  {lessonTitle ? (
+                    <p className="audio-settings-sheet__lesson-title">{lessonTitle}</p>
+                  ) : null}
+                  <div className="audio-settings-sheet__lesson-course">
+                    {lessonSource ? (
+                      <span className="audio-settings-sheet__lesson-course-name">{lessonSource}</span>
+                    ) : null}
+                    {lessonPageLabel ? (
+                      <span className="audio-settings-sheet__lesson-page">({lessonPageLabel})</span>
+                    ) : null}
+                  </div>
+                </div>
+              </button>
             </div>
           )}
 
