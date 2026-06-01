@@ -1,0 +1,182 @@
+/* Review filter menu — method / scope / status (Figma 3185:5330). */
+
+.review-filter {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px 16px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.review-filter__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.review-filter__section-header {
+  margin: 0;
+  padding: 4px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #6d7680;
+}
+
+.review-filter__section-header--with-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-filter__info {
+  color: #6d7680;
+}
+
+/* --- Segmented controls (Method / Scope) --- */
+.review-filter__segmented {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0 12px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
+}
+
+.review-filter__segment {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  text-align: center;
+  color: #000;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.review-filter__segment:hover:not(.review-filter__segment--active) {
+  background: #f4f5f6;
+}
+
+.review-filter__segment--active {
+  background: #f1f7fe;
+  border-color: #2e75cd;
+  color: #2e75cd;
+}
+
+/* --- Status range bar --- */
+.review-filter__status-bar {
+  position: relative;
+  margin: 0 12px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
+  touch-action: none;
+}
+
+.review-filter__status-highlights {
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+}
+
+.review-filter__status-highlight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #f1f7fe;
+  border: 1px solid #2e75cd;
+  border-radius: 999px;
+  box-sizing: border-box;
+}
+
+.review-filter__status-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  z-index: 1;
+}
+
+.review-filter__status-seg {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1c1c1e;
+  transition: color 0.12s ease;
+  user-select: none;
+}
+
+.review-filter__status-seg--selected {
+  color: #2e75cd;
+}
+
+.review-filter__status-num {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+/* --- Divider + actions --- */
+.review-filter__divider {
+  height: 1px;
+  width: 100%;
+  margin: 8px 0;
+  background: #e3e5e7;
+}
+
+.review-filter__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.review-filter__btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.review-filter__btn:active {
+  transform: scale(0.97);
+}
+
+.review-filter__btn--cancel {
+  background: #f1f3f4;
+  color: #000;
+}
+
+.review-filter__btn--cancel:hover {
+  background: #e8eaec;
+}
+
+.review-filter__btn--update {
+  background: #2e75cd;
+  color: #fff;
+}
+
+.review-filter__btn--update:hover {
+  background: #2868b8;
+}
