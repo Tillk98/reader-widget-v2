@@ -11,6 +11,12 @@ interface WordProps {
   onClick: (wordId: string) => void;
   isKnown: boolean;
   isIgnored: boolean;
+  /** Part of an in-progress / active phrase selection. */
+  isPhraseSelected?: boolean;
+  /** First word of the phrase run (rounds the left edge of the highlight). */
+  isPhraseStart?: boolean;
+  /** Last word of the phrase run (rounds the right edge of the highlight). */
+  isPhraseEnd?: boolean;
 }
 
 export const Word: React.FC<WordProps> = ({
@@ -21,6 +27,9 @@ export const Word: React.FC<WordProps> = ({
   onClick,
   isKnown,
   isIgnored,
+  isPhraseSelected = false,
+  isPhraseStart = false,
+  isPhraseEnd = false,
 }) => {
   const handleClick = () => {
     if (isKnown || isIgnored) return;
@@ -28,10 +37,11 @@ export const Word: React.FC<WordProps> = ({
   };
 
   const getClassName = () => {
-    if (isKnown || isIgnored) {
-      return 'sentence-item';
-    }
-    return `sentence-item ${isClicked || isLingQ ? 'yellow-word' : 'blue-word'}`;
+    const base = isKnown || isIgnored ? 'sentence-item' : `sentence-item ${isClicked || isLingQ ? 'yellow-word' : 'blue-word'}`;
+    if (!isPhraseSelected) return base;
+    return [base, 'phrase-word', isPhraseStart && 'phrase-word--start', isPhraseEnd && 'phrase-word--end']
+      .filter(Boolean)
+      .join(' ');
   };
 
   return (

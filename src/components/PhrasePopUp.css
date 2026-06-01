@@ -1,0 +1,202 @@
+/* PhrasePopUp – Figma "MeaningPopUp" Phrase/Top + Phrase/Bottom variants. */
+.phrase-popup {
+  position: fixed;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--backgrounds-page, #ffffff);
+  border-radius: var(--radius-xs, 6px);
+  box-shadow: 0px 4px 16px -2px rgba(0, 0, 0, 0.15);
+  font-family: 'DM Sans', sans-serif;
+  overflow: clip;
+  pointer-events: auto;
+  user-select: none;
+  min-width: 160px;
+  max-width: min(320px, calc(100vw - 16px));
+}
+
+/* Meaning header (term + expand chevron). */
+.phrase-popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: none;
+  background: var(--backgrounds-page, #ffffff);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.phrase-popup__meaning {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phrase-popup__header-chevron {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--typography-default, #000000);
+  box-shadow: 0px 0.417px 0.833px var(--color-grey-200, #e3e5e7);
+}
+
+.phrase-popup__header-chevron svg,
+.phrase-popup__row-chevron svg {
+  display: block;
+}
+
+/* Section divider between header and list. */
+.phrase-popup__divider {
+  height: 1px;
+  width: 100%;
+  background: var(--color-grey-200, #e3e5e7);
+  flex-shrink: 0;
+}
+
+/* Scrollable word breakdown — ~3.5 rows visible, then scrolls internally. */
+.phrase-popup__list {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  max-height: 152px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.phrase-popup__row-divider {
+  height: 1px;
+  width: 100%;
+  background: var(--color-grey-100, #f1f3f4);
+  flex-shrink: 0;
+  margin: 5px 0;
+}
+
+.phrase-popup__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.phrase-popup__row-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.phrase-popup__row-source {
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--typography-muted, #6d7680);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.phrase-popup__row-def {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--typography-default, #000000);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.phrase-popup__row-chevron {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--typography-muted, #6d7680);
+}
+
+/* Invalid phrase variant (unchanged content). */
+.phrase-popup--invalid {
+  max-width: min(320px, calc(100vw - 16px));
+}
+
+.phrase-popup__invalid-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.phrase-popup__phrase {
+  margin: 0;
+  font-family: Lora, serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--typography-default, #000000);
+}
+
+.phrase-popup__translate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  border: 1px solid var(--ui-ctrl-border-light, #d1d6d9);
+  border-radius: var(--ui-ctrl-radius-md, 8px);
+  background: var(--ui-ctrl-surface-muted, #f7f9fa);
+  box-shadow: var(--ui-ctrl-shadow, 0 0 4px #e3e5e7);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--typography-default, #000000);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.phrase-popup__translate:hover {
+  background: var(--ui-ctrl-surface-hover, #eef1f3);
+}
+
+.phrase-popup__translate:active {
+  transform: scale(0.98);
+}
+
+.phrase-popup__translate svg {
+  display: block;
+  flex-shrink: 0;
+  color: var(--typography-action-secondary, #2e75cd);
+}
+
+.phrase-popup__note {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--typography-muted, #6d7680);
+}

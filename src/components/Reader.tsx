@@ -5,7 +5,10 @@ import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
+import { PhrasePopUp, type PhraseWordItem } from './PhrasePopUp';
+import { countWords, isPunctuation, joinWordsText, joinWordsTranslation, MAX_PHRASE_WORDS } from '../utils/phrase';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
+import { ExitLessonPopup } from './ExitLessonPopup';
 import { ReaderBottomBar } from './ReaderBottomBar';
 import { SentenceMode } from './SentenceMode';
 import { ReviewMode } from './ReviewMode';
@@ -27,6 +30,20 @@ import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
 const SWIPE_THRESHOLD_RATIO = 0.15;
+/** Hold this long (without moving) on a word to begin a phrase selection. */
+const LONG_PRESS_MS = 320;
+/** Movement past this (in px) before the timer fires is treated as a swipe, not a press. */
+const LONG_PRESS_MOVE_CANCEL_PX = 8;
+
+interface PhraseSelection {
+  ids: string[];
+  phraseText: string;
+  meaning: string;
+  /** Per-word breakdown (excludes punctuation) shown in the popup list. */
+  words: PhraseWordItem[];
+  /** ≤ 9 words within a single sentence → eligible for a phrase LingQ. */
+  valid: boolean;
+}
 
 type MediaMode = 'none' | 'video' | 'audio';
 
@@ -51,11 +68,30 @@ export const Reader: React.FC = () => {
     });
     return seed;
   });
+  /** Word ids currently highlighted as part of an in-progress / open phrase selection. */
+  const [phraseHighlightIds, setPhraseHighlightIds] = useState<Set<string>>(() => new Set());
+  /** Finalized phrase selection driving the phrase popup. */
+  const [phraseSelection, setPhraseSelection] = useState<PhraseSelection | null>(null);
+  /** Valid phrase expanded into the full detail sheet. */
+  const [phraseDetailOpen, setPhraseDetailOpen] = useState(false);
+  /** LingQ status per phrase, keyed by the joined word ids of the selection. */
+  const [phraseStatusMap, setPhraseStatusMap] = useState<Record<string, LingQStatusType>>({});
+  /** "Exit lesson?" confirmation popup, opened from the header Library button. */
+  const [exitPopupOpen, setExitPopupOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef<number>(0);
+  const dragStartY = useRef<number>(0);
   const dragOffsetPx = useRef<number>(0);
   const ignoreNextWordClick = useRef(false);
+  /** Pending long-press timer (set on pointer down over a word). */
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Word the long-press started on (anchor of the phrase range). */
+  const phraseAnchorRef = useRef<{ id: string; index: number } | null>(null);
+  /** True while actively dragging out a phrase selection (suppresses page swipe). */
+  const phraseModeRef = useRef(false);
+  /** Live phrase range (indices into the current page's word list). */
+  const phraseRangeRef = useRef<{ start: number; end: number } | null>(null);
   /** Skip ResizeObserver pagination while swiping — avoids remounting pages mid-gesture (white flash). */
   const isPageSwipeDraggingRef = useRef(false);
   /** Block pagination recalculation briefly after a page change (resize often fires during transform; recalc remounts rows → flash). */
@@ -132,6 +168,36 @@ export const Reader: React.FC = () => {
       sentence.words.forEach(w => m.set(w.id, si));
     });
     return m;
+  }, []);
+
+  const wordById = React.useMemo(() => {
+    const m = new Map<string, Word>();
+    allWords.forEach(w => m.set(w.id, w));
+    return m;
+  }, [allWords]);
+
+  /** Words rendered on the currently visible page (in document order). */
+  const currentPageWords = React.useMemo(
+    () => pages[currentPageIndex]?.words ?? [],
+    [pages, currentPageIndex]
+  );
+  const currentPageWordIndex = React.useMemo(() => {
+    const m = new Map<string, number>();
+    currentPageWords.forEach((w, i) => m.set(w.id, i));
+    return m;
+  }, [currentPageWords]);
+  /** Mirror the page word maps in refs so the pointer callbacks stay stable. */
+  const currentPageWordsRef = useRef(currentPageWords);
+  const currentPageWordIndexRef = useRef(currentPageWordIndex);
+  useEffect(() => {
+    currentPageWordsRef.current = currentPageWords;
+    currentPageWordIndexRef.current = currentPageWordIndex;
+  }, [currentPageWords, currentPageWordIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    };
   }, []);
 
   const calculatePages = useCallback(() => {
@@ -314,16 +380,149 @@ export const Reader: React.FC = () => {
     return () => ro.disconnect();
   }, [pages.length]);
 
+  /** Word ids covered by a [start, end] range of indices into the current page. */
+  const phraseIdsFromRange = useCallback((start: number, end: number): string[] => {
+    const a = Math.min(start, end);
+    const b = Math.max(start, end);
+    return currentPageWordsRef.current.slice(a, b + 1).map(w => w.id);
+  }, []);
+
+  /** Long-press fired: begin tracking a phrase selection anchored at the pressed word. */
+  const startPhraseSelection = useCallback(() => {
+    const anchor = phraseAnchorRef.current;
+    if (!anchor) return;
+    phraseModeRef.current = true;
+    phraseRangeRef.current = { start: anchor.index, end: anchor.index };
+    /* Drop any open single-word selection / popup so only the phrase is shown. */
+    setPhraseSelection(null);
+    setPhraseDetailOpen(false);
+    setSelectedWordId(prev => {
+      if (prev) {
+        setClickedWords(cw => {
+          const next = new Set(cw);
+          next.delete(prev);
+          return next;
+        });
+      }
+      return null;
+    });
+    setPhraseHighlightIds(new Set([anchor.id]));
+  }, []);
+
+  const clearPhraseSelection = useCallback(() => {
+    setPhraseSelection(null);
+    setPhraseDetailOpen(false);
+    setPhraseHighlightIds(new Set());
+  }, []);
+
+  /** Bounding rect spanning all words in the selection (viewport coords). */
+  const phraseAnchorRectFromIds = useCallback((ids: string[]): DOMRect | null => {
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      left = Math.min(left, r.left);
+      top = Math.min(top, r.top);
+      right = Math.max(right, r.right);
+      bottom = Math.max(bottom, r.bottom);
+    }
+    if (left === Infinity) return null;
+    return new DOMRect(left, top, right - left, bottom - top);
+  }, []);
+
+  /** Finalize an active phrase drag into a popup (or a single-word click). */
+  const finalizePhraseSelection = useCallback(() => {
+    const range = phraseRangeRef.current;
+    phraseRangeRef.current = null;
+    phraseModeRef.current = false;
+    if (!range) {
+      setPhraseHighlightIds(new Set());
+      return;
+    }
+    const ids = phraseIdsFromRange(range.start, range.end);
+    /* A single word: let the trailing native click handle normal word selection. */
+    if (ids.length <= 1) {
+      setPhraseHighlightIds(new Set());
+      return;
+    }
+    const words = ids.map(id => wordById.get(id)).filter((w): w is Word => Boolean(w));
+    const sentenceIds = new Set(ids.map(id => wordToSentenceIndex.get(id)));
+    const valid = sentenceIds.size === 1 && countWords(words) <= MAX_PHRASE_WORDS;
+    const wordItems: PhraseWordItem[] = words
+      .filter(w => !isPunctuation(w.text))
+      .map(w => ({ id: w.id, text: w.text, translation: w.translation ?? w.text }));
+    setPhraseSelection({
+      ids,
+      phraseText: joinWordsText(words),
+      meaning: joinWordsTranslation(words),
+      words: wordItems,
+      valid,
+    });
+    setPhraseHighlightIds(new Set(ids));
+    /* Suppress the trailing click so it doesn't select a word; auto-reset if none fires. */
+    ignoreNextWordClick.current = true;
+    setTimeout(() => {
+      ignoreNextWordClick.current = false;
+    }, 400);
+  }, [phraseIdsFromRange, wordById, wordToSentenceIndex]);
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     dragStartX.current = e.clientX;
+    dragStartY.current = e.clientY;
     dragOffsetPx.current = 0;
-  }, []);
+
+    /* Arm a long-press if the press landed on a word on the current page. */
+    phraseAnchorRef.current = null;
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    const wordEl = (e.target as HTMLElement)?.closest?.('.sentence-item') as HTMLElement | null;
+    const wid = wordEl?.id;
+    if (wid && currentPageWordIndexRef.current.has(wid)) {
+      phraseAnchorRef.current = { id: wid, index: currentPageWordIndexRef.current.get(wid)! };
+      longPressTimerRef.current = setTimeout(() => {
+        longPressTimerRef.current = null;
+        startPhraseSelection();
+      }, LONG_PRESS_MS);
+    }
+  }, [startPhraseSelection]);
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!contentRef.current || pages.length === 0) return;
       if (e.pointerType === 'mouse' && e.buttons === 0) return;
+
+      /* Cancel a pending long-press once the pointer moves enough (it's a swipe). */
+      if (longPressTimerRef.current != null) {
+        const moved = Math.hypot(e.clientX - dragStartX.current, e.clientY - dragStartY.current);
+        if (moved > LONG_PRESS_MOVE_CANCEL_PX) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+      }
+
+      /* Active phrase drag: extend the selection to the word under the pointer. */
+      if (phraseModeRef.current) {
+        const anchor = phraseAnchorRef.current;
+        if (!anchor) return;
+        const hit = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+        const wordEl = hit?.closest?.('.sentence-item') as HTMLElement | null;
+        const wid = wordEl?.id;
+        const idxMap = currentPageWordIndexRef.current;
+        if (wid && idxMap.has(wid)) {
+          const end = idxMap.get(wid)!;
+          phraseRangeRef.current = { start: anchor.index, end };
+          setPhraseHighlightIds(new Set(phraseIdsFromRange(anchor.index, end)));
+        }
+        return;
+      }
+
       const dx = e.clientX - dragStartX.current;
       if (!isDragging) {
         if (Math.abs(dx) >= DRAG_THRESHOLD_PX) {
@@ -337,11 +536,23 @@ export const Reader: React.FC = () => {
       dragOffsetPx.current = dx;
       setDragOffset(dx);
     },
-    [isDragging, pages.length]
+    [isDragging, pages.length, phraseIdsFromRange]
   );
 
   const handlePointerUp = useCallback(
     (e?: React.PointerEvent) => {
+      if (longPressTimerRef.current != null) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      /* Phrase drag: only finalize on a real pointer up (ignore pointerleave). */
+      if (phraseModeRef.current) {
+        if (!e) return;
+        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+        finalizePhraseSelection();
+        return;
+      }
+
       if (e?.target) (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
       if (!isDragging) return;
       isPageSwipeDraggingRef.current = false;
@@ -358,16 +569,30 @@ export const Reader: React.FC = () => {
       setDragOffset(0);
       dragOffsetPx.current = 0;
     },
-    [isDragging, currentPageIndex, pages.length]
+    [isDragging, currentPageIndex, pages.length, finalizePhraseSelection]
   );
 
   const handlePointerCancel = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    if (longPressTimerRef.current != null) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (phraseModeRef.current) {
+      phraseModeRef.current = false;
+      phraseRangeRef.current = null;
+      setPhraseHighlightIds(new Set());
+    }
     isPageSwipeDraggingRef.current = false;
     setIsDragging(false);
     setDragOffset(0);
     dragOffsetPx.current = 0;
   }, []);
+
+  /* A phrase is anchored to on-screen words: drop it when the page or mode changes. */
+  useEffect(() => {
+    clearPhraseSelection();
+  }, [currentPageIndex, mediaMode, sentenceMode, reviewMode, clearPhraseSelection]);
 
   const handleWordClick = useCallback(
     (wordId: string) => {
@@ -378,6 +603,10 @@ export const Reader: React.FC = () => {
       if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
         return;
       }
+      /* Selecting a single word dismisses any open phrase selection. */
+      setPhraseSelection(null);
+      setPhraseDetailOpen(false);
+      setPhraseHighlightIds(new Set());
       if (selectedWordId === wordId) {
         setSelectedWordId(null);
         setClickedWords(prev => {
@@ -480,6 +709,15 @@ export const Reader: React.FC = () => {
     setListDetailOpen(true);
   }, []);
 
+  /** Tap a word inside the phrase popup's breakdown: open that word's detail sheet. */
+  const handlePhraseWordOpen = useCallback(
+    (wordId: string) => {
+      clearPhraseSelection();
+      handleListOpenDetail(wordId);
+    },
+    [clearPhraseSelection, handleListOpenDetail]
+  );
+
   const selectedWordData = React.useMemo(() => {
     if (!selectedWordId) return null;
 
@@ -532,7 +770,7 @@ export const Reader: React.FC = () => {
   }, []);
 
   /** Header close (X): closes the lesson — interaction wired in a later step. */
-  const handleCloseLesson = useCallback(() => {}, []);
+  const handleCloseLesson = useCallback(() => setExitPopupOpen(true), []);
 
   /** Header stats button: opens lesson stats — interaction wired in a later step. */
   const handleOpenStats = useCallback(() => {}, []);
@@ -949,6 +1187,7 @@ export const Reader: React.FC = () => {
                     ignoredWords={ignoredWords}
                     videoLessonLayout
                     wordToSentenceIndex={wordToSentenceIndex}
+                    phraseSelectedWords={phraseHighlightIds}
                   />
                 </div>
               ) : (
@@ -971,6 +1210,7 @@ export const Reader: React.FC = () => {
                         ignoredWords={ignoredWords}
                         videoLessonLayout={false}
                         wordToSentenceIndex={wordToSentenceIndex}
+                        phraseSelectedWords={phraseHighlightIds}
                       />
                     </div>
                   ))}
@@ -1016,7 +1256,7 @@ export const Reader: React.FC = () => {
             value={reviewFilter}
             onApply={setReviewFilter}
           />
-          {selectedWordId && selectedWordData && !isReviewView && !(isSentenceView && sentencePopupSuppressed) && (
+          {selectedWordId && selectedWordData && !isReviewView && !listDetailOpen && !(isSentenceView && sentencePopupSuppressed) && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
@@ -1031,6 +1271,37 @@ export const Reader: React.FC = () => {
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
             />
           )}
+          {phraseSelection && !phraseDetailOpen && (
+            <PhrasePopUp
+              key={phraseSelection.ids.join('-')}
+              phraseText={phraseSelection.phraseText}
+              meaning={phraseSelection.meaning}
+              words={phraseSelection.words}
+              valid={phraseSelection.valid}
+              getAnchorRect={() => phraseAnchorRectFromIds(phraseSelection.ids)}
+              onClose={clearPhraseSelection}
+              onExpand={phraseSelection.valid ? () => setPhraseDetailOpen(true) : undefined}
+              onWordOpen={handlePhraseWordOpen}
+              onGoogleTranslate={() => {}}
+            />
+          )}
+          {phraseDetailOpen && phraseSelection && (() => {
+            const phraseKey = phraseSelection.ids.join('-');
+            return (
+              <WordDetailBottomSheet
+                key={phraseKey}
+                wordText={phraseSelection.phraseText}
+                wordTranslation={phraseSelection.meaning}
+                wordStatus={phraseStatusMap[phraseKey] ?? 'New'}
+                onWordStatusChange={status =>
+                  setPhraseStatusMap(prev => ({ ...prev, [phraseKey]: status }))
+                }
+                phraseWords={phraseSelection.words}
+                onPhraseWordOpen={handlePhraseWordOpen}
+                onClose={clearPhraseSelection}
+              />
+            );
+          })()}
           {listDetailOpen && selectedWordId && (() => {
             const word = getWordById(selectedWordId);
             if (!word) return null;
@@ -1059,7 +1330,7 @@ export const Reader: React.FC = () => {
               }
               anchorAboveVideoBarPx={lingqStripAnchorAboveVideoBarPx}
               lessonImageSrc={lessonImage}
-              wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen}
+              wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen || phraseDetailOpen}
               selectedWordId={selectedWordId}
               selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
               onSelectedWordStatusChange={
@@ -1130,6 +1401,7 @@ export const Reader: React.FC = () => {
           )}
         </>
       )}
+      <ExitLessonPopup open={exitPopupOpen} onClose={() => setExitPopupOpen(false)} />
     </div>
   );
 };

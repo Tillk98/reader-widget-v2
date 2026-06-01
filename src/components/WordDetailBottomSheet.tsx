@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { Volume2, Plus, Tags, Coins, ChevronDown, BookA } from 'lucide-react';
+import { Play, Tags, Coins, BookA } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -8,12 +8,13 @@ import sentenceTabInactive from '../assets/sentence-inactive.png';
 import dictionariesTabActive from '../assets/dictionaries-active.png';
 import dictionariesTabInactive from '../assets/dictionaries-inactive.png';
 import notesTabActive from '../assets/lynx-notes-active.png';
-import notesTabInactive from '../assets/lynx-notes.png';
+import notesTabInactive from '../assets/lynx-notes-subtle.png';
 import dictionaryGlosbe from '../assets/dictionary-glosbe.png';
 import dictionaryWordReference from '../assets/dictionary-wordreference.png';
 import dictionaryLinguee from '../assets/dictionary-linguee.png';
 import dictionaryDeepL from '../assets/dictionary-deepl.png';
 import type { LingQStatusType } from './LingQStatusBar';
+import type { PhraseWordItem } from './PhrasePopUp';
 import { LingQStatusBar } from './LingQStatusBar';
 import { SentenceBlock } from './SentenceBlock';
 import type { WordDetailSentenceContextEntry } from './SentenceBlock';
@@ -21,6 +22,15 @@ import { LynxMessageActions } from './LynxMessageActions';
 import { NoteField } from './NoteField';
 import { DictionaryMenuSheet } from './DictionaryMenuSheet';
 import type { DictionaryMenuItem } from './DictionaryMenuSheet';
+import { MeaningListItem } from './MeaningListItem';
+import { MeaningSection } from './MeaningSection';
+import { SavedMeaningRow } from './SavedMeaningRow';
+import {
+  loadSavedMeanings,
+  saveSavedMeanings,
+  makeSavedMeaningId,
+  type SavedMeaning,
+} from '../utils/savedMeanings';
 import './WordDetailBottomSheet.css';
 
 export type { WordDetailSentenceContextEntry } from './SentenceBlock';
@@ -32,8 +42,6 @@ const DRAG_CLOSE_THRESHOLD_PX = 24;
 const SHEET_TRANSITION_MS = 380;
 
 const DEFAULT_SUGGESTED_MEANINGS = ['Her hair was undone', 'Her hair was disheveled'];
-const DEFAULT_RELATED_PHRASE =
-  'Ihre Frisur war aufgelöst und hing wie drei Pfund Wolle nach unten.';
 const DEFAULT_TAGS = ['noun', 'adjective', 'phrase'];
 const DEFAULT_PRIMARY_MEANING = 'Her hairstyle was messed up ; her hair was disheveled.';
 const DEFAULT_QUOTE_LINE = 'Ihre Frisur war aufgelöst';
@@ -128,9 +136,8 @@ export type WordDetailWordNote = {
 };
 
 const DEFAULT_WORD_NOTE: WordDetailWordNote = {
-  meta: 'Updated Mar 20, 9:35 AM EST',
-  body:
-    'like Frisur can mean the style itself, not just the hair — so eine schlechte Frisur = a bad haircut/style',
+  meta: '',
+  body: '',
 };
 
 export interface WordDetailBottomSheetProps {
@@ -167,6 +174,10 @@ export interface WordDetailBottomSheetProps {
   onWordTranslationChange?: (value: string) => void;
   /** Footer Lynx button — opens the Lynx explanation/chat for this word. */
   onLynx?: () => void;
+  /** When set, renders a "Words in this phrase" breakdown on the Meanings tab (phrase LingQ). */
+  phraseWords?: PhraseWordItem[];
+  /** Tap a word in the phrase breakdown → open that word's detail. */
+  onPhraseWordOpen?: (wordId: string) => void;
 }
 
 export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
@@ -176,7 +187,6 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   onWordStatusChange,
   onClose,
   suggestedMeanings = DEFAULT_SUGGESTED_MEANINGS,
-  relatedPhrase = DEFAULT_RELATED_PHRASE,
   tags = DEFAULT_TAGS,
   coinCount = 3,
   savedMeanings: savedMeaningsProp,
@@ -190,8 +200,9 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   onLynxRefresh,
   dictionaryProviders = DEFAULT_DICTIONARY_PROVIDERS,
   wordNote = DEFAULT_WORD_NOTE,
-  onWordTranslationChange,
   onLynx,
+  phraseWords,
+  onPhraseWordOpen,
 }) => {
   const handleDragStartYRef = useRef<number | null>(null);
   const onCloseRef = useRef(onClose);
@@ -211,17 +222,6 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     wordTranslation != null && wordTranslation.trim() !== ''
       ? wordTranslation
       : DEFAULT_PRIMARY_MEANING;
-
-  const [meaningDraft, setMeaningDraft] = React.useState(primaryMeaning);
-  useEffect(() => {
-    setMeaningDraft(primaryMeaning);
-  }, [primaryMeaning]);
-
-  const handleMeaningChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setMeaningDraft(v);
-    onWordTranslationChange?.(v);
-  };
 
   const [sheetOpen, setSheetOpen] = React.useState(false);
 
@@ -357,14 +357,63 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     return deriveSavedMeanings(wordTranslation);
   }, [savedMeaningsProp, wordTranslation]);
 
-  /** Saved meanings are now editable input fields (Figma 2806:55446). */
-  const [savedDrafts, setSavedDrafts] = React.useState<string[]>(resolvedSavedMeanings);
+  /**
+   * Editable, persisted saved meanings (add / edit / delete / reorder). Keyed per word so a
+   * customized list is restored next time the sheet opens for that word.
+   */
+  const savedStoreKey = (wordText ?? '').trim();
+  const savedSignature = resolvedSavedMeanings.join('\u0000');
+  const [savedMeanings, setSavedMeanings] = React.useState<SavedMeaning[]>(() => {
+    const stored = loadSavedMeanings(savedStoreKey);
+    return stored ?? resolvedSavedMeanings.map((text) => ({ id: makeSavedMeaningId(), text }));
+  });
   useEffect(() => {
-    setSavedDrafts(resolvedSavedMeanings);
-  }, [resolvedSavedMeanings]);
+    const stored = loadSavedMeanings(savedStoreKey);
+    setSavedMeanings(
+      stored ?? resolvedSavedMeanings.map((text) => ({ id: makeSavedMeaningId(), text })),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedStoreKey, savedSignature]);
 
-  /** Suggested meanings is a collapsible section (collapsed by default). */
-  const [suggestedOpen, setSuggestedOpen] = React.useState(false);
+  const commitSavedMeanings = useCallback(
+    (next: SavedMeaning[]) => {
+      saveSavedMeanings(savedStoreKey, next);
+      return next;
+    },
+    [savedStoreKey],
+  );
+
+  const addSavedMeaning = useCallback(
+    (text: string) => {
+      const value = text.trim();
+      if (!value) return;
+      setSavedMeanings((prev) => {
+        if (prev.some((m) => m.text === value)) return prev;
+        return commitSavedMeanings([...prev, { id: makeSavedMeaningId(), text: value }]);
+      });
+    },
+    [commitSavedMeanings],
+  );
+
+  const editSavedMeaning = useCallback(
+    (id: string, text: string) => {
+      setSavedMeanings((prev) =>
+        commitSavedMeanings(prev.map((m) => (m.id === id ? { ...m, text } : m))),
+      );
+    },
+    [commitSavedMeanings],
+  );
+
+  const deleteSavedMeaning = useCallback(
+    (id: string) => {
+      setSavedMeanings((prev) => commitSavedMeanings(prev.filter((m) => m.id !== id)));
+    },
+    [commitSavedMeanings],
+  );
+
+  /** The master meaning at the top is the amalgamation of the saved meanings. */
+  const masterMeaning =
+    savedMeanings.length > 0 ? savedMeanings.map((m) => m.text).join(' ; ') : primaryMeaning;
 
   /** Dictionaries shown in the horizontal strip; editable via the manage menu. */
   const [activeDictionaries, setActiveDictionaries] =
@@ -443,20 +492,10 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                 <p className="word-detail-sheet-quote-line">{quoteLine}</p>
               </div>
               <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play audio">
-                <Volume2 size={18} aria-hidden />
+                <Play size={16} aria-hidden />
               </button>
             </div>
-            <div className="word-detail-sheet-meaning-field">
-              <input
-                type="text"
-                className="word-detail-sheet-meaning-input"
-                value={meaningDraft}
-                onChange={handleMeaningChange}
-                aria-label="Meaning"
-                autoComplete="off"
-                spellCheck
-              />
-            </div>
+            <p className="word-detail-sheet-meaning-text">{masterMeaning}</p>
           </div>
 
           <div className="word-detail-sheet-tabs" role="tablist" aria-label="Word detail sections">
@@ -554,67 +593,53 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           aria-live={explainActive ? 'polite' : undefined}
         >
           <div
-            className={`word-detail-sheet-scroll${dictionariesActive ? ' word-detail-sheet-scroll--dictionary' : ''}`}
+            className={`word-detail-sheet-scroll${dictionariesActive ? ' word-detail-sheet-scroll--dictionary' : ''}${meaningsActive ? ' word-detail-sheet-scroll--meanings' : ''}`}
           >
             {meaningsActive ? (
               <>
-                {savedDrafts.length > 0 ? (
-                  <div className="word-detail-sheet-saved-fields">
-                    {savedDrafts.map((text, i) => (
-                      <div key={i} className="word-detail-sheet-meaning-field">
-                        <input
-                          type="text"
-                          className="word-detail-sheet-meaning-input"
-                          value={text}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setSavedDrafts((prev) =>
-                              prev.map((p, idx) => (idx === i ? v : p))
-                            );
-                          }}
-                          aria-label={`Saved meaning ${i + 1}`}
-                          autoComplete="off"
-                          spellCheck
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                <section className="word-detail-sheet-block">
-                  <button
-                    type="button"
-                    className="word-detail-sheet-collapse-header"
-                    aria-expanded={suggestedOpen}
-                    aria-controls="word-detail-suggested-list"
-                    onClick={() => setSuggestedOpen((o) => !o)}
-                  >
-                    <span className="word-detail-sheet-section-label">SUGGESTED MEANINGS</span>
-                    <ChevronDown
-                      size={18}
-                      aria-hidden
-                      className={`word-detail-sheet-collapse-chevron${suggestedOpen ? ' word-detail-sheet-collapse-chevron--open' : ''}`}
+                <MeaningSection
+                  label="SAVED MEANINGS"
+                  items={savedMeanings}
+                  getKey={(m) => m.id}
+                  renderItem={(m) => (
+                    <SavedMeaningRow
+                      meaning={m.text}
+                      onSave={(text) => editSavedMeaning(m.id, text)}
+                      onDelete={() => deleteSavedMeaning(m.id)}
                     />
-                  </button>
-                  {suggestedOpen ? (
-                    <ul id="word-detail-suggested-list" className="word-detail-sheet-suggested-list">
-                      {suggestedMeanings.map((text, i) => (
-                        <li key={`${i}-${text}`}>
-                          <button type="button" className="word-detail-sheet-suggested-row">
-                            <span className="word-detail-sheet-suggested-text">{text}</span>
-                            <Plus size={18} aria-hidden className="word-detail-sheet-suggested-plus" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </section>
+                  )}
+                />
 
-                <div className="word-detail-sheet-divider" aria-hidden />
+                <div className="word-detail-sheet-section-divider" aria-hidden />
+                <MeaningSection
+                  label="MORE MEANINGS"
+                  spacious
+                  defaultOpen={false}
+                  items={suggestedMeanings}
+                  getKey={(m) => m}
+                  renderItem={(m) => (
+                    <MeaningListItem meaning={m} cta="add" onCta={() => addSavedMeaning(m)} />
+                  )}
+                />
 
-                <div className="word-detail-sheet-related-card">
-                  <p>{relatedPhrase}</p>
-                </div>
+                {phraseWords && phraseWords.length > 0 ? (
+                  <>
+                    <div className="word-detail-sheet-section-divider" aria-hidden />
+                    <MeaningSection
+                      label="WORDS IN THIS PHRASE"
+                      items={phraseWords}
+                      getKey={(w) => w.id}
+                      renderItem={(w) => (
+                        <MeaningListItem
+                          originalText={w.text}
+                          meaning={w.translation}
+                          cta="open"
+                          onCta={() => onPhraseWordOpen?.(w.id)}
+                        />
+                      )}
+                    />
+                  </>
+                ) : null}
               </>
             ) : null}
 

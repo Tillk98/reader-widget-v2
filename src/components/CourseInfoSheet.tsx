@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  X,
   Heart,
   Check,
   Headphones,
@@ -77,12 +76,10 @@ export const CourseInfoSheet: React.FC<CourseInfoSheetProps> = ({
           <div className="course-info__hero-gradient" aria-hidden />
           <button
             type="button"
-            className="course-info__close"
+            className="course-info__handle"
             onClick={onClose}
-            aria-label="Close course details"
-          >
-            <X size={20} strokeWidth={ICON_STROKE} />
-          </button>
+            aria-label="Tap to close course details"
+          />
           <div className="course-info__hero-content">
             <p className="course-info__hero-title">{courseTitle}</p>
             <div className="course-info__hero-actions">

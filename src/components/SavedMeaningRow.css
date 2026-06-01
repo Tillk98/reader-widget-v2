@@ -1,0 +1,150 @@
+/* Saved meaning row — swipe-to-delete (Figma 3776:7544) + inline edit (Figma 3789:7189). */
+.saved-meaning {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--backgrounds-page, #ffffff);
+}
+
+/* Slides in from the right edge as you swipe; the meaning stays put behind it. */
+.saved-meaning__delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 63px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+  color: var(--text-destructive, #e5484d);
+  cursor: pointer;
+}
+
+.saved-meaning__delete svg {
+  display: block;
+}
+
+.saved-meaning__content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  box-sizing: border-box;
+  cursor: text;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.saved-meaning__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+}
+
+/* Edit state */
+.saved-meaning--edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  overflow: visible;
+  background: var(--backgrounds-page, #ffffff);
+  box-sizing: border-box;
+}
+
+.saved-meaning__edit-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.saved-meaning__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
+}
+
+.saved-meaning__input:focus {
+  outline: none;
+}
+
+.saved-meaning__clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--backgrounds-page, #ffffff);
+  color: var(--typography-muted, #6d7680);
+  cursor: pointer;
+}
+
+.saved-meaning__clear svg {
+  display: block;
+}
+
+.saved-meaning__actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.saved-meaning__btn {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius-2xs, 4px);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.saved-meaning__btn:active {
+  transform: scale(0.98);
+}
+
+.saved-meaning__btn--cancel {
+  background: var(--surfaces-default, #f1f3f4);
+  color: var(--typography-default, #000000);
+}
+
+.saved-meaning__btn--save {
+  background: var(--surfaces-secondary, #2e75cd);
+  color: #ffffff;
+}
+
+.saved-meaning__btn--save:hover {
+  filter: brightness(0.97);
+}
