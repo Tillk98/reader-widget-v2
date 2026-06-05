@@ -36,8 +36,8 @@ export const StatusSnackbar: React.FC<StatusSnackbarProps> = ({
   bottomOffsetPx,
 }) => {
   const [exiting, setExiting] = useState(false);
-  const exitCallbackRef = useRef<() => void>();
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const exitCallbackRef = useRef<(() => void) | undefined>(undefined);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const triggerExit = useCallback((cb: () => void) => {
     clearTimeout(timerRef.current);
