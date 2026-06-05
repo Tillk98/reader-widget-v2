@@ -105,6 +105,42 @@
   padding: 16px 0;
 }
 
+/* --- Sticky sentence popup --- */
+.sentence-mode__sticky {
+  position: fixed;
+  top: 80px; /* sits directly below the reader header */
+  left: 16px;
+  right: 16px;
+  z-index: 50;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0px 4px 16px -4px rgba(0, 0, 0, 0.14);
+  padding: 12px 16px;
+  animation: sticky-sentence-in 0.2s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@keyframes sticky-sentence-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sentence-mode__sticky .sentence-mode__sentence {
+  font-size: 16px;
+  line-height: 26px;
+}
+
+.sentence-mode__sentence-translation--sticky {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
 /* --- Team toggle: horizontal list switch --- */
 .sentence-mode__list-toggle {
   display: inline-flex;

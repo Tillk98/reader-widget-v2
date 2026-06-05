@@ -51,6 +51,9 @@ export interface SentenceModeProps {
   horizontalList?: boolean;
 }
 
+/** Height of the fixed reader header (px) — used as rootMargin for the IntersectionObserver. */
+const HEADER_HEIGHT_PX = 80;
+
 export const SentenceMode: React.FC<SentenceModeProps> = ({
   sentences,
   index,
@@ -66,6 +69,8 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
   horizontalList = false,
 }) => {
   const [showTranslation, setShowTranslation] = useState(false);
+  const [sentenceSticky, setSentenceSticky] = useState(false);
+  const sentenceRef = useRef<HTMLParagraphElement>(null);
 
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
@@ -100,6 +105,23 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [goTo, safeIndex]);
 
+  // Show sticky sentence popup when the original scrolls behind the header.
+  useEffect(() => {
+    const el = sentenceRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setSentenceSticky(!entry.isIntersecting),
+      { rootMargin: `-${HEADER_HEIGHT_PX}px 0px 0px 0px`, threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Hide sticky when the sentence changes (new sentence starts unscrolled).
+  useEffect(() => {
+    setSentenceSticky(false);
+  }, [safeIndex]);
+
   const handlePointerDown = (e: React.PointerEvent) => {
     swipeStart.current = { x: e.clientX, y: e.clientY };
   };
@@ -121,6 +143,14 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
   const handleWordTap = (wordId: string) => {
     if (suppressClick.current) return;
     onWordSelect(wordId);
+  };
+
+  /** Tap a word in the STICKY popup: same as above, but also scrolls the vocab tile into view. */
+  const handleStickyWordTap = (wordId: string) => {
+    if (suppressClick.current) return;
+    onWordSelect(wordId);
+    const tile = document.querySelector(`[data-word-id="${wordId}"]`);
+    tile?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   /** Tap a list item's status badge: LingQ status bar only. */
@@ -154,7 +184,7 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     >
       <div className={['sentence-mode__inner', horizontalList && 'sentence-mode__inner--horizontal'].filter(Boolean).join(' ')}>
         <div className="sentence-mode__content">
-          <p className="sentence-mode__sentence">
+          <p ref={sentenceRef} className="sentence-mode__sentence">
             {sentence.words.map((w, i) => {
               const punct = isPunctuation(w.text);
               return (
@@ -219,6 +249,41 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
           onMarkKnown={onMarkKnown}
           onMarkIgnored={onMarkIgnored}
         />
+      )}
+
+      {sentenceSticky && !horizontalList && (
+        <div className="sentence-mode__sticky">
+          <p className="sentence-mode__sentence">
+            {sentence.words.map((w, i) => {
+              const punct = isPunctuation(w.text);
+              return (
+                <React.Fragment key={w.id}>
+                  {i > 0 && !punct ? ' ' : ''}
+                  {punct ? (
+                    <span className="sentence-mode__punct">{w.text}</span>
+                  ) : (
+                    <span
+                      className={[
+                        'sentence-mode__word',
+                        selectedWordId === w.id && 'sentence-mode__word--active',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() => handleStickyWordTap(w.id)}
+                    >
+                      {w.text}
+                    </span>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </p>
+          {showTranslation && (
+            <p className="sentence-mode__sentence-translation sentence-mode__sentence-translation--sticky">
+              {sentenceTranslation}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

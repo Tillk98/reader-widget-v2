@@ -293,8 +293,13 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(new Set());
 
   const visibleItems = useMemo(
-    () => items.filter((w) => !dismissedIds.has(w.id)),
-    [items, dismissedIds],
+    () => items.filter((w) => {
+      if (dismissedIds.has(w.id)) return false;
+      const s = wordStatusMap[w.id];
+      if (s === 'Known' || s === 'Ignored') return false;
+      return true;
+    }),
+    [items, dismissedIds, wordStatusMap],
   );
 
   const handleMarkKnown = useCallback(
