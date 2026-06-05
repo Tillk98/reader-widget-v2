@@ -24,7 +24,7 @@ import { DictionaryMenuSheet } from './DictionaryMenuSheet';
 import type { DictionaryMenuItem } from './DictionaryMenuSheet';
 import { MeaningListItem } from './MeaningListItem';
 import { MeaningSection } from './MeaningSection';
-import { SavedMeaningRow } from './SavedMeaningRow';
+import { AddMeaningRow, SavedMeaningRow } from './SavedMeaningRow';
 import {
   loadSavedMeanings,
   saveSavedMeanings,
@@ -608,6 +608,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                       onDelete={() => deleteSavedMeaning(m.id)}
                     />
                   )}
+                  footer={<AddMeaningRow onAdd={(text) => addSavedMeaning(text)} />}
                 />
 
                 <div className="word-detail-sheet-section-divider" aria-hidden />

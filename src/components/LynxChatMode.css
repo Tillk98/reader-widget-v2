@@ -1,30 +1,17 @@
-.lynx-chat {
-  position: fixed;
-  inset: 0;
-  z-index: 150;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
+/* ── Sheet panel overrides ────────────────────────────────────────── */
+.lynx-sheet .bottom-sheet__panel {
+  max-width: 100%;
   font-family: 'DM Sans', sans-serif;
-  animation: lynx-chat-in 0.22s ease;
 }
 
-@keyframes lynx-chat-in {
-  from {
-    opacity: 0;
-  }
-}
-
-/* --- Header (Library | lesson card | progress) --- */
+/* ── Header (X close | stats) ─────────────────────────────────────── */
 .lynx-chat__header {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 16px;
+  padding: 8px 16px 16px;
   box-sizing: border-box;
 }
 
@@ -39,7 +26,7 @@
   box-sizing: border-box;
   border: none;
   border-radius: 999px;
-  background: #fff;
+  background: var(--backgrounds-page, #ffffff);
   color: #1c1c1e;
   box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
@@ -57,90 +44,7 @@
   object-fit: contain;
 }
 
-.lynx-chat__lesson {
-  display: flex;
-  flex: 1 1 0;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  box-sizing: border-box;
-  border: 1px solid #e3e5e7;
-  border-radius: 8px;
-  background: #f8f9fa;
-  text-align: left;
-  cursor: pointer;
-  appearance: none;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-}
-
-.lynx-chat__lesson:hover {
-  background: #f1f3f4;
-  border-color: #d1d6d9;
-}
-
-.lynx-chat__lesson:active {
-  transform: scale(0.99);
-}
-
-.lynx-chat__lesson-image {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #e3e5e7;
-}
-
-.lynx-chat__lesson-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.lynx-chat__lesson-meta {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.lynx-chat__lesson-title {
-  margin: 0;
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 18px;
-  color: #000;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lynx-chat__lesson-course {
-  display: flex;
-  gap: 4px;
-  min-width: 0;
-  font-weight: 400;
-  font-size: 12px;
-  line-height: 16px;
-  color: #6d7680;
-}
-
-.lynx-chat__lesson-course-name {
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.lynx-chat__lesson-page {
-  flex-shrink: 0;
-}
-
-/* --- Conversation --- */
+/* ── Conversation scroll ──────────────────────────────────────────── */
 .lynx-chat__scroll {
   flex: 1 1 0;
   min-height: 0;
@@ -184,7 +88,7 @@
 .lynx-chat__bubble--user {
   max-width: 300px;
   padding: 16px;
-  background: #fff;
+  background: var(--backgrounds-page, #ffffff);
 }
 
 .lynx-chat__bubble--lynx {
@@ -229,7 +133,7 @@
   padding: 16px;
   border: 1px solid #e3e5e7;
   border-radius: 6px;
-  background: #fff;
+  background: var(--backgrounds-page, #ffffff);
   animation: lynx-chat-bubble 0.28s ease;
 }
 
@@ -256,7 +160,7 @@
   box-shadow: 0 0 0 0.5px #42a564;
 }
 
-/* --- Thinking indicator --- */
+/* ── Thinking indicator ───────────────────────────────────────────── */
 .lynx-chat__thinking {
   display: inline-flex;
   align-items: center;
@@ -299,12 +203,10 @@
   }
 }
 
-/* --- Input field (Figma LynxInputField) --- */
+/* ── Input field ──────────────────────────────────────────────────── */
 .lynx-chat__input-wrap {
   flex-shrink: 0;
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
   box-sizing: border-box;
   padding: 16px 12px calc(16px + env(safe-area-inset-bottom, 0px));
 }
@@ -316,7 +218,7 @@
   box-sizing: border-box;
   border: 1px solid #e3e5e7;
   border-radius: 12px;
-  background: #fff;
+  background: var(--backgrounds-page, #ffffff);
   box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
@@ -324,7 +226,6 @@
 .lynx-chat__input-header {
   display: flex;
   align-items: center;
-  gap: 16px;
   padding: 16px;
 }
 
@@ -346,6 +247,33 @@
   color: #6d7680;
 }
 
+/* Footer: menu (left) | send arrow-up (right) */
+.lynx-chat__input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.lynx-chat__input-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  border-radius: 666px;
+  background: var(--backgrounds-page, #ffffff);
+  color: #1c1c1e;
+  box-shadow: 0 1.333px 5.333px -2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lynx-chat__input-menu:active {
+  transform: scale(0.94);
+}
+
+/* Send button — always visible; bg changes when input is active */
 .lynx-chat__send {
   flex-shrink: 0;
   display: flex;
@@ -354,58 +282,24 @@
   padding: 8px;
   border: none;
   border-radius: 666px;
-  background: #f4f7fb;
-  color: #2e75cd;
+  background: var(--backgrounds-page, #ffffff);
+  color: #1c1c1e;
   box-shadow: 0 1.333px 5.333px -2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.lynx-chat__send--active {
+  background: var(--surfaces-accent-subtle, #f4f7fb);
+  color: #2e75cd;
 }
 
 .lynx-chat__send:active {
   transform: scale(0.94);
 }
 
-.lynx-chat__input-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-}
-
-.lynx-chat__input-menu,
-.lynx-chat__input-lynx {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  border: none;
-  border-radius: 832px;
-  cursor: pointer;
-  box-shadow: 0 1.667px 6.667px -2px rgba(0, 0, 0, 0.15);
-}
-
-.lynx-chat__input-menu {
-  background: #fff;
-  color: #1c1c1e;
-}
-
-.lynx-chat__input-lynx {
-  background: #f1f7fe;
-}
-
-.lynx-chat__input-menu:active,
-.lynx-chat__input-lynx:active {
-  transform: scale(0.94);
-}
-
-.lynx-chat__input-lynx img {
-  width: 20px;
-  height: 20px;
-  display: block;
-  object-fit: contain;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .lynx-chat,
   .lynx-chat__bubble,
   .lynx-chat__text,
   .lynx-chat__extract {

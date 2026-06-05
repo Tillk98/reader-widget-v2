@@ -1,5 +1,10 @@
 /* Course info — full-page BottomSheet (Figma 3428:46623 / CourseDetailsPage). */
 
+.course-info-sheet .bottom-sheet__panel {
+  max-width: 100%;
+}
+
+
 .course-info {
   display: flex;
   flex-direction: column;

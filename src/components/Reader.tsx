@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { Library, ListFilter } from 'lucide-react';
+import { Library } from 'lucide-react';
 import { lesson, reviewTerms, buildReviewTerms } from '../data/lesson';
 import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
@@ -27,6 +27,7 @@ import streakIcon from '../assets/streak-icon.png';
 import { AudioMiniPlayer } from './AudioMiniPlayer';
 import { AudioSettingsSheet } from './AudioSettingsSheet';
 import { CourseInfoSheet } from './CourseInfoSheet';
+import { StatusSnackbar } from './StatusSnackbar';
 import { startViewTransition, supportsViewTransition } from '../utils/viewTransition';
 import './Reader.css';
 
@@ -70,6 +71,16 @@ export const Reader: React.FC = () => {
     });
     return seed;
   });
+  const [sentenceHorizontalList, setSentenceHorizontalList] = useState(false);
+
+  const [snackbar, setSnackbar] = useState<{
+    key: number;
+    wordId: string;
+    status: LingQStatusType;
+    previousStatus: LingQStatusType;
+  } | null>(null);
+  const snackbarKeyRef = useRef(0);
+
   /** Word ids currently highlighted as part of an in-progress / open phrase selection. */
   const [phraseHighlightIds, setPhraseHighlightIds] = useState<Set<string>>(() => new Set());
   /** Finalized phrase selection driving the phrase popup. */
@@ -609,10 +620,11 @@ export const Reader: React.FC = () => {
       if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
         return;
       }
-      /* Selecting a single word dismisses any open phrase selection. */
+      /* Selecting a single word dismisses any open phrase selection and snackbar. */
       setPhraseSelection(null);
       setPhraseDetailOpen(false);
       setPhraseHighlightIds(new Set());
+      setSnackbar(null);
       if (selectedWordId === wordId) {
         setSelectedWordId(null);
         setClickedWords(prev => {
@@ -674,6 +686,24 @@ export const Reader: React.FC = () => {
     });
     setSelectedWordId(wordId);
   }, []);
+
+  /** Unified status change handler — updates wordStatusMap and shows the snackbar. */
+  const handleStatusChange = useCallback(
+    (wordId: string, newStatus: LingQStatusType) => {
+      setWordStatusMap(prev => {
+        const previousStatus = prev[wordId] ?? 'New';
+        snackbarKeyRef.current += 1;
+        setSnackbar({
+          key: snackbarKeyRef.current,
+          wordId,
+          status: newStatus,
+          previousStatus,
+        });
+        return { ...prev, [wordId]: newStatus };
+      });
+    },
+    []
+  );
 
   const getWordById = useCallback((wordId: string): Word | undefined => {
     for (const sentence of lesson.sentences) {
@@ -791,7 +821,6 @@ export const Reader: React.FC = () => {
     pages.length === 0 ? 0 : -currentPageIndex * pageColumnPx + dragOffset;
 
   const isSentenceView = mediaMode === 'none' && sentenceMode;
-  const isReviewView = mediaMode === 'none' && reviewMode;
 
   /** Entering sentence mode always lands at the top, where the current sentence is. */
   useEffect(() => {
@@ -888,7 +917,7 @@ export const Reader: React.FC = () => {
     isLessonMediaMode && 'reader-content--video-mode',
     isLessonMediaMode && videoBarExpanded && 'reader-content--video-expanded',
     showAudioMiniAsBottomBar && 'reader-content--audio-mini',
-    (isSentenceView || isReviewView) && 'reader-content--sentence-mode',
+    isSentenceView && 'reader-content--sentence-mode',
   ]
     .filter(Boolean)
     .join(' ');
@@ -1107,37 +1136,25 @@ export const Reader: React.FC = () => {
               >
                 <Library size={24} strokeWidth={2} />
               </button>
-              {isReviewView ? (
-                <button
-                  type="button"
-                  className="reader-header-filter"
-                  aria-label="Review filter"
-                  onClick={handleOpenReviewFilter}
+              <div className="reader-progress-bar-wrap">
+                <div
+                  className="reader-progress-bar"
+                  onClick={handleProgressBarClick}
+                  onMouseMove={handleProgressBarMouseMove}
+                  onMouseLeave={handleProgressBarMouseLeave}
                 >
-                  <ListFilter size={20} strokeWidth={2} />
-                  <span className="reader-header-filter-label">{reviewFilterLabel}</span>
-                </button>
-              ) : (
-                <div className="reader-progress-bar-wrap">
-                  <div
-                    className="reader-progress-bar"
-                    onClick={handleProgressBarClick}
-                    onMouseMove={handleProgressBarMouseMove}
-                    onMouseLeave={handleProgressBarMouseLeave}
-                  >
-                    <div className="reader-progress-fill" style={{ width: `${fillProgress}%` }} />
-                    <div className="reader-progress-thumb" style={{ left: `${thumbProgress}%` }} />
-                    {hoveredPageIndex !== null && (
-                      <div
-                        className="reader-progress-tooltip"
-                        style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
-                      >
-                        Page {hoveredPageIndex + 1}
-                      </div>
-                    )}
-                  </div>
+                  <div className="reader-progress-fill" style={{ width: `${fillProgress}%` }} />
+                  <div className="reader-progress-thumb" style={{ left: `${thumbProgress}%` }} />
+                  {hoveredPageIndex !== null && (
+                    <div
+                      className="reader-progress-tooltip"
+                      style={{ left: `${((hoveredPageIndex + 1) / pages.length) * 100}%` }}
+                    >
+                      Page {hoveredPageIndex + 1}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
               <button
                 type="button"
                 className="reader-header-button"
@@ -1152,25 +1169,14 @@ export const Reader: React.FC = () => {
             className={contentClassName}
             style={readerContentVideoStyle}
             ref={contentRef}
-            onPointerDown={isPageMode && !sentenceMode && !reviewMode ? handlePointerDown : undefined}
-            onPointerMove={isPageMode && !sentenceMode && !reviewMode ? handlePointerMove : undefined}
-            onPointerUp={isPageMode && !sentenceMode && !reviewMode ? e => handlePointerUp(e) : undefined}
-            onPointerLeave={isPageMode && !sentenceMode && !reviewMode ? () => handlePointerUp() : undefined}
-            onPointerCancel={isPageMode && !sentenceMode && !reviewMode ? handlePointerCancel : undefined}
+            onPointerDown={isPageMode && !sentenceMode ? handlePointerDown : undefined}
+            onPointerMove={isPageMode && !sentenceMode ? handlePointerMove : undefined}
+            onPointerUp={isPageMode && !sentenceMode ? e => handlePointerUp(e) : undefined}
+            onPointerLeave={isPageMode && !sentenceMode ? () => handlePointerUp() : undefined}
+            onPointerCancel={isPageMode && !sentenceMode ? handlePointerCancel : undefined}
           >
             <div className="reader-body-vt">
-              {isReviewView ? (
-                <ReviewMode
-                  terms={reviewVisibleTerms}
-                  wordStatusMap={wordStatusMap}
-                  untrackedIds={reviewUntrackedIds}
-                  selectedWordId={selectedWordId}
-                  onSelect={handleReviewSelect}
-                  onOpenDetail={handleListOpenDetail}
-                  onAdd={handleReviewAdd}
-                  onDeselect={handleClosePopup}
-                />
-              ) : isSentenceView ? (
+              {isSentenceView ? (
                 <SentenceMode
                   sentences={lesson.sentences}
                   index={sentenceIndex}
@@ -1181,6 +1187,9 @@ export const Reader: React.FC = () => {
                   onListWordSelect={handleSentenceListSelect}
                   onListWordOpenDetail={handleListOpenDetail}
                   onDeselect={handleClosePopup}
+                  horizontalList={sentenceHorizontalList}
+                  onMarkKnown={(wordId) => handleStatusChange(wordId, 'Known')}
+                  onMarkIgnored={(wordId) => handleStatusChange(wordId, 'Ignored')}
                 />
               ) : isLessonMediaMode ? (
                 <div className="reader-video-scroll">
@@ -1260,13 +1269,31 @@ export const Reader: React.FC = () => {
             }}
             onChromeHeightChange={setAudioSettingsSheetHeightPx}
           />
+          <ReviewMode
+            open={reviewMode}
+            onClose={() => setReviewMode(false)}
+            onOpenFilter={handleOpenReviewFilter}
+            reviewFilterLabel={reviewFilterLabel}
+            onLynxAI={() => setLynxChatOpen(true)}
+            onStats={handleOpenStats}
+            terms={reviewVisibleTerms}
+            wordStatusMap={wordStatusMap}
+            untrackedIds={reviewUntrackedIds}
+            selectedWordId={selectedWordId}
+            onSelect={handleReviewSelect}
+            onOpenDetail={handleListOpenDetail}
+            onAdd={handleReviewAdd}
+            onDeselect={handleClosePopup}
+            onMarkKnown={(wordId) => handleStatusChange(wordId, 'Known')}
+            onMarkIgnored={(wordId) => handleStatusChange(wordId, 'Ignored')}
+          />
           <ReviewFilterSheet
             open={reviewFilterOpen}
             onClose={() => setReviewFilterOpen(false)}
             value={reviewFilter}
             onApply={setReviewFilter}
           />
-          {selectedWordId && selectedWordData && !isReviewView && !listDetailOpen && !(isSentenceView && sentencePopupSuppressed) && (
+          {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen && !(isSentenceView && sentencePopupSuppressed) && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
@@ -1274,9 +1301,7 @@ export const Reader: React.FC = () => {
               wordTranslation={selectedWordData.word.translation}
               resolveAnchorElement={resolveSelectedWordAnchorElement}
               wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
-              onWordStatusChange={status =>
-                setWordStatusMap(prev => ({ ...prev, [selectedWordId]: status }))
-              }
+              onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
               onClose={handleClosePopup}
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
             />
@@ -1322,9 +1347,7 @@ export const Reader: React.FC = () => {
                 wordText={word.text}
                 wordTranslation={word.translation}
                 wordStatus={wordStatusMap[wordId] ?? 'New'}
-                onWordStatusChange={status =>
-                  setWordStatusMap(prev => ({ ...prev, [wordId]: status }))
-                }
+                onWordStatusChange={status => handleStatusChange(wordId, status)}
                 onClose={handleClosePopup}
               />
             );
@@ -1347,7 +1370,7 @@ export const Reader: React.FC = () => {
                 selectedWordId
                   ? status => {
                       const wordId = selectedWordId;
-                      setWordStatusMap(prev => ({ ...prev, [wordId]: status }));
+                      handleStatusChange(wordId, status);
                       setClickedWords(prev => {
                         const next = new Set(prev);
                         next.delete(wordId);
@@ -1357,6 +1380,8 @@ export const Reader: React.FC = () => {
                     }
                   : undefined
               }
+              horizontalListOn={sentenceHorizontalList}
+              onHorizontalListChange={setSentenceHorizontalList}
               sentenceModeActive={sentenceMode}
               onSentence={() =>
                 setSentenceMode(v => {
@@ -1366,13 +1391,10 @@ export const Reader: React.FC = () => {
                 })
               }
               reviewModeActive={reviewMode}
-              onReview={() =>
-                setReviewMode(v => {
-                  const next = !v;
-                  if (next) setSentenceMode(false);
-                  return next;
-                })
-              }
+              onReview={() => {
+                setSentenceMode(false);
+                setReviewMode(true);
+              }}
               onPlay={handleDefaultPlay}
               onToggleVideoPlayback={handlePlaybackPauseToggle}
               onExpandVideoBar={() => {
@@ -1425,12 +1447,26 @@ export const Reader: React.FC = () => {
       <LynxChatMode
         open={lynxChatOpen}
         onClose={() => setLynxChatOpen(false)}
-        onLibrary={handleCloseLesson}
-        onLessonClick={() => setCourseInfoOpen(true)}
-        lessonTitle={lesson.title}
-        lessonSource={lesson.source ?? ''}
-        lessonImageSrc={lessonImage}
+        onStats={handleOpenStats}
       />
+      {snackbar && (
+        <StatusSnackbar
+          key={snackbar.key}
+          status={snackbar.status}
+          bottomOffsetPx={
+            isLessonMediaMode
+              ? effectiveLessonBottomChromePx + 16
+              : sentenceHorizontalList
+              ? 150
+              : undefined
+          }
+          onUndo={() => {
+            setWordStatusMap(prev => ({ ...prev, [snackbar.wordId]: snackbar.previousStatus }));
+            setSnackbar(null);
+          }}
+          onDismiss={() => setSnackbar(null)}
+        />
+      )}
     </div>
   );
 };

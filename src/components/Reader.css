@@ -36,8 +36,6 @@
   left: 0;
   right: 0;
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
   padding: 16px;
   box-sizing: border-box;
   z-index: 100;
@@ -240,8 +238,6 @@
 
 .reader-video-scroll {
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
   box-sizing: border-box;
 }
 
@@ -285,8 +281,6 @@
   right: 0;
   z-index: 48;
   pointer-events: none;
-  max-width: 600px;
-  margin: 0 auto;
   width: 100%;
   height: 80px;
   bottom: calc(var(--reader-lesson-bottom-fade-offset, 132px) + env(safe-area-inset-bottom, 0px));

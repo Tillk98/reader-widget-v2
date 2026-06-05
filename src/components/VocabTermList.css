@@ -1,4 +1,4 @@
-/* Shared vocabulary term list — Sentence mode & Review mode (Figma 2812:56925 / 2830:64728). */
+/* Shared vocabulary term list — Sentence mode & Review mode (Figma 2812:56925 / 2830:64728 / 3926:8702). */
 
 .vocab-list {
   display: flex;
@@ -12,19 +12,88 @@
 .vocab-list__divider {
   height: 1px;
   width: 100%;
-  background: #e3e5e7;
+  background: var(--border-default, #e3e5e7);
+  flex-shrink: 0;
 }
 
+/* ── Swipe wrapper ─────────────────────────────────────────────────────────── */
+
+.vocab-list__swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  /* Clipping context for reveal panels and the tile's slide animation */
+}
+
+/* Wrapper collapse animations triggered on confirmed swipe */
+.vocab-list__swipe-wrapper--exit-known {
+  animation: vocab-tile-collapse 0.36s 0.22s ease forwards;
+}
+
+.vocab-list__swipe-wrapper--exit-ignored {
+  animation: vocab-tile-collapse 0.36s 0.22s ease forwards;
+}
+
+@keyframes vocab-tile-collapse {
+  0%   { max-height: 80px; opacity: 1; }
+  40%  { opacity: 0; }
+  100% { max-height: 0; opacity: 0; overflow: hidden; }
+}
+
+/* ── Reveal panels ─────────────────────────────────────────────────────────── */
+
+.vocab-list__reveal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  max-width: 120px;
+  pointer-events: none;
+}
+
+.vocab-list__reveal--known {
+  left: 0;
+  width: 100%;
+  max-width: 120px;
+  justify-content: flex-start;
+  background: var(--surfaces-primary-subtle, #f4fcef);
+  color: var(--text-primary, #42a564);
+}
+
+.vocab-list__reveal--ignored {
+  right: 0;
+  width: 100%;
+  max-width: 120px;
+  justify-content: flex-end;
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+  color: var(--text-destructive, #dd2525);
+}
+
+.vocab-list__reveal-label {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+/* ── Tile ──────────────────────────────────────────────────────────────────── */
+
 .vocab-list__tile {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 16px;
+  padding: 12px;
   box-sizing: border-box;
-  border-radius: 12px;
-  background: #fff;
-  transition: background 0.15s ease;
+  background: var(--backgrounds-page, #fff);
+  user-select: none;
+  touch-action: pan-y; /* allow browser to scroll vertically; JS owns horizontal */
+  will-change: transform;
 }
 
 .vocab-list__tile--active {
@@ -39,6 +108,8 @@
   min-width: 0;
 }
 
+/* ── Status badge ──────────────────────────────────────────────────────────── */
+
 .vocab-list__status {
   display: inline-flex;
   align-items: center;
@@ -50,7 +121,7 @@
   box-sizing: border-box;
   border: 0.8px solid #42a564;
   border-radius: 50px;
-  background: #fff;
+  background: var(--backgrounds-elevated, #fff);
   color: #42a564;
   cursor: pointer;
   transition: transform 0.1s ease, background 0.15s ease;
@@ -88,6 +159,8 @@
   background: #f1f7fe;
 }
 
+/* ── Term text ─────────────────────────────────────────────────────────────── */
+
 .vocab-list__term-text {
   display: flex;
   flex-direction: column;
@@ -109,7 +182,7 @@
   font-weight: 500;
   font-size: 16px;
   line-height: 20px;
-  color: #000;
+  color: var(--text-default, #000);
 }
 
 .vocab-list__term-gloss {
@@ -117,20 +190,22 @@
   font-weight: 400;
   font-size: 14px;
   line-height: 18px;
-  color: #6d7680;
+  color: var(--text-muted, #6d7680);
 }
+
+/* ── Audio button ──────────────────────────────────────────────────────────── */
 
 .vocab-list__audio {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 10px;
+  padding: 8px;
   border: none;
   border-radius: 999px;
-  background: #fff;
+  background: var(--backgrounds-elevated, #fff);
   color: #1c1c1e;
-  box-shadow: 0 0.833px 1.667px #e3e5e7;
+  box-shadow: 0px 1.333px 5.333px -2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
 }

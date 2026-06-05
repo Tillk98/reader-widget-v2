@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Trash2, X } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Plus, Trash2, X } from 'lucide-react';
 import './SavedMeaningRow.css';
 
 const DELETE_WIDTH = 63;
@@ -15,9 +15,9 @@ export interface SavedMeaningRowProps {
 }
 
 /**
- * Saved-meaning row with two interactions (Figma 3776:7544 delete + 3789:7189 edit):
- * - swipe left to reveal a delete action (the meaning stays in place)
- * - tap to edit inline (clear with "x", Cancel reverts, Save commits)
+ * Saved-meaning row with two interactions:
+ * - swipe left  → reveals delete action (Figma 3776:7544)
+ * - tap          → inline edit: single row with [input] [X cancel] [+ save] (Figma 3789:7189)
  */
 export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
   meaning,
@@ -53,7 +53,10 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
 
   const open = offset > 0;
 
-  const snap = () => setOffset(offset >= SWIPE_OPEN_THRESHOLD ? DELETE_WIDTH : 0);
+  const snap = useCallback(
+    () => setOffset(offset >= SWIPE_OPEN_THRESHOLD ? DELETE_WIDTH : 0),
+    [offset],
+  );
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (editing) return;
@@ -71,13 +74,11 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
     const dy = e.clientY - startY.current;
     if (!engaged.current) {
       if (Math.abs(dx) > TAP_MOVE_TOLERANCE && Math.abs(dx) >= Math.abs(dy)) {
-        // Horizontal intent — take over the gesture.
         engaged.current = true;
         moved.current = true;
         setActive(true);
         (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
       } else if (Math.abs(dy) > TAP_MOVE_TOLERANCE) {
-        // Vertical intent — let the sheet scroll.
         dragging.current = false;
         return;
       } else {
@@ -118,56 +119,45 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
     setEditing(false);
   };
 
+  /* ── Edit state ──────────────────────────────────────────────── */
   if (editing) {
     return (
       <div className="saved-meaning saved-meaning--edit">
-        <div className="saved-meaning__edit-top">
-          <input
-            ref={inputRef}
-            type="text"
-            className="saved-meaning__input"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSave();
-              else if (e.key === 'Escape') handleCancel();
-            }}
-            aria-label="Edit meaning"
-            autoComplete="off"
-            spellCheck
-          />
-          <button
-            type="button"
-            className="saved-meaning__clear"
-            aria-label="Clear text"
-            onClick={() => {
-              setDraft('');
-              inputRef.current?.focus();
-            }}
-          >
-            <X size={16} aria-hidden />
-          </button>
-        </div>
-        <div className="saved-meaning__actions">
-          <button
-            type="button"
-            className="saved-meaning__btn saved-meaning__btn--cancel"
-            onClick={handleCancel}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="saved-meaning__btn saved-meaning__btn--save"
-            onClick={handleSave}
-          >
-            Save
-          </button>
-        </div>
+        <input
+          ref={inputRef}
+          type="text"
+          className="saved-meaning__input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+            else if (e.key === 'Escape') handleCancel();
+          }}
+          aria-label="Edit meaning"
+          autoComplete="off"
+          spellCheck
+        />
+        <button
+          type="button"
+          className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
+          aria-label="Cancel edit"
+          onClick={handleCancel}
+        >
+          <X size={16} aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="saved-meaning__edit-btn saved-meaning__edit-btn--save"
+          aria-label="Save meaning"
+          onClick={handleSave}
+        >
+          <Plus size={16} aria-hidden />
+        </button>
       </div>
     );
   }
 
+  /* ── Default / delete-revealed state ────────────────────────── */
   return (
     <div className={`saved-meaning${open ? ' saved-meaning--open' : ''}`}>
       <div
@@ -193,5 +183,90 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
         <Trash2 size={16} aria-hidden />
       </button>
     </div>
+  );
+};
+
+/* ── Add a new meaning row ───────────────────────────────────────── */
+
+export interface AddMeaningRowProps {
+  onAdd: (text: string) => void;
+}
+
+/**
+ * Persistent "Add a new meaning" row that lives at the bottom of the saved-meanings list.
+ * Tapping enters inline edit mode (same single-row style as SavedMeaningRow edit state).
+ * After saving the new meaning the row reverts to its AddNew appearance.
+ */
+export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+    }
+  }, [editing]);
+
+  const handleSave = () => {
+    const v = draft.trim();
+    if (v) {
+      onAdd(v);
+      setDraft('');
+      setEditing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setDraft('');
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="saved-meaning saved-meaning--edit">
+        <input
+          ref={inputRef}
+          type="text"
+          className="saved-meaning__input"
+          placeholder="New meaning…"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+            else if (e.key === 'Escape') handleCancel();
+          }}
+          aria-label="New meaning"
+          autoComplete="off"
+          spellCheck
+        />
+        <button
+          type="button"
+          className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
+          aria-label="Cancel"
+          onClick={handleCancel}
+        >
+          <X size={16} aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="saved-meaning__edit-btn saved-meaning__edit-btn--save"
+          aria-label="Save new meaning"
+          onClick={handleSave}
+        >
+          <Plus size={16} aria-hidden />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="saved-meaning__add-new"
+      onClick={() => setEditing(true)}
+    >
+      + Add a new meaning
+    </button>
   );
 };

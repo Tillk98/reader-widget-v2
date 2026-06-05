@@ -1,21 +1,15 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Library, Menu, ArrowUp } from 'lucide-react';
+import { X, Menu, ArrowUp } from 'lucide-react';
 import streakIcon from '../assets/streak-icon.png';
-import lynxIcon from '../assets/lynx-default.png';
+import { BottomSheet } from './BottomSheet';
 import './LynxChatMode.css';
 
 export interface LynxChatModeProps {
   open: boolean;
-  /** Collapse Lynx mode and return to the previous reader mode. */
+  /** Close the Lynx sheet and return to the previous reader mode. */
   onClose: () => void;
-  /** Header Library button — opens the exit-lesson confirmation. */
-  onLibrary?: () => void;
-  /** Tapping the lesson header opens course info. */
-  onLessonClick?: () => void;
-  lessonTitle?: string;
-  lessonSource?: string;
-  lessonImageSrc?: string;
-  lessonPageLabel?: string;
+  /** Opens the lesson stats sheet. */
+  onStats?: () => void;
 }
 
 /** The phrase the user "highlighted" — fixed example for this prototype. */
@@ -23,17 +17,7 @@ const PHRASE = '\u201CIl y a de cela un an\u201D';
 /** Total Lynx response chunks revealed one after another. */
 const TOTAL_CHUNKS = 3;
 
-export const LynxChatMode: React.FC<LynxChatModeProps> = ({
-  open,
-  onClose,
-  onLibrary,
-  onLessonClick,
-  lessonTitle = 'Des chats meurent pour la science : STOP ou encore ?',
-  lessonSource = 'La statistique expliquée à mon chat',
-  lessonImageSrc,
-  lessonPageLabel = '1/5',
-}) => {
-  /** Number of Lynx response chunks revealed so far (0..TOTAL_CHUNKS). */
+export const LynxChatMode: React.FC<LynxChatModeProps> = ({ open, onClose, onStats }) => {
   const [revealed, setRevealed] = useState(0);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,41 +44,36 @@ export const LynxChatMode: React.FC<LynxChatModeProps> = ({
     if (el) el.scrollTop = el.scrollHeight;
   }, [revealed, open]);
 
-  if (!open) return null;
-
   return (
-    <div className="lynx-chat" role="dialog" aria-label="Chat with Lynx">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      variant="full"
+      ariaLabel="Chat with Lynx"
+      showDragBar
+      className="lynx-sheet"
+    >
+      {/* ── Header: X close (left) + stats (right) ───────────────── */}
       <header className="lynx-chat__header">
         <button
           type="button"
           className="lynx-chat__header-btn"
-          aria-label="Close lesson"
-          onClick={onLibrary}
+          aria-label="Close Lynx"
+          onClick={onClose}
         >
-          <Library size={24} strokeWidth={2} />
+          <X size={24} strokeWidth={2} />
         </button>
         <button
           type="button"
-          className="lynx-chat__lesson"
-          onClick={onLessonClick}
-          aria-label="Open course details"
+          className="lynx-chat__header-btn"
+          aria-label="Lesson stats"
+          onClick={onStats}
         >
-          <div className="lynx-chat__lesson-image">
-            {lessonImageSrc ? <img src={lessonImageSrc} alt="" /> : null}
-          </div>
-          <div className="lynx-chat__lesson-meta">
-            <p className="lynx-chat__lesson-title">{lessonTitle}</p>
-            <div className="lynx-chat__lesson-course">
-              <span className="lynx-chat__lesson-course-name">{lessonSource}</span>
-              <span className="lynx-chat__lesson-page">({lessonPageLabel})</span>
-            </div>
-          </div>
-        </button>
-        <button type="button" className="lynx-chat__header-btn" aria-label="Lesson stats">
           <img className="lynx-chat__header-stats" src={streakIcon} alt="" />
         </button>
       </header>
 
+      {/* ── Scrollable messages ───────────────────────────────────── */}
       <div className="lynx-chat__scroll" ref={scrollRef}>
         <div className="lynx-chat__messages">
           <div className="lynx-chat__row lynx-chat__row--user">
@@ -145,8 +124,10 @@ export const LynxChatMode: React.FC<LynxChatModeProps> = ({
         </div>
       </div>
 
+      {/* ── Input field ───────────────────────────────────────────── */}
       <div className="lynx-chat__input-wrap">
-        <div className={`lynx-chat__input ${isActive ? 'lynx-chat__input--active' : ''}`}>
+        <div className={['lynx-chat__input', isActive && 'lynx-chat__input--active'].filter(Boolean).join(' ')}>
+          {/* Text input */}
           <div className="lynx-chat__input-header">
             <input
               type="text"
@@ -156,32 +137,23 @@ export const LynxChatMode: React.FC<LynxChatModeProps> = ({
               onChange={(e) => setDraft(e.target.value)}
               aria-label="Chat with Lynx"
             />
-            {isActive && (
-              <button
-                type="button"
-                className="lynx-chat__send"
-                aria-label="Send message"
-                onClick={() => setDraft('')}
-              >
-                <ArrowUp size={16} strokeWidth={2.25} />
-              </button>
-            )}
           </div>
+          {/* Footer: menu (left) | send arrow-up (right, always visible) */}
           <div className="lynx-chat__input-footer">
             <button type="button" className="lynx-chat__input-menu" aria-label="Menu">
-              <Menu size={20} strokeWidth={2} />
+              <Menu size={16} strokeWidth={2} />
             </button>
             <button
               type="button"
-              className="lynx-chat__input-lynx"
-              aria-label="Close Lynx chat"
-              onClick={onClose}
+              className={['lynx-chat__send', isActive && 'lynx-chat__send--active'].filter(Boolean).join(' ')}
+              aria-label="Send message"
+              onClick={() => setDraft('')}
             >
-              <img src={lynxIcon} alt="" />
+              <ArrowUp size={16} strokeWidth={2.25} />
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   );
 };

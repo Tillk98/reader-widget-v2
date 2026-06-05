@@ -19,26 +19,49 @@
   font-family: 'DM Sans', sans-serif;
   display: flex;
   flex-direction: column;
-  padding: 24px 12px 12px;
+  padding: 16px;
+  gap: 12px;
   border-radius: 12px;
   background: var(--backgrounds-page, #ffffff);
   box-shadow: 0px 4px 24px -4px rgba(0, 0, 0, 0.15);
   animation: exit-lesson-pop 0.18s ease;
+  overflow: clip;
 }
 
+/* Header row: title + inline close button */
 .exit-lesson-popup__header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 4px;
-  padding: 12px;
+  width: 100%;
 }
 
 .exit-lesson-popup__title {
+  flex: 1 0 0;
+  min-width: 0;
   margin: 0;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 20px;
   line-height: 24px;
   color: #000;
+}
+
+.exit-lesson-popup__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 6px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #1c1c1e;
+  box-shadow: 0px 1px 4px -2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
 }
 
 .exit-lesson-popup__subtitle {
@@ -47,12 +70,14 @@
   font-size: 16px;
   line-height: 20px;
   color: var(--text-muted, #6d7680);
+  width: 100%;
 }
 
 .exit-lesson-popup__actions {
   display: flex;
   gap: 12px;
-  padding: 12px 0;
+  width: 100%;
+  margin: 0;
 }
 
 .exit-lesson-popup__btn {
@@ -78,7 +103,7 @@
 
 .exit-lesson-popup__btn--secondary {
   background: var(--surfaces-default, #f1f3f4);
-  color: #000;
+  color: var(--text-default, #000);
 }
 
 .exit-lesson-popup__btn--primary {
@@ -86,22 +111,46 @@
   color: #fff;
 }
 
-.exit-lesson-popup__close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+/* "Don't show this again" row */
+.exit-lesson-popup__dont-show {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 6px;
-  border: none;
-  border-radius: 999px;
-  background: #fff;
-  color: #1c1c1e;
-  box-shadow: 0px 1px 4px -2px rgba(0, 0, 0, 0.15);
+  gap: 8px;
+  width: 100%;
   cursor: pointer;
+}
+
+.exit-lesson-popup__checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border-default, #e3e5e7);
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+
+.exit-lesson-popup__checkbox:checked {
+  background: var(--surfaces-primary, #42a564);
+  border-color: var(--surfaces-primary, #42a564);
+}
+
+.exit-lesson-popup__checkbox:checked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8' fill='none'%3E%3Cpath d='M1 4L3.5 6.5L9 1' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 8px no-repeat;
+}
+
+.exit-lesson-popup__dont-show-label {
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted, #6d7680);
+  white-space: nowrap;
 }
 
 @keyframes exit-lesson-fade {

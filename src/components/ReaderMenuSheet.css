@@ -1,5 +1,10 @@
 /* Reader menu — content inside the floating BottomSheet (Figma 3443:5651 / ReaderMenu). */
 
+.reader-menu-sheet .bottom-sheet__panel {
+  max-width: 100%;
+}
+
+
 .reader-menu {
   display: flex;
   flex-direction: column;

@@ -12,6 +12,8 @@ export interface MeaningSectionProps<T> {
   items: T[];
   getKey: (item: T) => string;
   renderItem: (item: T, index: number) => React.ReactNode;
+  /** Optional node rendered after the items list, inside the section (e.g. AddMeaningRow). */
+  footer?: React.ReactNode;
 }
 
 /** Collapsible meanings section — shared by Saved / More / Words in this Phrase. */
@@ -22,6 +24,7 @@ export function MeaningSection<T>({
   items,
   getKey,
   renderItem,
+  footer,
 }: MeaningSectionProps<T>) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -45,6 +48,7 @@ export function MeaningSection<T>({
           {items.map((item, i) => (
             <React.Fragment key={getKey(item)}>{renderItem(item, i)}</React.Fragment>
           ))}
+          {footer}
         </div>
       )}
     </section>

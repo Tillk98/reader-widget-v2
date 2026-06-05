@@ -1,0 +1,123 @@
+.status-snackbar {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--backgrounds-page, #ffffff);
+  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
+
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+
+  animation: status-snackbar-in 0.28s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@keyframes status-snackbar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.status-snackbar--exiting {
+  animation: status-snackbar-out 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes status-snackbar-out {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+}
+
+.status-snackbar--known {
+  background: var(--surfaces-primary-subtle, #f4fcef);
+}
+
+.status-snackbar--ignored {
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+}
+
+/* Status badge (32×32 pill icon) */
+.status-snackbar__badge {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50px;
+  border: 0.8px solid var(--icons-action-primary, #42a564);
+  background: var(--backgrounds-elevated, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icons-action-primary, #42a564);
+}
+
+.status-snackbar__badge--known {
+  background: var(--color-green-50, #f4fcef);
+}
+
+.status-snackbar__badge--ignored {
+  border-color: var(--text-destructive, #dd2525);
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+  color: var(--text-destructive, #dd2525);
+}
+
+.status-snackbar__badge-number {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 16px;
+  color: var(--icons-action-primary, #42a564);
+}
+
+/* Label */
+.status-snackbar__label {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--text-default, #000000);
+}
+
+.status-snackbar--known .status-snackbar__label {
+  color: var(--text-primary, #42a564);
+}
+
+.status-snackbar--ignored .status-snackbar__label {
+  color: var(--text-destructive, #dd2525);
+}
+
+/* Undo button */
+.status-snackbar__undo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  border-radius: 666px;
+  background: #ffffff;
+  color: #1c1c1e;
+  box-shadow: 0px 1.333px 5.333px -2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease;
+}
+
+.status-snackbar__undo:active {
+  transform: scale(0.9);
+}

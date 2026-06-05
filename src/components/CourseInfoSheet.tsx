@@ -69,7 +69,7 @@ export const CourseInfoSheet: React.FC<CourseInfoSheetProps> = ({
   ];
 
   return (
-    <BottomSheet open={open} onClose={onClose} variant="full" showDragBar={false} ariaLabel="Course details">
+    <BottomSheet open={open} onClose={onClose} variant="full" showDragBar={false} ariaLabel="Course details" className="course-info-sheet">
       <div className="course-info">
         <div className="course-info__hero">
           {heroImageSrc ? <img className="course-info__hero-img" src={heroImageSrc} alt="" /> : null}

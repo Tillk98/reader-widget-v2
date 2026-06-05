@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import type { Sentence, Word } from '../data/lesson';
 import type { LingQStatusType } from './LingQStatusBar';
 import { VocabTermList } from './VocabTermList';
+import { HorizontalTermList } from './HorizontalTermList';
 import './SentenceMode.css';
 
 const SWIPE_PX = 60;
@@ -42,6 +43,12 @@ export interface SentenceModeProps {
   onListWordOpenDetail: (wordId: string) => void;
   /** Clear the current selection (e.g. tapping the page background). */
   onDeselect: () => void;
+  /** Swipe-right on a vocab tile — mark the word as Known. */
+  onMarkKnown?: (wordId: string) => void;
+  /** Swipe-left on a vocab tile — mark the word as Ignored. */
+  onMarkIgnored?: (wordId: string) => void;
+  /** Controlled: show the horizontal scrollable term list instead of the vertical one. */
+  horizontalList?: boolean;
 }
 
 export const SentenceMode: React.FC<SentenceModeProps> = ({
@@ -54,6 +61,9 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
   onListWordSelect,
   onListWordOpenDetail,
   onDeselect,
+  onMarkKnown,
+  onMarkIgnored,
+  horizontalList = false,
 }) => {
   const [showTranslation, setShowTranslation] = useState(false);
 
@@ -142,55 +152,74 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
       onPointerUp={handlePointerUp}
       onClick={handleBackgroundClick}
     >
-      <div className="sentence-mode__inner">
-        <p className="sentence-mode__sentence">
-          {sentence.words.map((w, i) => {
-            const punct = isPunctuation(w.text);
-            return (
-              <React.Fragment key={w.id}>
-                {i > 0 && !punct ? ' ' : ''}
-                {punct ? (
-                  <span className="sentence-mode__punct">{w.text}</span>
-                ) : (
-                  <span
-                    id={w.id}
-                    className={[
-                      'sentence-mode__word',
-                      selectedWordId === w.id && 'sentence-mode__word--active',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    onClick={() => handleWordTap(w.id)}
-                  >
-                    {w.text}
-                  </span>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </p>
+      <div className={['sentence-mode__inner', horizontalList && 'sentence-mode__inner--horizontal'].filter(Boolean).join(' ')}>
+        <div className="sentence-mode__content">
+          <p className="sentence-mode__sentence">
+            {sentence.words.map((w, i) => {
+              const punct = isPunctuation(w.text);
+              return (
+                <React.Fragment key={w.id}>
+                  {i > 0 && !punct ? ' ' : ''}
+                  {punct ? (
+                    <span className="sentence-mode__punct">{w.text}</span>
+                  ) : (
+                    <span
+                      id={w.id}
+                      className={[
+                        'sentence-mode__word',
+                        selectedWordId === w.id && 'sentence-mode__word--active',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() => handleWordTap(w.id)}
+                    >
+                      {w.text}
+                    </span>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </p>
 
-        <button
-          type="button"
-          className="sentence-mode__translation-toggle"
-          onClick={() => setShowTranslation(v => !v)}
-          aria-pressed={showTranslation}
-        >
-          {showTranslation ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
-          <span>{showTranslation ? 'Hide Translation' : 'Show Translation'}</span>
-        </button>
+          <div className="sentence-mode__controls">
+            <button
+              type="button"
+              className="sentence-mode__translation-toggle"
+              onClick={() => setShowTranslation(v => !v)}
+              aria-pressed={showTranslation}
+            >
+              {showTranslation ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
+              <span>{showTranslation ? 'Hide Translation' : 'Show Translation'}</span>
+            </button>
+          </div>
 
-        {showTranslation && <p className="sentence-mode__sentence-translation">{sentenceTranslation}</p>}
+          {showTranslation && <p className="sentence-mode__sentence-translation">{sentenceTranslation}</p>}
+        </div>
 
-        <VocabTermList
-          className="sentence-mode__vocab"
+        {!horizontalList && (
+          <VocabTermList
+            className="sentence-mode__vocab"
+            items={vocabWords}
+            wordStatusMap={wordStatusMap}
+            selectedWordId={selectedWordId}
+            onSelect={handleListStatus}
+            onOpenDetail={handleListDetail}
+            onMarkKnown={onMarkKnown}
+            onMarkIgnored={onMarkIgnored}
+          />
+        )}
+      </div>
+
+      {horizontalList && (
+        <HorizontalTermList
           items={vocabWords}
           wordStatusMap={wordStatusMap}
           selectedWordId={selectedWordId}
           onSelect={handleListStatus}
-          onOpenDetail={handleListDetail}
+          onMarkKnown={onMarkKnown}
+          onMarkIgnored={onMarkIgnored}
         />
-      </div>
+      )}
     </div>
   );
 };

@@ -6,7 +6,7 @@
   background: var(--backgrounds-page, #ffffff);
 }
 
-/* Slides in from the right edge as you swipe; the meaning stays put behind it. */
+/* ── Swipe-to-delete reveal ───────────────────────────────────── */
 .saved-meaning__delete {
   position: absolute;
   top: 0;
@@ -29,6 +29,7 @@
   display: block;
 }
 
+/* ── Default state ─────────────────────────────────────────────── */
 .saved-meaning__content {
   position: relative;
   z-index: 1;
@@ -53,23 +54,17 @@
   color: var(--typography-default, #000000);
 }
 
-/* Edit state */
+/* ── Edit state — single flex row: [input] [X] [+] ───────────── */
 .saved-meaning--edit {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   padding: 12px 0;
+  box-sizing: border-box;
   overflow: visible;
   background: var(--backgrounds-page, #ffffff);
-  box-sizing: border-box;
-}
-
-.saved-meaning__edit-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
 }
 
 .saved-meaning__input {
@@ -86,65 +81,83 @@
   color: var(--typography-default, #000000);
 }
 
+.saved-meaning__input::placeholder {
+  color: var(--text-muted, #6d7680);
+}
+
 .saved-meaning__input:focus {
   outline: none;
 }
 
-.saved-meaning__clear {
+/* Small square icon buttons inside the edit row */
+.saved-meaning__edit-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  padding: 8px;
   margin: 0;
-  padding: 0;
   border: none;
-  border-radius: 999px;
-  background: var(--backgrounds-page, #ffffff);
-  color: var(--typography-muted, #6d7680);
+  border-radius: 4px;
   cursor: pointer;
+  color: var(--typography-default, #000000);
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
-.saved-meaning__clear svg {
+.saved-meaning__edit-btn:active {
+  transform: scale(0.92);
+}
+
+.saved-meaning__edit-btn svg {
   display: block;
 }
 
-.saved-meaning__actions {
+/* X — cancel, no fill */
+.saved-meaning__edit-btn--cancel {
+  background: transparent;
+  color: var(--text-muted, #6d7680);
+}
+
+.saved-meaning__edit-btn--cancel:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* + — save, blue-subtle fill */
+.saved-meaning__edit-btn--save {
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  color: var(--text-secondary, #2e75cd);
+}
+
+.saved-meaning__edit-btn--save:hover {
+  background: #e3eefb;
+}
+
+/* ── Add a new meaning row ─────────────────────────────────────── */
+.saved-meaning__add-new {
   display: flex;
-  gap: 12px;
+  align-items: center;
   width: 100%;
-}
-
-.saved-meaning__btn {
-  flex: 1 1 0;
-  min-width: 0;
+  padding: 12px 0;
   margin: 0;
-  padding: 6px 16px;
   border: none;
-  border-radius: var(--radius-2xs, 4px);
+  background: transparent;
   font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 500;
-  line-height: 16px;
+  line-height: 20px;
+  color: var(--text-secondary, #2e75cd);
   cursor: pointer;
-  transition: filter 0.15s ease, transform 0.1s ease;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease;
+  box-sizing: border-box;
 }
 
-.saved-meaning__btn:active {
-  transform: scale(0.98);
+.saved-meaning__add-new:hover {
+  opacity: 0.8;
 }
 
-.saved-meaning__btn--cancel {
-  background: var(--surfaces-default, #f1f3f4);
-  color: var(--typography-default, #000000);
-}
-
-.saved-meaning__btn--save {
-  background: var(--surfaces-secondary, #2e75cd);
-  color: #ffffff;
-}
-
-.saved-meaning__btn--save:hover {
-  filter: brightness(0.97);
+.saved-meaning__add-new:active {
+  opacity: 0.6;
 }

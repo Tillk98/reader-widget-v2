@@ -33,7 +33,6 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  max-width: 600px;
   pointer-events: auto;
   overflow: visible;
 }
@@ -209,8 +208,9 @@
 .reader-bottom-bar-actions-container.expanded {
   max-height: 360px;
   border-radius: 12px;
+  flex: 1 1 auto;
   min-width: 0;
-  max-width: 100%;
+  width: 100%;
   /* Heavy frost: lesson text must not read through the expanded menu */
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(40px) saturate(200%);
@@ -331,12 +331,7 @@
   box-sizing: border-box;
 }
 
-.reader-bottom-bar-expanded-menu--grid {
-  max-width: 275px;
-}
-
 .reader-bottom-bar-expanded-menu--list {
-  max-width: 268px;
   padding: 0;
   gap: 0;
 }

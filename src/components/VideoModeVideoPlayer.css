@@ -1,4 +1,4 @@
-/* Top video slot — width matches video mode bar column (600px); inner has no card fill/shadow. */
+/* Top video slot — full width. */
 
 .video-mode-player-slot {
   position: fixed;
@@ -12,8 +12,6 @@
   padding-top: env(safe-area-inset-top, 0px);
   box-sizing: border-box;
   pointer-events: none;
-  max-width: 600px;
-  margin: 0 auto;
   width: 100%;
   /* View Transitions API: paired with Reader.css ::view-transition-(old|new)(video-mode-top) */
   view-transition-name: video-mode-top;
@@ -22,7 +20,6 @@
 .video-mode-player-slot__inner {
   pointer-events: auto;
   width: 100%;
-  max-width: 600px;
   overflow: hidden;
   display: flex;
   flex-direction: column;

@@ -74,6 +74,9 @@ export interface ReaderBottomBarProps {
   onMenuPreviousLesson?: () => void;
   onMenuNextLesson?: () => void;
   onShowTranslation?: () => void;
+  /** Controlled state for the horizontal term list toggle (sentence mode only). */
+  horizontalListOn?: boolean;
+  onHorizontalListChange?: (on: boolean) => void;
   /** When true, collapsed audio mini was the bottom bar — skip the default play/menu morph into LingQ (avoids a one-frame flash of default chrome). */
   audioMiniActive?: boolean;
 }
@@ -139,6 +142,8 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onMenuPreviousLesson,
   onMenuNextLesson,
   onShowTranslation,
+  horizontalListOn,
+  onHorizontalListChange,
   audioMiniActive = false,
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
@@ -624,6 +629,8 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
         onPreviousLesson={onMenuPreviousLesson}
         onNextLesson={onMenuNextLesson}
         onShowTranslationChange={() => onShowTranslation?.()}
+        horizontalListOn={horizontalListOn}
+        onHorizontalListChange={onHorizontalListChange}
         onRefresh={onRefresh}
         onTheme={onTheme}
         onSettings={onSettings}

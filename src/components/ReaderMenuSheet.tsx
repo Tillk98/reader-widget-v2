@@ -26,6 +26,9 @@ export interface ReaderMenuSheetProps {
   onPreviousLesson?: () => void;
   onNextLesson?: () => void;
   onShowTranslationChange?: (on: boolean) => void;
+  /** Controlled state for the horizontal term list toggle (sentence mode only). */
+  horizontalListOn?: boolean;
+  onHorizontalListChange?: (on: boolean) => void;
   onRefresh?: () => void;
   onAddToPlaylist?: () => void;
   onTheme?: () => void;
@@ -49,6 +52,8 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
   onPreviousLesson,
   onNextLesson,
   onShowTranslationChange,
+  horizontalListOn = false,
+  onHorizontalListChange,
   onRefresh,
   onAddToPlaylist,
   onTheme,
@@ -70,7 +75,7 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
   };
 
   return (
-    <BottomSheet open={open} onClose={onClose} dragWholeCard ariaLabel="Lesson menu">
+    <BottomSheet open={open} onClose={onClose} dragWholeCard ariaLabel="Lesson menu" className="reader-menu-sheet">
       <div className="reader-menu">
         <div className="reader-menu__header">
           <button
@@ -164,6 +169,26 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
                   aria-label="Auto-Play Sentence Audio"
                   className={`reader-menu__toggle ${autoPlayOn ? 'reader-menu__toggle--on' : ''}`}
                   onClick={() => setAutoPlayOn(prev => !prev)}
+                >
+                  <span className="reader-menu__toggle-knob" />
+                </button>
+              </div>
+              <div className="reader-menu__item">
+                <span className="reader-menu__item-label">
+                  <img
+                    src={reviewDefaultIcon}
+                    alt=""
+                    className="reader-menu__item-icon reader-menu__item-icon--img"
+                  />
+                  <span className="reader-menu__item-text">Horizontal Term List</span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={horizontalListOn}
+                  aria-label="Horizontal Term List"
+                  className={`reader-menu__toggle ${horizontalListOn ? 'reader-menu__toggle--on' : ''}`}
+                  onClick={() => onHorizontalListChange?.(!horizontalListOn)}
                 >
                   <span className="reader-menu__toggle-knob" />
                 </button>
