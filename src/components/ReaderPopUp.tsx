@@ -139,6 +139,8 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   };
 
   if (showBottomSheet) {
+    // On tablet (no panel mode yet): show as a floating positioned card instead of a bottom sheet.
+    const useFloating = isTablet === true && !panelMode;
     return (
       <WordDetailBottomSheet
         wordText={wordText}
@@ -149,6 +151,8 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
         onClose={onClose}
         isTablet={isTablet}
         panelMode={panelMode}
+        floatingMode={useFloating}
+        resolveAnchorElement={useFloating ? resolveAnchorElement : undefined}
         onTogglePanelMode={onTogglePanelMode}
       />
     );

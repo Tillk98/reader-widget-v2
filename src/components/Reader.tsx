@@ -1333,36 +1333,23 @@ export const Reader: React.FC = () => {
             value={reviewFilter}
             onApply={setReviewFilter}
           />
-          {/* Word detail popup: floating card on tablet, compact→sheet on mobile. */}
+          {/* Compact popup → floating card (tablet) or bottom sheet (mobile). */}
           {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen &&
            !(isSentenceView && sentencePopupSuppressed) && !(isTablet && wordDetailPanelMode) && (
-            isTablet ? (
-              <WordDetailBottomSheet
-                key={selectedWordId}
-                wordText={selectedWordData.word.text}
-                wordTranslation={selectedWordData.word.translation}
-                wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
-                onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
-                onClose={handleClosePopup}
-                floatingMode={true}
-                resolveAnchorElement={resolveSelectedWordAnchorElement}
-                onTogglePanelMode={() => setWordDetailPanelMode(true)}
-              />
-            ) : (
-              <ReaderPopUp
-                key={selectedWordId}
-                wordId={selectedWordId}
-                wordText={selectedWordData.word.text}
-                wordTranslation={selectedWordData.word.translation}
-                resolveAnchorElement={resolveSelectedWordAnchorElement}
-                wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
-                onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
-                onClose={handleClosePopup}
-                onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
-                isTablet={false}
-                panelMode={false}
-              />
-            )
+            <ReaderPopUp
+              key={selectedWordId}
+              wordId={selectedWordId}
+              wordText={selectedWordData.word.text}
+              wordTranslation={selectedWordData.word.translation}
+              resolveAnchorElement={resolveSelectedWordAnchorElement}
+              wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
+              onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
+              onClose={handleClosePopup}
+              onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
+              isTablet={isTablet}
+              panelMode={false}
+              onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(true) : undefined}
+            />
           )}
           {phraseSelection && !phraseDetailOpen && (
             <PhrasePopUp
@@ -1424,7 +1411,7 @@ export const Reader: React.FC = () => {
               }
               anchorAboveVideoBarPx={lingqStripAnchorAboveVideoBarPx}
               lessonImageSrc={lessonImage}
-              wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen || phraseDetailOpen || (isTablet && selectedWordId != null)}
+              wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen || phraseDetailOpen || (isTablet && wordDetailPanelMode && selectedWordId != null)}
               selectedWordId={selectedWordId}
               selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
               onSelectedWordStatusChange={
