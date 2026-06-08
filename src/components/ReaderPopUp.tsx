@@ -16,6 +16,12 @@ interface ReaderPopUpProps {
   onClose: () => void;
   /** Fired when the user opens the meanings / word-detail bottom sheet (popup bubble is unmounted). */
   onWordDetailSheetOpen?: () => void;
+  /** True when the viewport is ≥768px (tablet/desktop surface). */
+  isTablet?: boolean;
+  /** True when the word detail is shown as a floating side panel instead of a bottom sheet. */
+  panelMode?: boolean;
+  /** Toggle between panel and bottom-sheet presentation. */
+  onTogglePanelMode?: () => void;
 }
 
 export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
@@ -28,11 +34,22 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   onWordStatusChange,
   onClose,
   onWordDetailSheetOpen,
+  isTablet,
+  panelMode,
+  onTogglePanelMode,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
-  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  // If panel mode is already active (e.g. user tapped a new word while the panel was open),
+  // skip the compact popup and go straight to the full sheet so the panel stays persistent.
+  const [showBottomSheet, setShowBottomSheet] = useState(() => panelMode === true);
   /** Local override after editing meaning in the expanded sheet */
   const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
+
+  // Notify Reader that the sheet is open when we auto-expand in panel mode.
+  useEffect(() => {
+    if (panelMode) onWordDetailSheetOpen?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setMeaningOverride(undefined);
@@ -130,6 +147,9 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
         onWordStatusChange={onWordStatusChange}
         onWordTranslationChange={setMeaningOverride}
         onClose={onClose}
+        isTablet={isTablet}
+        panelMode={panelMode}
+        onTogglePanelMode={onTogglePanelMode}
       />
     );
   }

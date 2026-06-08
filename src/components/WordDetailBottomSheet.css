@@ -41,7 +41,7 @@
   width: 100%;
   min-width: 80px;
   min-height: 44px;
-  padding: max(env(safe-area-inset-top, 0px), 12px) 24px 8px;
+  padding: max(env(safe-area-inset-top, 0px), 16px) 24px 12px;
   box-sizing: border-box;
   border: none;
   flex-shrink: 0;
@@ -85,65 +85,55 @@
   gap: var(--spacing-spacing-sm, 12px);
 }
 
-.word-detail-sheet-meaning-section {
+/* Bottom sheet header content (Figma 3989:42455 — BottomSheet state) */
+.word-detail-sheet-header-content {
+  flex-shrink: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-spacing-xs, 8px);
   padding: 0 var(--spacing-spacing-sm, 12px);
-  background: var(--backgrounds-page, #ffffff);
   box-sizing: border-box;
 }
 
-/* Header meaning — plain read-only text (Figma 2806:54625) */
+.word-detail-sheet-original-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--spacing-spacing-sm, 8px);
+  padding: 4px 0;
+}
+
+.word-detail-sheet-original-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: var(--typography-footnote-font-size, 14px);
+  font-weight: 400;
+  line-height: var(--typography-footnote-line-height, 18px);
+  color: var(--foreground-muted, #6d7680);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.word-detail-sheet-meaning-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+
+/* Header meaning — plain read-only text (Figma 3989:42455) */
 .word-detail-sheet-meaning-text {
   margin: 0;
   width: 100%;
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 20px;
+  font-size: var(--typography-body-font-size, 16px);
+  font-weight: 500;
+  line-height: var(--typography-body-line-height, 20px);
   color: var(--typography-default, #000000);
   text-align: left;
   word-break: break-word;
-}
-
-.word-detail-sheet-quote-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  width: 100%;
-}
-
-.word-detail-sheet-quote-text {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  flex: 1;
-  min-width: 0;
-}
-
-.word-detail-sheet-quote-bar {
-  display: block;
-  width: 3px;
-  flex-shrink: 0;
-  border-radius: 2px;
-  background: var(--typography-muted, #6d7680);
-  margin-right: 6px;
-  align-self: stretch;
-  min-height: 18px;
-}
-
-.word-detail-sheet-quote-line {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 18px;
-  color: var(--typography-muted, #6d7680);
-  text-align: left;
 }
 
 .word-detail-sheet-vol-btn {
@@ -1052,6 +1042,86 @@ button.note-field__box {
   flex-shrink: 0;
 }
 
+/* Panel layout toggle button (Figma 3985:58507 — panel-right icon).
+   Visible only on tablet+ (≥768px); hidden below via media query. */
+.word-detail-sheet-panel-btn {
+  display: none; /* hidden by default; shown on tablet+ */
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--ui-ctrl-radius-pill);
+  background: #ffffff;
+  box-shadow: 0px 1.333px 5.333px -1.333px rgba(0, 0, 0, 0.15);
+  color: var(--typography-default, #000000);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--ui-ctrl-transition);
+}
+
+@media (min-width: 768px) {
+  .word-detail-sheet-panel-btn {
+    display: flex;
+  }
+}
+
+.word-detail-sheet-panel-btn:hover {
+  box-shadow: var(--ui-ctrl-shadow-hover);
+}
+
+.word-detail-sheet-panel-btn:active {
+  transform: var(--ui-ctrl-press);
+}
+
+.word-detail-sheet-panel-btn:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Panel mode header (Figma 3985:59330) — compact header replacing drag+quote when in side panel */
+.word-detail-sheet-header-block--panel {
+  gap: 0;
+}
+
+.word-detail-sheet-panel-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: var(--backgrounds-page, #ffffff);
+}
+
+.word-detail-sheet-panel-header-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+
+/* In the panel header, the meaning row gets min-height to match Figma spec */
+.word-detail-sheet-panel-header-left .word-detail-sheet-meaning-row {
+  min-height: 40px;
+}
+
+/* Action buttons in the panel header — always visible (panel mode is tablet-only) */
+.word-detail-sheet-panel-btn-group {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.word-detail-sheet-panel-btn-group .word-detail-sheet-panel-btn {
+  display: flex; /* always show; media query hidden class is overridden here */
+}
+
+
 /* Footer — status bar + Lynx button (Figma 3518:5968) */
 .word-detail-sheet-footer {
   flex-shrink: 0;
@@ -1112,4 +1182,35 @@ button.note-field__box {
   width: 24px;
   height: 24px;
   object-fit: contain;
+}
+
+/* ─── Floating mode (Figma 3989:45163) ─────────────────────────────────────
+   On tablet+, the word detail shows as a positioned card near the tapped word
+   instead of a bottom sheet. The panel's left / top / bottom / width / maxHeight
+   are applied via inline style by the position-calculation useLayoutEffect.
+   ──────────────────────────────────────────────────────────────────────────── */
+.word-detail-sheet-root.is-floating-mode {
+  /* Zero-size fixed anchor so the child panel can use position:fixed freely. */
+  position: fixed;
+  inset: auto;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  background: transparent !important;
+  pointer-events: none;
+  z-index: 1001;
+}
+
+.word-detail-sheet-root.is-floating-mode .word-detail-sheet-panel {
+  /* position + coords injected via inline style by useLayoutEffect */
+  position: fixed;
+  inset: auto;
+  pointer-events: auto;
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.25);
+  transform: none !important;
+  transition: none !important;
+  overflow: hidden;
 }

@@ -204,6 +204,67 @@
   padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
 }
 
+/* ─── Tablet side-panel layout (≥768px) ──────────────────────────────────────
+   .reader-layout wraps .reader-content (and optionally .reader-panel-slot).
+   In split mode it becomes a flex-row so text + panel genuinely share space
+   with no overlay; the ResizeObserver on .reader-content then measures the
+   correct narrower width and repaginates the lesson text automatically.
+   ─────────────────────────────────────────────────────────────────────────── */
+.reader-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.reader-layout--split {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+/* In split mode the content column must shed width:100% so flex can size it. */
+.reader-layout--split .reader-content {
+  width: auto;
+  min-width: 0;
+}
+
+/* Side-panel column: fixed width, matches the Figma 320px panel. */
+.reader-panel-slot {
+  flex-shrink: 0;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 80px; /* stay below the fixed reader header */
+  padding: 8px 16px calc(104px + env(safe-area-inset-bottom, 0px)) 0;
+  box-sizing: border-box;
+}
+
+/* Make WordDetailBottomSheet render inline (not as a fixed viewport overlay). */
+.reader-panel-slot .word-detail-sheet-root {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  background: transparent;
+  pointer-events: auto;
+  z-index: 1;
+  visibility: visible;
+}
+
+.reader-panel-slot .word-detail-sheet-panel {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  transform: none !important;
+  transition: none !important;
+  border-radius: 12px;
+  box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+
 /* Inner shell for lesson layout (page vs video). Intentionally no view-transition-name here:
  * naming this subtree `reader-body` caused WebKit to composite an empty layer during horizontal
  * paging (white flash) while the child .pages-container carried the translate3d transform. */

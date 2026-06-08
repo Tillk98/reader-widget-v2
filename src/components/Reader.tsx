@@ -720,6 +720,20 @@ export const Reader: React.FC = () => {
   const [wordDetailSheetOpen, setWordDetailSheetOpen] = useState(false);
   /** Word detail sheet opened directly from a vocabulary list item (Review / Sentence mode). */
   const [listDetailOpen, setListDetailOpen] = useState(false);
+  /** True when viewport is ≥768px (tablet / desktop surface). */
+  const [isTablet, setIsTablet] = useState(() => window.innerWidth >= 768);
+  /** True when the word detail is displayed as a floating side panel (tablet+ only). */
+  const [wordDetailPanelMode, setWordDetailPanelMode] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const tablet = window.innerWidth >= 768;
+      setIsTablet(tablet);
+      if (!tablet) setWordDetailPanelMode(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     setWordDetailSheetOpen(false);
@@ -728,6 +742,7 @@ export const Reader: React.FC = () => {
   const handleClosePopup = useCallback(() => {
     setWordDetailSheetOpen(false);
     setListDetailOpen(false);
+    setWordDetailPanelMode(false);
     if (selectedWordId) {
       setClickedWords(prev => {
         const newSet = new Set(prev);
@@ -743,6 +758,7 @@ export const Reader: React.FC = () => {
     setSentencePopupSuppressed(true);
     setSelectedWordId(wordId);
     setListDetailOpen(true);
+    setWordDetailPanelMode(false); // list/review detail always uses the bottom sheet
   }, []);
 
   /** Tap a word inside the phrase popup's breakdown: open that word's detail sheet. */
@@ -1165,73 +1181,97 @@ export const Reader: React.FC = () => {
               </button>
             </div>
           )}
-          <div
-            className={contentClassName}
-            style={readerContentVideoStyle}
-            ref={contentRef}
-            onPointerDown={isPageMode && !sentenceMode ? handlePointerDown : undefined}
-            onPointerMove={isPageMode && !sentenceMode ? handlePointerMove : undefined}
-            onPointerUp={isPageMode && !sentenceMode ? e => handlePointerUp(e) : undefined}
-            onPointerLeave={isPageMode && !sentenceMode ? () => handlePointerUp() : undefined}
-            onPointerCancel={isPageMode && !sentenceMode ? handlePointerCancel : undefined}
-          >
-            <div className="reader-body-vt">
-              {isSentenceView ? (
-                <SentenceMode
-                  sentences={lesson.sentences}
-                  index={sentenceIndex}
-                  onIndexChange={setSentenceIndex}
-                  wordStatusMap={wordStatusMap}
-                  selectedWordId={selectedWordId}
-                  onWordSelect={handleSentenceWordSelect}
-                  onListWordSelect={handleSentenceListSelect}
-                  onListWordOpenDetail={handleListOpenDetail}
-                  onDeselect={handleClosePopup}
-                  horizontalList={sentenceHorizontalList}
-                  onMarkKnown={(wordId) => handleStatusChange(wordId, 'Known')}
-                  onMarkIgnored={(wordId) => handleStatusChange(wordId, 'Ignored')}
-                />
-              ) : isLessonMediaMode ? (
-                <div className="reader-video-scroll">
-                  <PageComponent
-                    words={allWords}
-                    clickedWords={clickedWords}
-                    lingqWords={lingqWords}
-                    onWordClick={handleWordClick}
-                    knownWords={knownWords}
-                    ignoredWords={ignoredWords}
-                    videoLessonLayout
-                    wordToSentenceIndex={wordToSentenceIndex}
-                    phraseSelectedWords={phraseHighlightIds}
+          {/* reader-layout: flex-column normally; flex-row in tablet panel mode. */}
+          <div className={`reader-layout${isTablet && wordDetailPanelMode ? ' reader-layout--split' : ''}`}>
+            <div
+              className={contentClassName}
+              style={readerContentVideoStyle}
+              ref={contentRef}
+              onPointerDown={isPageMode && !sentenceMode ? handlePointerDown : undefined}
+              onPointerMove={isPageMode && !sentenceMode ? handlePointerMove : undefined}
+              onPointerUp={isPageMode && !sentenceMode ? e => handlePointerUp(e) : undefined}
+              onPointerLeave={isPageMode && !sentenceMode ? () => handlePointerUp() : undefined}
+              onPointerCancel={isPageMode && !sentenceMode ? handlePointerCancel : undefined}
+            >
+              <div className="reader-body-vt">
+                {isSentenceView ? (
+                  <SentenceMode
+                    sentences={lesson.sentences}
+                    index={sentenceIndex}
+                    onIndexChange={setSentenceIndex}
+                    wordStatusMap={wordStatusMap}
+                    selectedWordId={selectedWordId}
+                    onWordSelect={handleSentenceWordSelect}
+                    onListWordSelect={handleSentenceListSelect}
+                    onListWordOpenDetail={handleListOpenDetail}
+                    onDeselect={handleClosePopup}
+                    horizontalList={sentenceHorizontalList}
+                    onMarkKnown={(wordId) => handleStatusChange(wordId, 'Known')}
+                    onMarkIgnored={(wordId) => handleStatusChange(wordId, 'Ignored')}
+                  />
+                ) : isLessonMediaMode ? (
+                  <div className="reader-video-scroll">
+                    <PageComponent
+                      words={allWords}
+                      clickedWords={clickedWords}
+                      lingqWords={lingqWords}
+                      onWordClick={handleWordClick}
+                      knownWords={knownWords}
+                      ignoredWords={ignoredWords}
+                      videoLessonLayout
+                      wordToSentenceIndex={wordToSentenceIndex}
+                      phraseSelectedWords={phraseHighlightIds}
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
+                    style={{
+                      width: trackWidthPx > 0 ? trackWidthPx : pageColumnPx,
+                      transform: `translate3d(${pageTranslatePx}px, 0, 0)`,
+                      transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                    }}
+                  >
+                    {pages.map((page, index) => (
+                      <div key={index} className="page-wrapper" style={{ width: pageColumnPx }}>
+                        <PageComponent
+                          words={page.words}
+                          clickedWords={clickedWords}
+                          lingqWords={lingqWords}
+                          onWordClick={handleWordClick}
+                          knownWords={knownWords}
+                          ignoredWords={ignoredWords}
+                          videoLessonLayout={false}
+                          wordToSentenceIndex={wordToSentenceIndex}
+                          phraseSelectedWords={phraseHighlightIds}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Tablet side panel: inline flex sibling of the lesson text (no overlay). */}
+            {isTablet && wordDetailPanelMode && selectedWordId && selectedWordData && (() => {
+              const wordId = selectedWordId;
+              const word = selectedWordData.word;
+              return (
+                <div className="reader-panel-slot">
+                  <WordDetailBottomSheet
+                    key={wordId}
+                    wordText={word.text}
+                    wordTranslation={word.translation}
+                    wordStatus={wordStatusMap[wordId] ?? 'New'}
+                    onWordStatusChange={status => handleStatusChange(wordId, status)}
+                    onClose={handleClosePopup}
+                    isTablet={isTablet}
+                    panelMode={true}
+                    onTogglePanelMode={() => setWordDetailPanelMode(false)}
                   />
                 </div>
-              ) : (
-                <div
-                  className={`pages-container ${isDragging ? 'pages-container-dragging' : ''}`}
-                  style={{
-                    width: trackWidthPx > 0 ? trackWidthPx : pageColumnPx,
-                    transform: `translate3d(${pageTranslatePx}px, 0, 0)`,
-                    transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                  }}
-                >
-                  {pages.map((page, index) => (
-                    <div key={index} className="page-wrapper" style={{ width: pageColumnPx }}>
-                      <PageComponent
-                        words={page.words}
-                        clickedWords={clickedWords}
-                        lingqWords={lingqWords}
-                        onWordClick={handleWordClick}
-                        knownWords={knownWords}
-                        ignoredWords={ignoredWords}
-                        videoLessonLayout={false}
-                        wordToSentenceIndex={wordToSentenceIndex}
-                        phraseSelectedWords={phraseHighlightIds}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              );
+            })()}
           </div>
           {isLessonMediaMode && videoBarExpanded && (
             <div className="reader-lesson-fade-bottom" aria-hidden />
@@ -1293,18 +1333,36 @@ export const Reader: React.FC = () => {
             value={reviewFilter}
             onApply={setReviewFilter}
           />
-          {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen && !(isSentenceView && sentencePopupSuppressed) && (
-            <ReaderPopUp
-              key={selectedWordId}
-              wordId={selectedWordId}
-              wordText={selectedWordData.word.text}
-              wordTranslation={selectedWordData.word.translation}
-              resolveAnchorElement={resolveSelectedWordAnchorElement}
-              wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
-              onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
-              onClose={handleClosePopup}
-              onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
-            />
+          {/* Word detail popup: floating card on tablet, compact→sheet on mobile. */}
+          {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen &&
+           !(isSentenceView && sentencePopupSuppressed) && !(isTablet && wordDetailPanelMode) && (
+            isTablet ? (
+              <WordDetailBottomSheet
+                key={selectedWordId}
+                wordText={selectedWordData.word.text}
+                wordTranslation={selectedWordData.word.translation}
+                wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
+                onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
+                onClose={handleClosePopup}
+                floatingMode={true}
+                resolveAnchorElement={resolveSelectedWordAnchorElement}
+                onTogglePanelMode={() => setWordDetailPanelMode(true)}
+              />
+            ) : (
+              <ReaderPopUp
+                key={selectedWordId}
+                wordId={selectedWordId}
+                wordText={selectedWordData.word.text}
+                wordTranslation={selectedWordData.word.translation}
+                resolveAnchorElement={resolveSelectedWordAnchorElement}
+                wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
+                onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
+                onClose={handleClosePopup}
+                onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
+                isTablet={false}
+                panelMode={false}
+              />
+            )
           )}
           {phraseSelection && !phraseDetailOpen && (
             <PhrasePopUp
@@ -1349,6 +1407,9 @@ export const Reader: React.FC = () => {
                 wordStatus={wordStatusMap[wordId] ?? 'New'}
                 onWordStatusChange={status => handleStatusChange(wordId, status)}
                 onClose={handleClosePopup}
+                isTablet={isTablet}
+                panelMode={isTablet && wordDetailPanelMode}
+                onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(prev => !prev) : undefined}
               />
             );
           })()}
@@ -1363,7 +1424,7 @@ export const Reader: React.FC = () => {
               }
               anchorAboveVideoBarPx={lingqStripAnchorAboveVideoBarPx}
               lessonImageSrc={lessonImage}
-              wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen || phraseDetailOpen}
+              wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen || phraseDetailOpen || (isTablet && selectedWordId != null)}
               selectedWordId={selectedWordId}
               selectedWordStatus={selectedWordId ? (wordStatusMap[selectedWordId] ?? 'New') : undefined}
               onSelectedWordStatusChange={
