@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React from 'react';
 import { Check, EyeOff } from 'lucide-react';
 import { LingQStatusButton } from './LingQStatusButton';
 import './LingQStatusBar.css';
@@ -13,8 +13,7 @@ export type LingQStatusType =
 
 const LEARNING_STATUSES: LingQStatusType[] = ['New', 'Recognized', 'Familiar', 'Learned'];
 
-/** Sheet row: Ignored | 1–4 | Known (Figma 2181:47905) */
-const SHEET_SEGMENT_ORDER: LingQStatusType[] = [
+const SEGMENT_ORDER: LingQStatusType[] = [
   'Ignored',
   'New',
   'Recognized',
@@ -22,9 +21,6 @@ const SHEET_SEGMENT_ORDER: LingQStatusType[] = [
   'Learned',
   'Known',
 ];
-
-const SHEET_PAD_PX = 4;
-const DRAG_THRESHOLD_PX = 6;
 
 const LEARNING_LABELS: Record<LingQStatusType, string> = {
   New: 'New',
@@ -43,26 +39,15 @@ const LEARNING_NUMBERS: Record<LingQStatusType, string> = {
   Ignored: '',
 };
 
-function segmentIndexFromStatus(status: LingQStatusType): number {
-  const i = SHEET_SEGMENT_ORDER.indexOf(status);
-  return i >= 0 ? i : 1;
-}
-
-function highlightToneForIndex(index: number): 'ignored' | 'learning' | 'known' {
-  if (index === 0) return 'ignored';
-  if (index === 5) return 'known';
-  return 'learning';
-}
-
 interface LingQStatusBarProps {
   status: LingQStatusType;
   onStatusChange: (status: LingQStatusType) => void;
   /** When true, only the learning statuses (1–4) are shown; Ignored and Known are hidden. Used in bottom bar expanded state. */
   learningOnly?: boolean;
   /**
-   * `sheet`     — word detail bottom sheet: sliding-highlight Ignored | 1–4 | Known (Figma 2181:47905).
+   * `sheet`     — word detail bottom sheet: LingQStatusButton row (Figma 4011:11766).
    * `segmented` — reader bottom bar word-selected state: per-segment bordered highlight (Figma 2812:55682).
-   * `floating`  — compact floating bar above/below the popup: active segment expands to show label (Figma 3999:11724).
+   * `floating`  — compact floating bar above/below the popup (Figma 4008:56509).
    */
   variant?: 'default' | 'sheet' | 'segmented' | 'floating';
 }
@@ -76,67 +61,6 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
   const isKnown = status === 'Known';
   const isIgnored = status === 'Ignored';
 
-  const trackRef = useRef<HTMLDivElement>(null);
-  const dragStartXRef = useRef<number | null>(null);
-  const didDragRef = useRef(false);
-  const dragPointerIdRef = useRef<number | null>(null);
-  const [dragPreviewIndex, setDragPreviewIndex] = useState<number | null>(null);
-
-  const indexFromClientX = useCallback((clientX: number) => {
-    const el = trackRef.current;
-    if (!el) return 0;
-    const rect = el.getBoundingClientRect();
-    const innerW = rect.width - 2 * SHEET_PAD_PX;
-    if (innerW <= 0) return 0;
-    const x = clientX - rect.left - SHEET_PAD_PX;
-    const segW = innerW / SHEET_SEGMENT_ORDER.length;
-    return Math.max(
-      0,
-      Math.min(SHEET_SEGMENT_ORDER.length - 1, Math.floor(x / segW))
-    );
-  }, []);
-
-  const statusIndex = segmentIndexFromStatus(status);
-  const displayIndex = dragPreviewIndex ?? statusIndex;
-  const highlightTone = highlightToneForIndex(displayIndex);
-
-  /** Window-level drag tracking — avoids `setPointerCapture` on the track, which blocks button `click`. */
-  const handleTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    dragStartXRef.current = e.clientX;
-    didDragRef.current = false;
-    dragPointerIdRef.current = e.pointerId;
-
-    const onMove = (ev: PointerEvent) => {
-      if (ev.pointerId !== dragPointerIdRef.current) return;
-      if (dragStartXRef.current === null) return;
-      if (Math.abs(ev.clientX - dragStartXRef.current) > DRAG_THRESHOLD_PX) {
-        didDragRef.current = true;
-        setDragPreviewIndex(indexFromClientX(ev.clientX));
-      }
-    };
-
-    const onUp = (ev: PointerEvent) => {
-      if (ev.pointerId !== dragPointerIdRef.current) return;
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-
-      if (didDragRef.current) {
-        onStatusChange(SHEET_SEGMENT_ORDER[indexFromClientX(ev.clientX)]);
-      }
-
-      dragPointerIdRef.current = null;
-      dragStartXRef.current = null;
-      didDragRef.current = false;
-      setDragPreviewIndex(null);
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
-  };
-
   if (variant === 'segmented') {
     return (
       <div
@@ -144,7 +68,7 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
         role="group"
         aria-label="Word status"
       >
-        {SHEET_SEGMENT_ORDER.map((seg) => {
+        {SEGMENT_ORDER.map((seg) => {
           const active = status === seg;
           const tone =
             seg === 'Ignored' ? 'ignored' : seg === 'Known' ? 'known' : 'learning';
@@ -174,7 +98,7 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
   if (variant === 'floating') {
     return (
       <div className="lingq-status-bar lingq-status-bar--floating" role="group" aria-label="Word status">
-        {SHEET_SEGMENT_ORDER.map((seg) => (
+        {SEGMENT_ORDER.map((seg) => (
           <LingQStatusButton
             key={seg}
             status={seg}
@@ -191,45 +115,16 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
   if (variant === 'sheet') {
     return (
       <div className="lingq-status-bar lingq-status-bar--sheet" role="group" aria-label="Word status">
-        <div
-          ref={trackRef}
-          className="lingq-status-bar__sheet-track"
-          style={
-            {
-              '--segment-index': displayIndex,
-            } as React.CSSProperties
-          }
-          onPointerDown={handleTrackPointerDown}
-        >
-          <div className="lingq-status-bar__sheet-track-unfurl">
-            <div
-              className={`lingq-status-bar__sheet-highlight lingq-status-bar__sheet-highlight--${highlightTone}`}
-              aria-hidden
-            />
-            {SHEET_SEGMENT_ORDER.map((seg, i) => {
-              const active = displayIndex === i;
-              const isLearning = LEARNING_STATUSES.includes(seg);
-              return (
-                <button
-                  key={seg}
-                  type="button"
-                  className={`lingq-status-bar__sheet-segment ${active ? 'lingq-status-bar__sheet-segment--active' : ''} ${isLearning ? 'lingq-status-bar__sheet-segment--learning' : ''} ${seg === 'Ignored' ? 'lingq-status-bar__sheet-segment--ignored' : ''} ${seg === 'Known' ? 'lingq-status-bar__sheet-segment--known' : ''}`}
-                  onClick={() => onStatusChange(seg)}
-                  aria-pressed={status === seg}
-                  aria-label={LEARNING_LABELS[seg]}
-                >
-                  {seg === 'Ignored' ? (
-                    <EyeOff size={20} aria-hidden />
-                  ) : seg === 'Known' ? (
-                    <Check size={20} aria-hidden />
-                  ) : (
-                    <span>{LEARNING_NUMBERS[seg]}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {SEGMENT_ORDER.map((seg) => (
+          <LingQStatusButton
+            key={seg}
+            status={seg}
+            state={status === seg ? 'focus' : 'default'}
+            onClick={() => onStatusChange(seg)}
+            aria-pressed={status === seg}
+            aria-label={LEARNING_LABELS[seg]}
+          />
+        ))}
       </div>
     );
   }

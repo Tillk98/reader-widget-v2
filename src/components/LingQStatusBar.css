@@ -89,118 +89,18 @@
   line-height: 16px;
 }
 
-/* Sheet variant (Figma 2181:47905) — full-width six segments + sliding highlight (pill track) */
+/* Sheet variant (Figma 4011:11766) — LingQStatusButton row, full-width */
 .lingq-status-bar--sheet {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-}
-
-.lingq-status-bar__sheet-track {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  width: 100%;
-  min-width: 0;
-  padding: var(--spacing-spacing-2xs, 4px);
-  border-radius: var(--ui-ctrl-radius-pill);
-  border: 1px solid var(--ui-ctrl-border-light);
-  background: var(--backgrounds-page, #ffffff);
-  box-shadow: var(--ui-ctrl-shadow), var(--ui-ctrl-shadow-inset);
+  padding: 8px 12px;
+  background: #fbfcfc;
+  border: 0.5px solid var(--border-default, #d1d6d9);
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
-}
-
-/* Inner row: highlight + segments (bottom bar animates the outer wrap, not this row). */
-.lingq-status-bar__sheet-track-unfurl {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  flex: 1 1 auto;
-  min-width: 0;
-  width: 100%;
-}
-
-.lingq-status-bar__sheet-highlight {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: calc(100% / 6);
-  border-radius: var(--ui-ctrl-radius-pill);
-  pointer-events: none;
-  z-index: 0;
-  transition: transform 0.2s ease, border-color 0.15s ease, background-color 0.15s ease;
-  box-shadow: var(--ui-ctrl-shadow);
-  transform: translateX(calc(var(--segment-index, 0) * 100%));
-}
-
-.lingq-status-bar__sheet-highlight--ignored {
-  border: 1.25px solid var(--border-destructive, #dd2525);
-  background: var(--surfaces-destructive-subtle, #fef2f2);
-}
-
-.lingq-status-bar__sheet-highlight--learning {
-  border: 1.25px solid var(--border-action-secondary, #2e75cd);
-  background: var(--color-blue-50, #f4fbfe);
-}
-
-.lingq-status-bar__sheet-highlight--known {
-  border: 1.25px solid var(--border-action-primary, #42a564);
-  background: var(--surfaces-action-primary-subtle, #f4fcef);
-}
-
-.lingq-status-bar__sheet-segment {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 40px;
-  padding: 0;
-  border: none;
-  border-radius: var(--ui-ctrl-radius-pill);
-  background: transparent;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 20px;
-  color: var(--typography-muted, #6d7680);
-  cursor: pointer;
-  transition: var(--ui-ctrl-transition);
-}
-
-.lingq-status-bar__sheet-segment:active {
-  transform: var(--ui-ctrl-press);
-}
-
-.lingq-status-bar__sheet-segment svg {
-  display: block;
-  flex-shrink: 0;
-  color: inherit;
-}
-
-.lingq-status-bar__sheet-segment:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: 2px;
-  z-index: 2;
-}
-
-.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--ignored,
-.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--ignored svg {
-  color: var(--typography-destructive, #dd2525);
-}
-
-.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--learning span {
-  color: var(--typography-action-secondary, #2e75cd);
-}
-
-.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--known,
-.lingq-status-bar__sheet-segment--active.lingq-status-bar__sheet-segment--known svg {
-  color: var(--typography-action-primary, #42a564);
 }
 
 
