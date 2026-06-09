@@ -204,90 +204,19 @@
 }
 
 
-/* ── Floating status bar container (Figma 3999:11724) ───────────────────── */
+/* ── Floating status bar container (Figma 4008:56509) ────────────────────── */
 .lingq-status-bar--floating {
   display: flex;
   align-items: center;
-  gap: 0;
-  padding: 8px 4px;
-  background: var(--backgrounds-page, #ffffff);
-  border: 1px solid var(--border-default, #d1d6d9);
-  border-radius: 999px;
-  box-shadow: 0px 1px 4px 0px var(--color-grey-200, #e3e5e7);
+  justify-content: space-between;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #fbfcfc;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
+  border: 0.5px solid var(--border-default, #d1d6d9);
   box-sizing: border-box;
   width: 100%;
-}
-
-.lingq-status-bar__float-seg {
-  flex: 1 0 0;
-  min-width: 0;
-  height: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 8px;
-  box-sizing: border-box;
-  border: 0.5px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 20px;
-  color: var(--typography-muted, #6d7680);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.lingq-status-bar__float-seg svg {
-  display: block;
-  flex-shrink: 0;
-  color: inherit;
-}
-
-.lingq-status-bar__float-seg:active {
-  transform: scale(0.94);
-}
-
-.lingq-status-bar__float-seg:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: 1px;
-  z-index: 1;
-}
-
-/* Active: all segments equal width — no expansion needed without a label */
-.lingq-status-bar__float-seg--active {
-  overflow: visible;
-}
-
-/* Active learning: border + green text only, no fill */
-.lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--learning {
-  background: transparent;
-  border-color: var(--border-action-primary, #42a564);
-  color: var(--typography-action-primary, #42a564);
-}
-
-/* Active Known: keep the green fill */
-.lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--known {
-  background: var(--surfaces-action-primary-subtle, #f4fcef);
-  border-color: var(--border-action-primary, #42a564);
-  color: var(--typography-action-primary, #42a564);
-}
-
-/* Active Ignored: red fill */
-.lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--ignored {
-  background: var(--surfaces-destructive-subtle, #fef2f2);
-  border-color: var(--border-destructive, #dd2525);
-  color: var(--typography-destructive, #dd2525);
-}
-
-.lingq-status-bar__float-seg-number {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 20px;
 }
  — six discrete segments, active one bordered (no slider) */
 .lingq-status-bar--segmented {

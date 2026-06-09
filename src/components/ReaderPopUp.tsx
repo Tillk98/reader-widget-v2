@@ -1,13 +1,9 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
-import { Check, EyeOff } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { LingQStatusBar } from './LingQStatusBar';
+import { LingQStatusButton } from './LingQStatusButton';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
 import './ReaderPopUp.css';
-
-const STATUS_NUMBERS: Record<LingQStatusType, string> = {
-  New: '1', Recognized: '2', Familiar: '3', Learned: '4', Known: '', Ignored: '',
-};
 
 interface ReaderPopUpProps {
   wordId: string;
@@ -92,7 +88,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     // Position the floating status bar when visible
     if (floatingBarRef.current) {
       const barEl = floatingBarRef.current;
-      const barMinWidth = Math.max(popupWidth, 260);
+      const barMinWidth = Math.max(popupWidth, 220);
       const barHeight = barEl.getBoundingClientRect().height || 44;
 
       let barLeft = left + popupWidth / 2 - barMinWidth / 2;
@@ -187,10 +183,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     onClose();
   };
 
-  // Badge display helpers
-  const badgeTone =
-    wordStatus === 'Ignored' ? 'ignored' : wordStatus === 'Known' ? 'known' : 'learning';
-
   if (showBottomSheet) {
     // On tablet (no panel mode yet): show as a floating positioned card instead of a bottom sheet.
     const useFloating = isTablet === true && !panelMode;
@@ -234,22 +226,14 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="reader-popup-widget-header">
-          <button
-            type="button"
-            className={`reader-popup-widget-status-badge reader-popup-widget-status-badge--${badgeTone}${showStatusBar ? ' reader-popup-widget-status-badge--open' : ''}`}
-            aria-label={`Status ${wordStatus}, tap to change`}
-            aria-expanded={showStatusBar}
+          <LingQStatusButton
+            status={wordStatus}
+            state="focus"
             onClick={handleStatusBadgeClick}
             onPointerDown={(e) => e.stopPropagation()}
-          >
-            {wordStatus === 'Ignored' ? (
-              <EyeOff size={12} aria-hidden />
-            ) : wordStatus === 'Known' ? (
-              <Check size={12} aria-hidden />
-            ) : (
-              <span aria-hidden>{STATUS_NUMBERS[wordStatus]}</span>
-            )}
-          </button>
+            aria-label={`Status ${wordStatus}, tap to change`}
+            aria-expanded={showStatusBar}
+          />
           <div className="reader-popup-widget-term">
             <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
             {wordTransliteration != null && wordTransliteration !== '' && (

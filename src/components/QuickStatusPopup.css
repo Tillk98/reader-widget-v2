@@ -1,4 +1,4 @@
-/* QuickStatusPopup — long-press "Ignore / Known" fast-track popup */
+/* QuickStatusPopup — long-press "Known / Ignore" fast-track popup (Figma 4008:56612) */
 
 .quick-status-popup {
   position: fixed;
@@ -6,9 +6,9 @@
   display: flex;
   align-items: stretch;
   background: var(--backgrounds-page, #ffffff);
-  border: 1px solid var(--border-default, #d1d6d9);
-  border-radius: var(--radius-sm, 8px);
-  box-shadow: 0px 1px 4px 0px var(--color-grey-200, #e3e5e7);
+  border-radius: 6px;
+  box-shadow: 0px 4px 12px -4px rgba(0, 0, 0, 0.15);
+  border: 0.5px solid var(--border-default, #d1d6d9);
   font-family: 'DM Sans', sans-serif;
   user-select: none;
   pointer-events: auto;
@@ -28,57 +28,44 @@
   }
 }
 
-.quick-status-popup__btn {
-  flex: 1;
+.quick-status-popup__option {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 18px;
+  gap: 8px;
+  padding: 8px 12px;
   border: none;
   background: transparent;
+  cursor: pointer;
   font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.quick-status-popup__option:hover {
+  background: var(--color-grey-50, #f8f9fa);
+}
+
+.quick-status-popup__option:active {
+  transform: scale(0.97);
+}
+
+.quick-status-popup__option:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.quick-status-popup__label {
   font-size: 14px;
   font-weight: 600;
   line-height: 18px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.14s ease;
-}
-
-.quick-status-popup__btn svg {
-  display: block;
-  flex-shrink: 0;
-}
-
-.quick-status-popup__btn:active {
-  transform: scale(0.96);
-}
-
-.quick-status-popup__btn:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: -2px;
-  border-radius: 6px;
-}
-
-.quick-status-popup__btn--ignore {
-  color: var(--typography-destructive, #dd2525);
-}
-
-.quick-status-popup__btn--ignore:hover {
-  background: rgba(221, 37, 37, 0.06);
-}
-
-.quick-status-popup__btn--known {
-  color: var(--typography-action-primary, #42a564);
-}
-
-.quick-status-popup__btn--known:hover {
-  background: rgba(66, 165, 100, 0.06);
+  letter-spacing: 0;
+  color: var(--typography-default, #000000);
 }
 
 .quick-status-popup__divider {
   width: 1px;
   flex-shrink: 0;
-  background: var(--border-default, #d1d6d9);
+  background: var(--color-grey-100, #f1f3f4);
+  align-self: stretch;
 }

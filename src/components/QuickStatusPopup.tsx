@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect } from 'react';
-import { Check, EyeOff } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
+import { LingQStatusButton } from './LingQStatusButton';
 import './QuickStatusPopup.css';
 
 interface QuickStatusPopupProps {
@@ -26,8 +26,8 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const gap = 8;
-    const pw = popupRect.width || 192;
-    const ph = popupRect.height || 44;
+    const pw = popupRect.width || 200;
+    const ph = popupRect.height || 40;
 
     let left = anchorRect.left + anchorRect.width / 2 - pw / 2;
     if (left < 8) left = 8;
@@ -75,10 +75,6 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     };
   }, [onClose]);
 
-  const handle = (status: LingQStatusType) => {
-    onStatusChange(status);
-  };
-
   return (
     <div
       ref={popupRef}
@@ -87,22 +83,22 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     >
       <button
         type="button"
-        className="quick-status-popup__btn quick-status-popup__btn--ignore"
-        onClick={() => handle('Ignored')}
-        aria-label="Ignore word"
+        className="quick-status-popup__option"
+        onClick={() => onStatusChange('Known')}
+        aria-label="Mark word as Known"
       >
-        <EyeOff size={16} aria-hidden />
-        <span>Ignore</span>
+        <LingQStatusButton status="Known" state="focus" tabIndex={-1} aria-hidden />
+        <span className="quick-status-popup__label">Known</span>
       </button>
       <div className="quick-status-popup__divider" aria-hidden />
       <button
         type="button"
-        className="quick-status-popup__btn quick-status-popup__btn--known"
-        onClick={() => handle('Known')}
-        aria-label="Mark word as Known"
+        className="quick-status-popup__option"
+        onClick={() => onStatusChange('Ignored')}
+        aria-label="Ignore word"
       >
-        <Check size={16} aria-hidden />
-        <span>Known</span>
+        <LingQStatusButton status="Ignored" state="focus" tabIndex={-1} aria-hidden />
+        <span className="quick-status-popup__label">Ignore</span>
       </button>
     </div>
   );

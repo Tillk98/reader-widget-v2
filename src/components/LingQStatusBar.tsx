@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Check, EyeOff } from 'lucide-react';
+import { LingQStatusButton } from './LingQStatusButton';
 import './LingQStatusBar.css';
 
 export type LingQStatusType =
@@ -173,28 +174,16 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
   if (variant === 'floating') {
     return (
       <div className="lingq-status-bar lingq-status-bar--floating" role="group" aria-label="Word status">
-        {SHEET_SEGMENT_ORDER.map((seg) => {
-          const active = status === seg;
-          const tone = seg === 'Ignored' ? 'ignored' : seg === 'Known' ? 'known' : 'learning';
-          return (
-            <button
-              key={seg}
-              type="button"
-              className={`lingq-status-bar__float-seg lingq-status-bar__float-seg--${tone}${active ? ' lingq-status-bar__float-seg--active' : ''}`}
-              onClick={() => onStatusChange(seg)}
-              aria-pressed={active}
-              aria-label={LEARNING_LABELS[seg]}
-            >
-              {seg === 'Ignored' ? (
-                <EyeOff size={16} aria-hidden />
-              ) : seg === 'Known' ? (
-                <Check size={16} aria-hidden />
-              ) : (
-                <span className="lingq-status-bar__float-seg-number">{LEARNING_NUMBERS[seg]}</span>
-              )}
-            </button>
-          );
-        })}
+        {SHEET_SEGMENT_ORDER.map((seg) => (
+          <LingQStatusButton
+            key={seg}
+            status={seg}
+            state={status === seg ? 'focus' : 'default'}
+            onClick={() => onStatusChange(seg)}
+            aria-pressed={status === seg}
+            aria-label={LEARNING_LABELS[seg]}
+          />
+        ))}
       </div>
     );
   }
