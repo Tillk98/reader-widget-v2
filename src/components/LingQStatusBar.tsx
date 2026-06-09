@@ -59,10 +59,11 @@ interface LingQStatusBarProps {
   /** When true, only the learning statuses (1–4) are shown; Ignored and Known are hidden. Used in bottom bar expanded state. */
   learningOnly?: boolean;
   /**
-   * `sheet`  — word detail bottom sheet: sliding-highlight Ignored | 1–4 | Known (Figma 2181:47905).
+   * `sheet`     — word detail bottom sheet: sliding-highlight Ignored | 1–4 | Known (Figma 2181:47905).
    * `segmented` — reader bottom bar word-selected state: per-segment bordered highlight (Figma 2812:55682).
+   * `floating`  — compact floating bar above/below the popup: active segment expands to show label (Figma 3999:11724).
    */
-  variant?: 'default' | 'sheet' | 'segmented';
+  variant?: 'default' | 'sheet' | 'segmented' | 'floating';
 }
 
 export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
@@ -161,6 +162,38 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
                 <Check size={20} aria-hidden />
               ) : (
                 <span>{LEARNING_NUMBERS[seg]}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (variant === 'floating') {
+    return (
+      <div className="lingq-status-bar lingq-status-bar--floating" role="group" aria-label="Word status">
+        {SHEET_SEGMENT_ORDER.map((seg) => {
+          const active = status === seg;
+          const tone = seg === 'Ignored' ? 'ignored' : seg === 'Known' ? 'known' : 'learning';
+          return (
+            <button
+              key={seg}
+              type="button"
+              className={`lingq-status-bar__float-seg lingq-status-bar__float-seg--${tone}${active ? ' lingq-status-bar__float-seg--active' : ''}`}
+              onClick={() => onStatusChange(seg)}
+              aria-pressed={active}
+              aria-label={LEARNING_LABELS[seg]}
+            >
+              {seg === 'Ignored' ? (
+                <EyeOff size={16} aria-hidden />
+              ) : seg === 'Known' ? (
+                <Check size={16} aria-hidden />
+              ) : (
+                <span className="lingq-status-bar__float-seg-number">{LEARNING_NUMBERS[seg]}</span>
+              )}
+              {active && (
+                <span className="lingq-status-bar__float-seg-label">{LEARNING_LABELS[seg]}</span>
               )}
             </button>
           );

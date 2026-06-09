@@ -203,7 +203,96 @@
   color: var(--typography-action-primary, #42a564);
 }
 
-/* Segmented variant (Figma 2812:55682) — six discrete segments, active one bordered (no slider) */
+
+/* ── Floating status bar container (Figma 3999:11724) ───────────────────── */
+.lingq-status-bar--floating {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 6px;
+  background: var(--backgrounds-page, #ffffff);
+  border: 1px solid var(--border-default, #d1d6d9);
+  border-radius: var(--radius-sm, 8px);
+  box-shadow: 0px 1px 4px 0px var(--color-grey-200, #e3e5e7);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.lingq-status-bar__float-seg {
+  flex: 1 0 0;
+  min-width: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border: 0.5px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--typography-muted, #6d7680);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, flex 0.15s ease;
+}
+
+.lingq-status-bar__float-seg svg {
+  display: block;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.lingq-status-bar__float-seg:active {
+  transform: scale(0.94);
+}
+
+.lingq-status-bar__float-seg:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+/* Active: shrink back to content size so other segments keep equal share of remaining space */
+.lingq-status-bar__float-seg--active {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--learning {
+  background: var(--surfaces-action-primary-subtle, #f4fcef);
+  border-color: var(--border-action-primary, #42a564);
+  color: var(--typography-action-primary, #42a564);
+}
+
+.lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--known {
+  background: var(--surfaces-action-primary-subtle, #f4fcef);
+  border-color: var(--border-action-primary, #42a564);
+  color: var(--typography-action-primary, #42a564);
+}
+
+.lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--ignored {
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+  border-color: var(--border-destructive, #dd2525);
+  color: var(--typography-destructive, #dd2525);
+}
+
+.lingq-status-bar__float-seg-number {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.lingq-status-bar__float-seg-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+} — six discrete segments, active one bordered (no slider) */
 .lingq-status-bar--segmented {
   display: flex;
   align-items: center;

@@ -616,3 +616,63 @@
 .reader-popup-widget-footer .lingq-status-bar {
   width: 100%;
 }
+
+/* ── Status badge button (Figma 3999:11664) ─────────────────────────────── */
+.reader-popup-widget-status-badge {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--backgrounds-page, #ffffff);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.reader-popup-widget-status-badge:active {
+  transform: scale(0.9);
+}
+
+.reader-popup-widget-status-badge:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.reader-popup-widget-status-badge--learning {
+  border: 0.6px solid var(--border-action-primary, #42a564);
+  color: var(--typography-action-primary, #42a564);
+}
+
+.reader-popup-widget-status-badge--known {
+  border: 0.6px solid var(--border-action-primary, #42a564);
+  color: var(--typography-action-primary, #42a564);
+}
+
+.reader-popup-widget-status-badge--ignored {
+  border: 0.6px solid var(--border-destructive, #dd2525);
+  color: var(--typography-destructive, #dd2525);
+}
+
+.reader-popup-widget-status-badge--open {
+  box-shadow: 0 0 0 3px rgba(66, 165, 100, 0.18);
+}
+
+.reader-popup-widget-status-badge--open.reader-popup-widget-status-badge--ignored {
+  box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.15);
+}
+
+/* ── Floating status bar wrapper ────────────────────────────────────────── */
+.reader-popup-floating-bar {
+  position: fixed;
+  /* sits above the popup (z-index 130) */
+  z-index: 131;
+  pointer-events: auto;
+}

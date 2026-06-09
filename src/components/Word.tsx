@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import type { Word as WordType } from '../data/lesson';
 import './Word.css';
+
+const LONG_PRESS_MS = 450;
 
 interface WordProps {
   word: WordType;
@@ -9,6 +11,8 @@ interface WordProps {
   isClicked: boolean;
   isLingQ: boolean;
   onClick: (wordId: string) => void;
+  /** Called when the user holds the word for LONG_PRESS_MS without releasing. Does NOT trigger onClick. */
+  onLongPress?: (wordId: string) => void;
   isKnown: boolean;
   isIgnored: boolean;
   /** Part of an in-progress / active phrase selection. */
@@ -25,14 +29,47 @@ export const Word: React.FC<WordProps> = ({
   isClicked,
   isLingQ,
   onClick,
+  onLongPress,
   isKnown,
   isIgnored,
   isPhraseSelected = false,
   isPhraseStart = false,
   isPhraseEnd = false,
 }) => {
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPressRef = useRef(false);
+
+  const cancelTimer = () => {
+    if (longPressTimerRef.current !== null) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (isKnown || isIgnored) return;
+    if (e.button !== 0) return;
+    didLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      didLongPressRef.current = true;
+      onLongPress?.(word.id);
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePointerUp = () => cancelTimer();
+
+  const handlePointerCancel = () => {
+    cancelTimer();
+    didLongPressRef.current = false;
+  };
+
   const handleClick = () => {
     if (isKnown || isIgnored) return;
+    if (didLongPressRef.current) {
+      didLongPressRef.current = false;
+      return;
+    }
     onClick(word.id);
   };
 
@@ -48,8 +85,12 @@ export const Word: React.FC<WordProps> = ({
     <span
       id={domId ?? word.id}
       className={getClassName()}
-      onClick={handleClick}
       style={{ cursor: isKnown || isIgnored ? 'default' : 'pointer' }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onClick={handleClick}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {word.text}
     </span>

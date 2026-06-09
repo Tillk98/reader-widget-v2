@@ -5,6 +5,7 @@ import type { Word } from '../data/lesson';
 import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
+import { QuickStatusPopup } from './QuickStatusPopup';
 import { PhrasePopUp, type PhraseWordItem } from './PhrasePopUp';
 import { countWords, isPunctuation, joinWordsText, joinWordsTranslation, MAX_PHRASE_WORDS } from '../utils/phrase';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
@@ -59,6 +60,7 @@ export const Reader: React.FC = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [clickedWords, setClickedWords] = useState<Set<string>>(new Set());
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
+  const [longPressWordId, setLongPressWordId] = useState<string | null>(null);
   // Seed a mix of existing LingQ statuses so Review mode shows both saved terms and
   // unsaved ("+") terms out of the box (these words also read as LingQs in the lesson).
   const [wordStatusMap, setWordStatusMap] = useState<Record<string, LingQStatusType>>(() => {
@@ -611,6 +613,12 @@ export const Reader: React.FC = () => {
     clearPhraseSelection();
   }, [currentPageIndex, mediaMode, sentenceMode, reviewMode, clearPhraseSelection]);
 
+  /** Long-press a word: show the quick Ignore/Known popup without selecting the word or setting status to New. */
+  const handleWordLongPress = useCallback((wordId: string) => {
+    setLongPressWordId(wordId);
+    setSnackbar(null);
+  }, []);
+
   const handleWordClick = useCallback(
     (wordId: string) => {
       if (ignoreNextWordClick.current) {
@@ -786,6 +794,11 @@ export const Reader: React.FC = () => {
     if (!selectedWordId) return null;
     return getWordElement(selectedWordId);
   }, [selectedWordId, getWordElement]);
+
+  const resolveLongPressAnchorElement = useCallback((): HTMLElement | null => {
+    if (!longPressWordId) return null;
+    return getWordElement(longPressWordId);
+  }, [longPressWordId, getWordElement]);
 
   const [hoveredPageIndex, setHoveredPageIndex] = React.useState<number | null>(null);
 
@@ -1216,6 +1229,7 @@ export const Reader: React.FC = () => {
                       clickedWords={clickedWords}
                       lingqWords={lingqWords}
                       onWordClick={handleWordClick}
+                      onWordLongPress={handleWordLongPress}
                       knownWords={knownWords}
                       ignoredWords={ignoredWords}
                       videoLessonLayout
@@ -1239,6 +1253,7 @@ export const Reader: React.FC = () => {
                           clickedWords={clickedWords}
                           lingqWords={lingqWords}
                           onWordClick={handleWordClick}
+                          onWordLongPress={handleWordLongPress}
                           knownWords={knownWords}
                           ignoredWords={ignoredWords}
                           videoLessonLayout={false}
@@ -1513,6 +1528,17 @@ export const Reader: React.FC = () => {
             setSnackbar(null);
           }}
           onDismiss={() => setSnackbar(null)}
+        />
+      )}
+      {longPressWordId && (
+        <QuickStatusPopup
+          key={longPressWordId}
+          resolveAnchorElement={resolveLongPressAnchorElement}
+          onStatusChange={(status) => {
+            handleStatusChange(longPressWordId, status);
+            setLongPressWordId(null);
+          }}
+          onClose={() => setLongPressWordId(null)}
         />
       )}
     </div>

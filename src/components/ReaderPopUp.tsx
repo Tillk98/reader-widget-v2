@@ -1,8 +1,13 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { Check, EyeOff } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
+import { LingQStatusBar } from './LingQStatusBar';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
 import './ReaderPopUp.css';
+
+const STATUS_NUMBERS: Record<LingQStatusType, string> = {
+  New: '1', Recognized: '2', Familiar: '3', Learned: '4', Known: '', Ignored: '',
+};
 
 interface ReaderPopUpProps {
   wordId: string;
@@ -44,6 +49,9 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   const [showBottomSheet, setShowBottomSheet] = useState(() => panelMode === true);
   /** Local override after editing meaning in the expanded sheet */
   const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
+  /** Whether the floating status-picker bar is open */
+  const [showStatusBar, setShowStatusBar] = useState(false);
+  const floatingBarRef = useRef<HTMLDivElement>(null);
 
   // Notify Reader that the sheet is open when we auto-expand in panel mode.
   useEffect(() => {
@@ -53,6 +61,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
 
   useEffect(() => {
     setMeaningOverride(undefined);
+    setShowStatusBar(false);
   }, [wordId, wordTranslation]);
 
   const effectiveTranslation = meaningOverride ?? wordTranslation;
@@ -67,6 +76,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     const anchorRect = anchorEl.getBoundingClientRect();
     const popupRect = popupRef.current.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     const gap = 6;
     const popupWidth = popupRect.width || 80;
 
@@ -74,15 +84,42 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     if (left < 8) left = 8;
     if (left + popupWidth > viewportWidth - 8) left = viewportWidth - 8 - popupWidth;
 
-    const bottom = window.innerHeight - anchorRect.top + gap;
+    const bottom = viewportHeight - anchorRect.top + gap;
 
     popupRef.current.style.left = `${left}px`;
     popupRef.current.style.bottom = `${bottom}px`;
+
+    // Position the floating status bar when visible
+    if (floatingBarRef.current) {
+      const barEl = floatingBarRef.current;
+      const barMinWidth = Math.max(popupWidth, 260);
+      const barHeight = barEl.getBoundingClientRect().height || 44;
+
+      let barLeft = left + popupWidth / 2 - barMinWidth / 2;
+      if (barLeft < 8) barLeft = 8;
+      if (barLeft + barMinWidth > viewportWidth - 8) barLeft = viewportWidth - 8 - barMinWidth;
+
+      barEl.style.left = `${barLeft}px`;
+      barEl.style.minWidth = `${barMinWidth}px`;
+
+      const popupHeight = popupRect.height || 47;
+      const spaceAbove = anchorRect.top - barHeight - gap * 2;
+
+      if (spaceAbove >= 0) {
+        // Place above popup
+        barEl.style.bottom = `${bottom + popupHeight + gap}px`;
+        barEl.style.top = 'auto';
+      } else {
+        // Fall back: place below the anchor word
+        barEl.style.top = `${anchorRect.bottom + gap}px`;
+        barEl.style.bottom = 'auto';
+      }
+    }
   }, [resolveAnchorElement]);
 
   useLayoutEffect(() => {
     calculatePosition();
-  }, [calculatePosition, meaning, wordTransliteration, showBottomSheet]);
+  }, [calculatePosition, meaning, wordTransliteration, showBottomSheet, showStatusBar]);
 
   useEffect(() => {
     const handleUpdate = () => calculatePosition();
@@ -104,6 +141,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     const isOutside = (target: EventTarget | null) => {
       if (!popupRef.current || !(target instanceof Node)) return false;
       if (popupRef.current.contains(target)) return false;
+      if (floatingBarRef.current && floatingBarRef.current.contains(target)) return false;
       const bar = document.querySelector('.reader-bottom-bar');
       if (bar && bar.contains(target)) return false;
       const hitEl = hitElement(target);
@@ -138,6 +176,21 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     setShowBottomSheet(true);
   };
 
+  const handleStatusBadgeClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.stopPropagation();
+    setShowStatusBar((prev) => !prev);
+  };
+
+  const handleFloatingStatusChange = (newStatus: LingQStatusType) => {
+    onWordStatusChange?.(newStatus);
+    setShowStatusBar(false);
+    onClose();
+  };
+
+  // Badge display helpers
+  const badgeTone =
+    wordStatus === 'Ignored' ? 'ignored' : wordStatus === 'Known' ? 'known' : 'learning';
+
   if (showBottomSheet) {
     // On tablet (no panel mode yet): show as a floating positioned card instead of a bottom sheet.
     const useFloating = isTablet === true && !panelMode;
@@ -159,24 +212,52 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   }
 
   return (
-    <div
-      ref={popupRef}
-      className="reader-popup-widget"
-      role="tooltip"
-      onClick={handleExpandClick}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      <div className="reader-popup-widget-header">
-        <div className="reader-popup-widget-term">
-          <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
-          {wordTransliteration != null && wordTransliteration !== '' && (
-            <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
-          )}
+    <>
+      {showStatusBar && (
+        <div
+          ref={floatingBarRef}
+          className="reader-popup-floating-bar"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <LingQStatusBar
+            variant="floating"
+            status={wordStatus}
+            onStatusChange={handleFloatingStatusChange}
+          />
         </div>
-        <div className="reader-popup-widget-chevron-btn" aria-hidden>
-          <ChevronRight size={16} />
+      )}
+      <div
+        ref={popupRef}
+        className="reader-popup-widget"
+        role="tooltip"
+        onClick={handleExpandClick}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="reader-popup-widget-header">
+          <button
+            type="button"
+            className={`reader-popup-widget-status-badge reader-popup-widget-status-badge--${badgeTone}${showStatusBar ? ' reader-popup-widget-status-badge--open' : ''}`}
+            aria-label={`Status ${wordStatus}, tap to change`}
+            aria-expanded={showStatusBar}
+            onClick={handleStatusBadgeClick}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {wordStatus === 'Ignored' ? (
+              <EyeOff size={12} aria-hidden />
+            ) : wordStatus === 'Known' ? (
+              <Check size={12} aria-hidden />
+            ) : (
+              <span aria-hidden>{STATUS_NUMBERS[wordStatus]}</span>
+            )}
+          </button>
+          <div className="reader-popup-widget-term">
+            <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
+            {wordTransliteration != null && wordTransliteration !== '' && (
+              <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
