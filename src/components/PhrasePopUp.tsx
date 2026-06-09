@@ -101,6 +101,16 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
     };
   }, [calculatePosition]);
 
+  /* Re-run positioning whenever the popup resizes (e.g. status-bar morph
+     expanding the meaning card) so the right-edge clamp stays accurate. */
+  useEffect(() => {
+    const el = popupRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => calculatePosition());
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [calculatePosition]);
+
   useEffect(() => {
     const isOutside = (target: EventTarget | null) => {
       if (!popupRef.current || !(target instanceof Node)) return false;

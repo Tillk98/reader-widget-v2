@@ -100,6 +100,16 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     };
   }, [calculatePosition]);
 
+  /* Re-run positioning whenever the popup resizes (e.g. status-bar morph
+     expanding the card width) so the right-edge clamp stays accurate. */
+  useEffect(() => {
+    const el = popupRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => calculatePosition());
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [calculatePosition]);
+
   useEffect(() => {
     const hitElement = (target: EventTarget | null): Element | null => {
       if (target instanceof Element) return target;

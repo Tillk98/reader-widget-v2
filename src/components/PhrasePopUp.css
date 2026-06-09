@@ -42,7 +42,6 @@
 
 /* Header: status badge + meaning text — collapses when status picker opens */
 .phrase-popup__meaning-header {
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -52,8 +51,10 @@
   cursor: pointer;
   max-width: 600px;
   transition:
-    max-width 0.26s ease-out,
-    opacity   0.18s ease;
+    max-width    0.26s ease-out,
+    padding-left 0.26s ease-out,
+    padding-right 0.26s ease-out,
+    opacity      0.18s ease;
 }
 
 .phrase-popup__meaning-header:focus-visible {
@@ -63,6 +64,8 @@
 
 .phrase-popup__meaning-card--status-mode .phrase-popup__meaning-header {
   max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
   opacity: 0;
   pointer-events: none;
 }

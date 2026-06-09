@@ -642,20 +642,24 @@
 }
 
 /* Header: visible by default, collapses in status mode.
- * box-sizing: border-box so max-width: 0 folds the padding too (no phantom
- * 24 px gap left behind when the content collapses). */
+ * We animate both max-width and padding-inline to zero so the padding
+ * doesn't leave a phantom gap — max-width:0 alone only collapses the
+ * content box and leaves horizontal padding intact in content-box sizing. */
 .reader-popup-widget-header {
-  box-sizing: border-box;
   overflow: hidden;
   flex-shrink: 0;
   max-width: 600px; /* large enough never to constrain */
   transition:
-    max-width 0.26s ease-out,
-    opacity   0.18s ease;
+    max-width    0.26s ease-out,
+    padding-left 0.26s ease-out,
+    padding-right 0.26s ease-out,
+    opacity      0.18s ease;
 }
 
 .reader-popup-widget--status-mode .reader-popup-widget-header {
   max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
   opacity: 0;
   pointer-events: none;
 }
