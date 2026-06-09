@@ -3,6 +3,7 @@ import type { Word as WordType } from '../data/lesson';
 import './Word.css';
 
 const LONG_PRESS_MS = 450;
+const DRAG_CANCEL_PX = 6;
 
 interface WordProps {
   word: WordType;
@@ -38,31 +39,73 @@ export const Word: React.FC<WordProps> = ({
 }) => {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPressRef = useRef(false);
-
-  const cancelTimer = () => {
-    if (longPressTimerRef.current !== null) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
+  /** Long hold completed; popup will show when pointer is released (not while still held). */
+  const longPressPendingRef = useRef(false);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isKnown || isIgnored) return;
     if (e.button !== 0) return;
     didLongPressRef.current = false;
+    longPressPendingRef.current = false;
+
+    const origin = { x: e.clientX, y: e.clientY };
+
+    const cancelAll = () => {
+      if (longPressTimerRef.current !== null) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      longPressPendingRef.current = false;
+    };
+
+    const onWindowMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - origin.x;
+      const dy = ev.clientY - origin.y;
+      if (Math.sqrt(dx * dx + dy * dy) > DRAG_CANCEL_PX) {
+        cancelAll();
+        cleanup();
+      }
+    };
+
+    const onWindowUp = () => {
+      cleanup();
+      if (longPressTimerRef.current !== null) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      if (longPressPendingRef.current) {
+        // Full hold with no drag → show popup on release
+        longPressPendingRef.current = false;
+        didLongPressRef.current = true; // suppress the click that follows pointerup
+        onLongPress?.(word.id);
+      }
+    };
+
+    const onWindowCancel = () => {
+      cancelAll();
+      cleanup();
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onWindowMove);
+      window.removeEventListener('pointerup', onWindowUp);
+      window.removeEventListener('pointercancel', onWindowCancel);
+    };
+
+    window.addEventListener('pointermove', onWindowMove);
+    window.addEventListener('pointerup', onWindowUp);
+    window.addEventListener('pointercancel', onWindowCancel);
+
     longPressTimerRef.current = setTimeout(() => {
       longPressTimerRef.current = null;
-      didLongPressRef.current = true;
-      onLongPress?.(word.id);
+      longPressPendingRef.current = true; // hold threshold reached; wait for release
     }, LONG_PRESS_MS);
   };
 
-  const handlePointerUp = () => cancelTimer();
-
-  const handlePointerCancel = () => {
-    cancelTimer();
-    didLongPressRef.current = false;
-  };
+  // Safety-net handlers (the window listeners above handle the real work).
+  const handlePointerMove = () => { /* handled at window level */ };
+  const handlePointerUp = () => { /* handled at window level */ };
+  const handlePointerCancel = () => { /* handled at window level */ };
 
   const handleClick = () => {
     if (isKnown || isIgnored) return;
@@ -87,6 +130,7 @@ export const Word: React.FC<WordProps> = ({
       className={getClassName()}
       style={{ cursor: isKnown || isIgnored ? 'default' : 'pointer' }}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onClick={handleClick}

@@ -232,14 +232,14 @@
   border-radius: 4px;
   background: transparent;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: 20px;
   color: var(--typography-muted, #6d7680);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, flex 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .lingq-status-bar__float-seg svg {
@@ -258,24 +258,26 @@
   z-index: 1;
 }
 
-/* Active: shrink back to content size so other segments keep equal share of remaining space */
+/* Active: all segments equal width — no expansion needed without a label */
 .lingq-status-bar__float-seg--active {
-  flex: 0 0 auto;
   overflow: visible;
 }
 
+/* Active learning: border + green text only, no fill */
 .lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--learning {
-  background: var(--surfaces-action-primary-subtle, #f4fcef);
+  background: transparent;
   border-color: var(--border-action-primary, #42a564);
   color: var(--typography-action-primary, #42a564);
 }
 
+/* Active Known: keep the green fill */
 .lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--known {
   background: var(--surfaces-action-primary-subtle, #f4fcef);
   border-color: var(--border-action-primary, #42a564);
   color: var(--typography-action-primary, #42a564);
 }
 
+/* Active Ignored: red fill */
 .lingq-status-bar__float-seg--active.lingq-status-bar__float-seg--ignored {
   background: var(--surfaces-destructive-subtle, #fef2f2);
   border-color: var(--border-destructive, #dd2525);
@@ -283,16 +285,11 @@
 }
 
 .lingq-status-bar__float-seg-number {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: 20px;
 }
-
-.lingq-status-bar__float-seg-label {
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 14px;
-} — six discrete segments, active one bordered (no slider) */
+ — six discrete segments, active one bordered (no slider) */
 .lingq-status-bar--segmented {
   display: flex;
   align-items: center;

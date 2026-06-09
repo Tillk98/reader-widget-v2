@@ -192,9 +192,6 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
               ) : (
                 <span className="lingq-status-bar__float-seg-number">{LEARNING_NUMBERS[seg]}</span>
               )}
-              {active && (
-                <span className="lingq-status-bar__float-seg-label">{LEARNING_LABELS[seg]}</span>
-              )}
             </button>
           );
         })}
