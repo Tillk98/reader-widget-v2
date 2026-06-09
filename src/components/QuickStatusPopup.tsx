@@ -75,25 +75,6 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     };
   }, [onClose]);
 
-  // Dismiss the popup if the user starts dragging after it appears (phrase-selection).
-  useEffect(() => {
-    let origin: { x: number; y: number } | null = null;
-    const onMove = (e: PointerEvent) => {
-      if (e.buttons === 0) return; // only while a button is held
-      if (!origin) {
-        origin = { x: e.clientX, y: e.clientY };
-        return;
-      }
-      const dx = e.clientX - origin.x;
-      const dy = e.clientY - origin.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 8) {
-        onClose();
-      }
-    };
-    window.addEventListener('pointermove', onMove);
-    return () => window.removeEventListener('pointermove', onMove);
-  }, [onClose]);
-
   const handle = (status: LingQStatusType) => {
     onStatusChange(status);
   };

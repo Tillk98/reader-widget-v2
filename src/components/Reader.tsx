@@ -619,6 +619,11 @@ export const Reader: React.FC = () => {
     setSnackbar(null);
   }, []);
 
+  /** User started dragging after the long-press popup appeared — dismiss it. */
+  const handleWordLongPressCancel = useCallback(() => {
+    setLongPressWordId(null);
+  }, []);
+
   const handleWordClick = useCallback(
     (wordId: string) => {
       if (ignoreNextWordClick.current) {
@@ -1230,6 +1235,7 @@ export const Reader: React.FC = () => {
                       lingqWords={lingqWords}
                       onWordClick={handleWordClick}
                       onWordLongPress={handleWordLongPress}
+                      onWordLongPressCancel={handleWordLongPressCancel}
                       knownWords={knownWords}
                       ignoredWords={ignoredWords}
                       videoLessonLayout
@@ -1254,6 +1260,7 @@ export const Reader: React.FC = () => {
                           lingqWords={lingqWords}
                           onWordClick={handleWordClick}
                           onWordLongPress={handleWordLongPress}
+                          onWordLongPressCancel={handleWordLongPressCancel}
                           knownWords={knownWords}
                           ignoredWords={ignoredWords}
                           videoLessonLayout={false}

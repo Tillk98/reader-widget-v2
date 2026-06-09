@@ -9,6 +9,7 @@ interface PageProps {
   lingqWords: Set<string>;
   onWordClick: (wordId: string) => void;
   onWordLongPress?: (wordId: string) => void;
+  onWordLongPressCancel?: () => void;
   knownWords: Set<string>;
   ignoredWords: Set<string>;
   /** When true, group words into block elements per lesson sentence (video lesson layout). */
@@ -60,6 +61,7 @@ export const Page: React.FC<PageProps> = ({
   lingqWords,
   onWordClick,
   onWordLongPress,
+  onWordLongPressCancel,
   knownWords,
   ignoredWords,
   videoLessonLayout = false,
@@ -88,6 +90,7 @@ export const Page: React.FC<PageProps> = ({
             isLingQ={lingqWords.has(word.id)}
             onClick={onWordClick}
             onLongPress={onWordLongPress}
+            onLongPressCancel={onWordLongPressCancel}
             isKnown={knownWords.has(word.id)}
             isIgnored={ignoredWords.has(word.id)}
             isPhraseSelected={selected}

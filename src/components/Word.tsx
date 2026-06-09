@@ -14,6 +14,8 @@ interface WordProps {
   onClick: (wordId: string) => void;
   /** Called when the user holds the word for LONG_PRESS_MS without releasing. Does NOT trigger onClick. */
   onLongPress?: (wordId: string) => void;
+  /** Called when the user starts dragging after the long-press popup has appeared. */
+  onLongPressCancel?: () => void;
   isKnown: boolean;
   isIgnored: boolean;
   /** Part of an in-progress / active phrase selection. */
@@ -31,6 +33,7 @@ export const Word: React.FC<WordProps> = ({
   isLingQ,
   onClick,
   onLongPress,
+  onLongPressCancel,
   isKnown,
   isIgnored,
   isPhraseSelected = false,
@@ -46,17 +49,24 @@ export const Word: React.FC<WordProps> = ({
     didLongPressRef.current = false;
 
     const origin = { x: e.clientX, y: e.clientY };
+    let longPressHasFired = false;
 
     const onWindowMove = (ev: PointerEvent) => {
       const dx = ev.clientX - origin.x;
       const dy = ev.clientY - origin.y;
       if (Math.sqrt(dx * dx + dy * dy) > DRAG_CANCEL_PX) {
-        // Drag detected before long-press fired — cancel the timer
-        if (longPressTimerRef.current !== null) {
-          clearTimeout(longPressTimerRef.current);
-          longPressTimerRef.current = null;
+        if (longPressHasFired) {
+          // Drag after popup appeared → dismiss the popup
+          onLongPressCancel?.();
+          cleanup();
+        } else {
+          // Drag before popup appeared → cancel the pending timer
+          if (longPressTimerRef.current !== null) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+          }
+          cleanup();
         }
-        cleanup();
       }
     };
 
@@ -87,9 +97,10 @@ export const Word: React.FC<WordProps> = ({
 
     longPressTimerRef.current = setTimeout(() => {
       longPressTimerRef.current = null;
-      cleanup(); // stop drag-cancel tracking — popup is now visible
+      longPressHasFired = true;
       didLongPressRef.current = true;
       onLongPress?.(word.id);
+      // Keep move/up/cancel listeners running — onWindowMove will call onLongPressCancel if the user drags.
     }, LONG_PRESS_MS);
   };
 
