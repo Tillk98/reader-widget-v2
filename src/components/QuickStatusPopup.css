@@ -56,9 +56,9 @@
 }
 
 .quick-status-popup__label {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: 20px;
   letter-spacing: 0;
   color: var(--typography-default, #000000);
 }

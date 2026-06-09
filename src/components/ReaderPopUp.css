@@ -35,8 +35,8 @@
 
 .reader-popup-widget-meaning {
   font-weight: 600;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 16px;
+  line-height: 20px;
   color: var(--typography-default, #000000);
   white-space: nowrap;
   overflow: hidden;

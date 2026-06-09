@@ -38,9 +38,9 @@ export const LingQStatusButton: React.FC<LingQStatusButtonProps> = ({
       {number !== undefined ? (
         <span className="lingq-status-btn__number">{number}</span>
       ) : status === 'Known' ? (
-        <Check size={14} aria-hidden />
+        <Check size={18} strokeWidth={1.5} aria-hidden />
       ) : (
-        <EyeOff size={14} aria-hidden />
+        <EyeOff size={18} strokeWidth={1.5} aria-hidden />
       )}
     </button>
   );

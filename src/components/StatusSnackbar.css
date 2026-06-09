@@ -52,8 +52,8 @@
 /* Label */
 .status-snackbar__label {
   font-weight: 600;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 16px;
+  line-height: 20px;
   color: var(--typography-default, #000000);
 }
 

@@ -1,11 +1,11 @@
-/* LingQStatusButton — 24×24 pill status indicator (Figma 4008:56485) */
+/* LingQStatusButton — 32×32 pill status indicator (Figma 4008:56485) */
 
 .lingq-status-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   padding: 0;
   border: none;
@@ -14,9 +14,9 @@
   box-shadow: none;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: 20px;
   /* Default state: black numbers, muted icons */
   color: var(--typography-default, #000000);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -32,9 +32,9 @@
 }
 
 .lingq-status-btn__number {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: 20px;
   letter-spacing: 0;
 }
 
@@ -53,7 +53,7 @@
 /* Numbers 1–4 + Known check: white bg, green text */
 .lingq-status-btn--focus {
   background: var(--backgrounds-page, #ffffff);
-  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0px 5.333px 10.667px -5.333px rgba(0, 0, 0, 0.15);
   color: var(--typography-action-primary, #42a564);
 }
 
