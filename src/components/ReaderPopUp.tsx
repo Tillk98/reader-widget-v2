@@ -85,28 +85,25 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     popupRef.current.style.left = `${left}px`;
     popupRef.current.style.bottom = `${bottom}px`;
 
-    // Position the floating status bar when visible
     if (floatingBarRef.current) {
       const barEl = floatingBarRef.current;
-      const barMinWidth = Math.max(popupWidth, 220);
-      const barHeight = barEl.getBoundingClientRect().height || 44;
+      const barRect = barEl.getBoundingClientRect();
+      const barWidth = barRect.width || 240;
+      const barHeight = barRect.height || 48;
 
-      let barLeft = left + popupWidth / 2 - barMinWidth / 2;
+      let barLeft = anchorRect.left + anchorRect.width / 2 - barWidth / 2;
       if (barLeft < 8) barLeft = 8;
-      if (barLeft + barMinWidth > viewportWidth - 8) barLeft = viewportWidth - 8 - barMinWidth;
+      if (barLeft + barWidth > viewportWidth - 8) barLeft = viewportWidth - 8 - barWidth;
 
       barEl.style.left = `${barLeft}px`;
-      barEl.style.minWidth = `${barMinWidth}px`;
 
       const popupHeight = popupRect.height || 47;
       const spaceAbove = anchorRect.top - barHeight - gap * 2;
 
       if (spaceAbove >= 0) {
-        // Place above popup
         barEl.style.bottom = `${bottom + popupHeight + gap}px`;
         barEl.style.top = 'auto';
       } else {
-        // Fall back: place below the anchor word
         barEl.style.top = `${anchorRect.bottom + gap}px`;
         barEl.style.bottom = 'auto';
       }
