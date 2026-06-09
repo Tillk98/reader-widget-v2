@@ -39,50 +39,39 @@ export const Word: React.FC<WordProps> = ({
 }) => {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPressRef = useRef(false);
-  /** Long hold completed; popup will show when pointer is released (not while still held). */
-  const longPressPendingRef = useRef(false);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isKnown || isIgnored) return;
     if (e.button !== 0) return;
     didLongPressRef.current = false;
-    longPressPendingRef.current = false;
 
     const origin = { x: e.clientX, y: e.clientY };
-
-    const cancelAll = () => {
-      if (longPressTimerRef.current !== null) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-      longPressPendingRef.current = false;
-    };
 
     const onWindowMove = (ev: PointerEvent) => {
       const dx = ev.clientX - origin.x;
       const dy = ev.clientY - origin.y;
       if (Math.sqrt(dx * dx + dy * dy) > DRAG_CANCEL_PX) {
-        cancelAll();
+        // Drag detected before long-press fired — cancel the timer
+        if (longPressTimerRef.current !== null) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
         cleanup();
       }
     };
 
     const onWindowUp = () => {
-      cleanup();
       if (longPressTimerRef.current !== null) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
-      if (longPressPendingRef.current) {
-        // Full hold with no drag → show popup on release
-        longPressPendingRef.current = false;
-        didLongPressRef.current = true; // suppress the click that follows pointerup
-        onLongPress?.(word.id);
-      }
+      cleanup();
     };
-
     const onWindowCancel = () => {
-      cancelAll();
+      if (longPressTimerRef.current !== null) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
       cleanup();
     };
 
@@ -98,7 +87,9 @@ export const Word: React.FC<WordProps> = ({
 
     longPressTimerRef.current = setTimeout(() => {
       longPressTimerRef.current = null;
-      longPressPendingRef.current = true; // hold threshold reached; wait for release
+      cleanup(); // stop drag-cancel tracking — popup is now visible
+      didLongPressRef.current = true;
+      onLongPress?.(word.id);
     }, LONG_PRESS_MS);
   };
 

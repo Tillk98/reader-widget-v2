@@ -209,10 +209,10 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 6px;
+  padding: 8px 4px;
   background: var(--backgrounds-page, #ffffff);
   border: 1px solid var(--border-default, #d1d6d9);
-  border-radius: var(--radius-sm, 8px);
+  border-radius: 999px;
   box-shadow: 0px 1px 4px 0px var(--color-grey-200, #e3e5e7);
   box-sizing: border-box;
   width: 100%;
@@ -221,15 +221,15 @@
 .lingq-status-bar__float-seg {
   flex: 1 0 0;
   min-width: 0;
-  height: 28px;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 0 8px;
+  padding: 4px 8px;
   box-sizing: border-box;
   border: 0.5px solid transparent;
-  border-radius: 4px;
+  border-radius: 999px;
   background: transparent;
   font-family: 'DM Sans', sans-serif;
   font-size: 16px;
