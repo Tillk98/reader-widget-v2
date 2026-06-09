@@ -47,7 +47,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
   /** Whether the floating status-picker bar is open */
   const [showStatusBar, setShowStatusBar] = useState(false);
-  const floatingBarRef = useRef<HTMLDivElement>(null);
 
   // Notify Reader that the sheet is open when we auto-expand in panel mode.
   useEffect(() => {
@@ -85,29 +84,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     popupRef.current.style.left = `${left}px`;
     popupRef.current.style.bottom = `${bottom}px`;
 
-    if (floatingBarRef.current) {
-      const barEl = floatingBarRef.current;
-      const barRect = barEl.getBoundingClientRect();
-      const barWidth = barRect.width || 240;
-      const barHeight = barRect.height || 48;
-
-      let barLeft = anchorRect.left + anchorRect.width / 2 - barWidth / 2;
-      if (barLeft < 8) barLeft = 8;
-      if (barLeft + barWidth > viewportWidth - 8) barLeft = viewportWidth - 8 - barWidth;
-
-      barEl.style.left = `${barLeft}px`;
-
-      const popupHeight = popupRect.height || 47;
-      const spaceAbove = anchorRect.top - barHeight - gap * 2;
-
-      if (spaceAbove >= 0) {
-        barEl.style.bottom = `${bottom + popupHeight + gap}px`;
-        barEl.style.top = 'auto';
-      } else {
-        barEl.style.top = `${anchorRect.bottom + gap}px`;
-        barEl.style.bottom = 'auto';
-      }
-    }
   }, [resolveAnchorElement]);
 
   useLayoutEffect(() => {
@@ -134,7 +110,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     const isOutside = (target: EventTarget | null) => {
       if (!popupRef.current || !(target instanceof Node)) return false;
       if (popupRef.current.contains(target)) return false;
-      if (floatingBarRef.current && floatingBarRef.current.contains(target)) return false;
       const bar = document.querySelector('.reader-bottom-bar');
       if (bar && bar.contains(target)) return false;
       const hitEl = hitElement(target);
@@ -201,44 +176,36 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   }
 
   return (
-    <>
-      {showStatusBar && (
-        <div
-          ref={floatingBarRef}
-          className="reader-popup-floating-bar"
+    <div
+      ref={popupRef}
+      className={`reader-popup-widget${showStatusBar ? ' reader-popup-widget--status-mode' : ''}`}
+      role="tooltip"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {/* Always in DOM so CSS can cross-fade between the two states */}
+      <div className="reader-popup-widget-header" onClick={handleExpandClick}>
+        <LingQStatusButton
+          status={wordStatus}
+          state="focus"
+          onClick={handleStatusBadgeClick}
           onPointerDown={(e) => e.stopPropagation()}
-        >
-          <LingQStatusBar
-            variant="floating"
-            status={wordStatus}
-            onStatusChange={handleFloatingStatusChange}
-          />
-        </div>
-      )}
-      <div
-        ref={popupRef}
-        className="reader-popup-widget"
-        role="tooltip"
-        onClick={handleExpandClick}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <div className="reader-popup-widget-header">
-          <LingQStatusButton
-            status={wordStatus}
-            state="focus"
-            onClick={handleStatusBadgeClick}
-            onPointerDown={(e) => e.stopPropagation()}
-            aria-label={`Status ${wordStatus}, tap to change`}
-            aria-expanded={showStatusBar}
-          />
-          <div className="reader-popup-widget-term">
-            <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
-            {wordTransliteration != null && wordTransliteration !== '' && (
-              <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
-            )}
-          </div>
+          aria-label={`Status ${wordStatus}, tap to change`}
+          aria-expanded={showStatusBar}
+        />
+        <div className="reader-popup-widget-term">
+          <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
+          {wordTransliteration != null && wordTransliteration !== '' && (
+            <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
+          )}
         </div>
       </div>
-    </>
+      <div className="reader-popup-widget-statusbar" aria-hidden={!showStatusBar}>
+        <LingQStatusBar
+          variant="floating"
+          status={wordStatus}
+          onStatusChange={handleFloatingStatusChange}
+        />
+      </div>
+    </div>
   );
 };

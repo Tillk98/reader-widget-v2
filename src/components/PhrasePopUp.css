@@ -5,30 +5,94 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  background: var(--backgrounds-page, #ffffff);
-  border-radius: var(--radius-xs, 6px);
-  box-shadow: 0px 4px 16px -2px rgba(0, 0, 0, 0.15);
   font-family: 'DM Sans', sans-serif;
-  overflow: clip;
   pointer-events: auto;
   user-select: none;
   min-width: 160px;
   max-width: min(320px, calc(100vw - 16px));
 }
 
-/* Meaning header (term + expand chevron). */
-.phrase-popup__header {
+/* Valid variant: two separate floating cards with a gap. */
+.phrase-popup--valid {
+  background: transparent;
+  gap: 10px;
+  padding: 12px 0;
+  overflow: visible;
+}
+
+
+/* ── Meaning card ─────────────────────────────────────────────────────── */
+
+/*
+ * Card shell: provides the white background, border, shadow and entry
+ * animation target. Padding and gap live on the inner children so
+ * max-width: 0 can fully collapse each side without a phantom gap.
+ */
+.phrase-popup__meaning-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--backgrounds-page, #ffffff);
+  border: 0.5px solid #d1d6d9;
+  border-radius: var(--radius-xs, 6px);
+  box-shadow: 0px 4px 12px -4px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  overflow: clip;
+  flex-shrink: 0;
+}
+
+/* Header: status badge + meaning text — collapses when status picker opens */
+.phrase-popup__meaning-header {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   padding: 8px 12px;
-  border: none;
-  background: var(--backgrounds-page, #ffffff);
+  overflow: hidden;
+  flex-shrink: 0;
   cursor: pointer;
-  font: inherit;
-  text-align: left;
+  max-width: 600px;
+  transition:
+    max-width 0.26s ease-out,
+    opacity   0.18s ease;
 }
+
+.phrase-popup__meaning-header:focus-visible {
+  outline: var(--ui-focus-ring, 2px solid #2e75cd);
+  outline-offset: -2px;
+}
+
+.phrase-popup__meaning-card--status-mode .phrase-popup__meaning-header {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Status picker: hidden by default, expands when status badge is tapped */
+.phrase-popup__meaning-statusbar {
+  overflow: hidden;
+  flex-shrink: 0;
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    max-width 0.28s ease-out,
+    opacity   0.2s ease 0.08s;
+}
+
+.phrase-popup__meaning-card--status-mode .phrase-popup__meaning-statusbar {
+  max-width: 320px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Strip the floating bar's own card shell — the meaning card is the container */
+.phrase-popup__meaning-card--status-mode .lingq-status-bar--floating {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 
 .phrase-popup__meaning {
   font-weight: 600;
@@ -40,28 +104,14 @@
   text-overflow: ellipsis;
 }
 
-.phrase-popup__header-chevron {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px;
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--typography-default, #000000);
-  box-shadow: 0px 0.417px 0.833px var(--color-grey-200, #e3e5e7);
-}
-
-.phrase-popup__header-chevron svg,
-.phrase-popup__row-chevron svg {
-  display: block;
-}
-
-/* Section divider between header and list. */
-.phrase-popup__divider {
-  height: 1px;
+/* Word list card – separate floating card. */
+.phrase-popup__list-card {
+  background: var(--backgrounds-page, #ffffff);
+  border: 0.5px solid #d1d6d9;
+  border-radius: var(--radius-xs, 6px);
+  box-shadow: 0px 4px 12px -4px rgba(0, 0, 0, 0.15);
+  overflow: clip;
   width: 100%;
-  background: var(--color-grey-200, #e3e5e7);
   flex-shrink: 0;
 }
 
@@ -76,12 +126,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* DividerSection: 16px tall with a centred 1px rule (mirrors Figma asset). */
 .phrase-popup__row-divider {
-  height: 1px;
+  position: relative;
+  height: 16px;
   width: 100%;
-  background: var(--color-grey-100, #f1f3f4);
   flex-shrink: 0;
-  margin: 5px 0;
+}
+
+.phrase-popup__row-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-grey-100, #f1f3f4);
 }
 
 .phrase-popup__row {
@@ -90,7 +150,7 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 0;
+  padding: 4px 0;
   border: none;
   background: none;
   cursor: pointer;
@@ -117,7 +177,7 @@
 }
 
 .phrase-popup__row-def {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
   line-height: 18px;
   color: var(--typography-default, #000000);
@@ -136,6 +196,11 @@
   border-radius: 999px;
   background: #ffffff;
   color: var(--typography-muted, #6d7680);
+  box-shadow: 0px 0.417px 0.833px var(--color-grey-200, #e3e5e7);
+}
+
+.phrase-popup__row-chevron svg {
+  display: block;
 }
 
 /* Invalid phrase variant (unchanged content). */

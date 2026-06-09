@@ -13,8 +13,9 @@
   overflow: clip;
 }
 
-.reader-popup-widget:not(.reader-popup-widget--expanded) {
-  cursor: pointer;
+/* Cursor is managed per-child; reset at card level */
+.reader-popup-widget {
+  cursor: default;
 }
 
 .reader-popup-widget-header {
@@ -23,6 +24,7 @@
   gap: var(--spacing-spacing-xs, 8px);
   padding: 8px 12px;
   background: var(--backgrounds-page, #ffffff);
+  cursor: pointer;
 }
 
 .reader-popup-widget-term {
@@ -616,12 +618,70 @@
   width: 100%;
 }
 
-/* ── Status badge: now rendered by LingQStatusButton component ──────────── */
+/* ── Status-bar morph ───────────────────────────────────────────────────── */
+/*
+ * Both header and status bar are always in the DOM so CSS can cross-fade
+ * them smoothly — no instant swap, no staccato.
+ *
+ * Technique (mirrors the tab flex-grow/max-width approach):
+ *   • Header:     max-width collapses  0.38 s + opacity fades 0.18 s
+ *   • Status bar: max-width expands    0.38 s + opacity rises 0.22 s (0.1 s delay)
+ * Both use cubic-bezier(0.4, 0, 0.2, 1) — the same ease as --word-detail-sheet-ease.
+ * overflow: hidden on each child clips content as it widens/narrows, so the card
+ * width flows naturally from header-width → statusbar-width with no jumps.
+ */
 
-/* ── Floating status bar wrapper ────────────────────────────────────────── */
-.reader-popup-floating-bar {
-  position: fixed;
-  /* sits above the popup (z-index 130) */
-  z-index: 131;
+/* Popup becomes a flex row so both children sit side-by-side while animating */
+.reader-popup-widget {
+  display: flex;
+  align-items: stretch;
+}
+
+.reader-popup-widget:not(.reader-popup-widget--expanded):not(.reader-popup-widget--status-mode) {
+  cursor: pointer;
+}
+
+/* Header: visible by default, collapses in status mode.
+ * box-sizing: border-box so max-width: 0 folds the padding too (no phantom
+ * 24 px gap left behind when the content collapses). */
+.reader-popup-widget-header {
+  box-sizing: border-box;
+  overflow: hidden;
+  flex-shrink: 0;
+  max-width: 600px; /* large enough never to constrain */
+  transition:
+    max-width 0.26s ease-out,
+    opacity   0.18s ease;
+}
+
+.reader-popup-widget--status-mode .reader-popup-widget-header {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Status bar: hidden by default, expands in status mode */
+.reader-popup-widget-statusbar {
+  overflow: hidden;
+  flex-shrink: 0;
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    max-width 0.28s ease-out,
+    opacity   0.2s ease 0.08s;
+}
+
+.reader-popup-widget--status-mode .reader-popup-widget-statusbar {
+  max-width: 320px; /* safely larger than the ~256 px natural width */
+  opacity: 1;
   pointer-events: auto;
+}
+
+/* Strip the floating bar's own card shell — the popup card is the container. */
+.reader-popup-widget--status-mode .lingq-status-bar--floating {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
 }
