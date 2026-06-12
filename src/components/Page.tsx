@@ -18,6 +18,8 @@ interface PageProps {
   wordToSentenceIndex?: ReadonlyMap<string, number>;
   /** Word ids currently part of an active phrase selection. */
   phraseSelectedWords?: ReadonlySet<string>;
+  /** The anchor word while picking a phrase — gets a distinct focus highlight. */
+  phraseAnchorWordId?: string | null;
 }
 
 /** Split a page’s word list into contiguous runs that belong to the same sentence. */
@@ -67,6 +69,7 @@ export const Page: React.FC<PageProps> = ({
   videoLessonLayout = false,
   wordToSentenceIndex,
   phraseSelectedWords,
+  phraseAnchorWordId,
 }) => {
   const useSentenceLayout = Boolean(videoLessonLayout && wordToSentenceIndex && wordToSentenceIndex.size > 0);
   const sentenceRuns = useSentenceLayout
@@ -96,6 +99,7 @@ export const Page: React.FC<PageProps> = ({
             isPhraseSelected={selected}
             isPhraseStart={selected && !prevSelected}
             isPhraseEnd={selected && !nextSelected}
+            isPhraseAnchor={phraseAnchorWordId === word.id}
           />
           {index < run.length - 1 && (
             <span className={selected && nextSelected ? 'reader-space reader-space--phrase' : 'reader-space'}>

@@ -24,6 +24,8 @@ interface WordProps {
   isPhraseStart?: boolean;
   /** Last word of the phrase run (rounds the right edge of the highlight). */
   isPhraseEnd?: boolean;
+  /** The anchor (start) word while picking a phrase — gets a distinct focus ring. */
+  isPhraseAnchor?: boolean;
 }
 
 export const Word: React.FC<WordProps> = ({
@@ -39,6 +41,7 @@ export const Word: React.FC<WordProps> = ({
   isPhraseSelected = false,
   isPhraseStart = false,
   isPhraseEnd = false,
+  isPhraseAnchor = false,
 }) => {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPressRef = useRef(false);
@@ -120,8 +123,14 @@ export const Word: React.FC<WordProps> = ({
 
   const getClassName = () => {
     const base = isKnown || isIgnored ? 'sentence-item' : `sentence-item ${isClicked || isLingQ ? 'yellow-word' : 'blue-word'}`;
-    if (!isPhraseSelected) return base;
-    return [base, 'phrase-word', isPhraseStart && 'phrase-word--start', isPhraseEnd && 'phrase-word--end']
+    if (!isPhraseSelected && !isPhraseAnchor) return base;
+    return [
+      base,
+      isPhraseSelected && 'phrase-word',
+      isPhraseSelected && isPhraseStart && 'phrase-word--start',
+      isPhraseSelected && isPhraseEnd && 'phrase-word--end',
+      isPhraseAnchor && 'phrase-word--anchor',
+    ]
       .filter(Boolean)
       .join(' ');
   };

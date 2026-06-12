@@ -18,6 +18,6 @@ export const PhrasePickTooltip: React.FC<PhrasePickTooltipProps> = ({ bottomOffs
         : undefined
     }
   >
-    Tap a word to examine a phrase
+    Tap another word to create a phrase
   </div>
 );

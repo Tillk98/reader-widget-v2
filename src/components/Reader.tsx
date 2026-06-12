@@ -35,10 +35,6 @@ import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
 const SWIPE_THRESHOLD_RATIO = 0.15;
-/** Hold this long (without moving) on a word to begin a phrase selection. */
-const LONG_PRESS_MS = 320;
-/** Movement past this (in px) before the timer fires is treated as a swipe, not a press. */
-const LONG_PRESS_MOVE_CANCEL_PX = 8;
 
 interface PhraseSelection {
   ids: string[];
@@ -103,17 +99,8 @@ export const Reader: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef<number>(0);
-  const dragStartY = useRef<number>(0);
   const dragOffsetPx = useRef<number>(0);
   const ignoreNextWordClick = useRef(false);
-  /** Pending long-press timer (set on pointer down over a word). */
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Word the long-press started on (anchor of the phrase range). */
-  const phraseAnchorRef = useRef<{ id: string; index: number } | null>(null);
-  /** True while actively dragging out a phrase selection (suppresses page swipe). */
-  const phraseModeRef = useRef(false);
-  /** Live phrase range (indices into the current page's word list). */
-  const phraseRangeRef = useRef<{ start: number; end: number } | null>(null);
   /** Skip ResizeObserver pagination while swiping — avoids remounting pages mid-gesture (white flash). */
   const isPageSwipeDraggingRef = useRef(false);
   /** Block pagination recalculation briefly after a page change (resize often fires during transform; recalc remounts rows → flash). */
@@ -215,12 +202,6 @@ export const Reader: React.FC = () => {
     currentPageWordsRef.current = currentPageWords;
     currentPageWordIndexRef.current = currentPageWordIndex;
   }, [currentPageWords, currentPageWordIndex]);
-
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-    };
-  }, []);
 
   const calculatePages = useCallback(() => {
     if (!containerRef.current) return;
@@ -409,28 +390,6 @@ export const Reader: React.FC = () => {
     return currentPageWordsRef.current.slice(a, b + 1).map(w => w.id);
   }, []);
 
-  /** Long-press fired: begin tracking a phrase selection anchored at the pressed word. */
-  const startPhraseSelection = useCallback(() => {
-    const anchor = phraseAnchorRef.current;
-    if (!anchor) return;
-    phraseModeRef.current = true;
-    phraseRangeRef.current = { start: anchor.index, end: anchor.index };
-    /* Drop any open single-word selection / popup so only the phrase is shown. */
-    setPhraseSelection(null);
-    setPhraseDetailOpen(false);
-    setSelectedWordId(prev => {
-      if (prev) {
-        setClickedWords(cw => {
-          const next = new Set(cw);
-          next.delete(prev);
-          return next;
-        });
-      }
-      return null;
-    });
-    setPhraseHighlightIds(new Set([anchor.id]));
-  }, []);
-
   const clearPhraseSelection = useCallback(() => {
     setPhraseSelection(null);
     setPhraseDetailOpen(false);
@@ -485,76 +444,16 @@ export const Reader: React.FC = () => {
     [phraseIdsFromRange, wordById, wordToSentenceIndex]
   );
 
-  /** Finalize an active phrase drag into a popup (or a single-word click). */
-  const finalizePhraseSelection = useCallback(() => {
-    const range = phraseRangeRef.current;
-    phraseRangeRef.current = null;
-    phraseModeRef.current = false;
-    if (!range) {
-      setPhraseHighlightIds(new Set());
-      return;
-    }
-    /* A single word: let the trailing native click handle normal word selection. */
-    if (!commitPhraseRange(range.start, range.end)) return;
-    /* Suppress the trailing click so it doesn't select a word; auto-reset if none fires. */
-    ignoreNextWordClick.current = true;
-    setTimeout(() => {
-      ignoreNextWordClick.current = false;
-    }, 400);
-  }, [commitPhraseRange]);
-
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     dragStartX.current = e.clientX;
-    dragStartY.current = e.clientY;
     dragOffsetPx.current = 0;
-
-    /* Arm a long-press if the press landed on a word on the current page. */
-    phraseAnchorRef.current = null;
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    const wordEl = (e.target as HTMLElement)?.closest?.('.sentence-item') as HTMLElement | null;
-    const wid = wordEl?.id;
-    if (wid && currentPageWordIndexRef.current.has(wid)) {
-      phraseAnchorRef.current = { id: wid, index: currentPageWordIndexRef.current.get(wid)! };
-      longPressTimerRef.current = setTimeout(() => {
-        longPressTimerRef.current = null;
-        startPhraseSelection();
-      }, LONG_PRESS_MS);
-    }
-  }, [startPhraseSelection]);
+  }, []);
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!contentRef.current || pages.length === 0) return;
       if (e.pointerType === 'mouse' && e.buttons === 0) return;
-
-      /* Cancel a pending long-press once the pointer moves enough (it's a swipe). */
-      if (longPressTimerRef.current != null) {
-        const moved = Math.hypot(e.clientX - dragStartX.current, e.clientY - dragStartY.current);
-        if (moved > LONG_PRESS_MOVE_CANCEL_PX) {
-          clearTimeout(longPressTimerRef.current);
-          longPressTimerRef.current = null;
-        }
-      }
-
-      /* Active phrase drag: extend the selection to the word under the pointer. */
-      if (phraseModeRef.current) {
-        const anchor = phraseAnchorRef.current;
-        if (!anchor) return;
-        const hit = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-        const wordEl = hit?.closest?.('.sentence-item') as HTMLElement | null;
-        const wid = wordEl?.id;
-        const idxMap = currentPageWordIndexRef.current;
-        if (wid && idxMap.has(wid)) {
-          const end = idxMap.get(wid)!;
-          phraseRangeRef.current = { start: anchor.index, end };
-          setPhraseHighlightIds(new Set(phraseIdsFromRange(anchor.index, end)));
-        }
-        return;
-      }
 
       const dx = e.clientX - dragStartX.current;
       if (!isDragging) {
@@ -569,23 +468,11 @@ export const Reader: React.FC = () => {
       dragOffsetPx.current = dx;
       setDragOffset(dx);
     },
-    [isDragging, pages.length, phraseIdsFromRange]
+    [isDragging, pages.length]
   );
 
   const handlePointerUp = useCallback(
     (e?: React.PointerEvent) => {
-      if (longPressTimerRef.current != null) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-      /* Phrase drag: only finalize on a real pointer up (ignore pointerleave). */
-      if (phraseModeRef.current) {
-        if (!e) return;
-        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-        finalizePhraseSelection();
-        return;
-      }
-
       if (e?.target) (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
       if (!isDragging) return;
       isPageSwipeDraggingRef.current = false;
@@ -602,20 +489,11 @@ export const Reader: React.FC = () => {
       setDragOffset(0);
       dragOffsetPx.current = 0;
     },
-    [isDragging, currentPageIndex, pages.length, finalizePhraseSelection]
+    [isDragging, currentPageIndex, pages.length]
   );
 
   const handlePointerCancel = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-    if (longPressTimerRef.current != null) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    if (phraseModeRef.current) {
-      phraseModeRef.current = false;
-      phraseRangeRef.current = null;
-      setPhraseHighlightIds(new Set());
-    }
     isPageSwipeDraggingRef.current = false;
     setIsDragging(false);
     setDragOffset(0);
@@ -664,9 +542,6 @@ export const Reader: React.FC = () => {
     const index = currentPageWordIndex.get(longPressWordId);
     setLongPressWordId(null);
     if (index === undefined) return;
-    /* Defuse any in-flight drag-phrase so its trailing finalize doesn't clear the anchor highlight. */
-    phraseModeRef.current = false;
-    phraseRangeRef.current = null;
     setPhraseSelection(null);
     setPhraseDetailOpen(false);
     setSnackbar(null);
@@ -1291,6 +1166,7 @@ export const Reader: React.FC = () => {
                       videoLessonLayout
                       wordToSentenceIndex={wordToSentenceIndex}
                       phraseSelectedWords={phraseHighlightIds}
+                      phraseAnchorWordId={phrasePick?.anchorId ?? null}
                     />
                   </div>
                 ) : (
@@ -1316,6 +1192,7 @@ export const Reader: React.FC = () => {
                           videoLessonLayout={false}
                           wordToSentenceIndex={wordToSentenceIndex}
                           phraseSelectedWords={phraseHighlightIds}
+                          phraseAnchorWordId={phrasePick?.anchorId ?? null}
                         />
                       </div>
                     ))}

@@ -52,6 +52,11 @@
   /* Scrolling is JS-driven; disabling native touch panning lets the long-press
      drag-to-select gesture work without the page scrolling underneath it. */
   touch-action: none;
+  /* Keep iOS from hijacking the hold with its selection/callout, which cancels
+     the pointer stream and prevents the status menu from opening. */
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
   transition: border-color 0.15s ease;
 }
 

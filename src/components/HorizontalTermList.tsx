@@ -18,7 +18,12 @@ const POPOVER_GAP_PX = 8;
 const LIST_INSET_PX = 16;
 /** Hold duration before the status menu pops for the drag-to-select gesture. */
 const LONG_PRESS_MS = 350;
-/** Movement before the long-press fires that counts as a scroll and cancels it. */
+/**
+ * Touch slop: movement under this is treated as a stationary tap/hold, not a
+ * scroll. Shared by the long-press cancel and the list's drag-scroll so a finger
+ * tap (which always jitters a few px) never gets misread as a drag — which would
+ * otherwise swallow the click and stop the status menu from opening on mobile.
+ */
 const PRESS_MOVE_CANCEL_PX = 10;
 /** New words can only be sent to Known or Ignored via long-press. */
 const NEW_WORD_STATUSES: LingQStatusType[] = ['Ignored', 'Known'];
@@ -239,6 +244,9 @@ const TermCard: React.FC<TermCardProps> = ({
     onPointerMove: handlePointerMove,
     onPointerUp: handlePointerUp,
     onPointerCancel: handlePointerCancel,
+    // Stop iOS from firing its long-press callout/selection, which would emit a
+    // pointercancel and kill the hold before the status menu can open.
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   };
 
   const pressMenu = pressOpen ? (
@@ -349,7 +357,13 @@ export interface HorizontalTermListProps {
   onStatusChange: (wordId: string, status: LingQStatusType) => void;
 }
 
-const DRAG_THRESHOLD_PX = 5;
+/**
+ * Drag-scroll slop, matched to the card's long-press slop. Below this a finger
+ * gesture stays a tap/hold (so the badge tap and long-press both fire); above it
+ * the list scrolls and the trailing click is suppressed. A small value (e.g. 5px)
+ * misreads ordinary touch jitter as a drag and eats taps on mobile.
+ */
+const DRAG_THRESHOLD_PX = PRESS_MOVE_CANCEL_PX;
 
 export const HorizontalTermList: React.FC<HorizontalTermListProps> = ({
   items,
