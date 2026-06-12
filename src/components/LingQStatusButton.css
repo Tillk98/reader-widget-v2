@@ -7,8 +7,9 @@
   width: 32px;
   height: 32px;
   flex-shrink: 0;
+  box-sizing: border-box;
   padding: 0;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
   box-shadow: none;
@@ -43,22 +44,31 @@
   flex-shrink: 0;
 }
 
-/* Default state: Known + Ignored icons are muted */
+/* Default state: numbers + Known/Ignored icons are solid black */
 .lingq-status-btn--known:not(.lingq-status-btn--focus),
 .lingq-status-btn--ignored:not(.lingq-status-btn--focus) {
-  color: var(--typography-muted, #6d7680);
+  color: var(--typography-default, #000000);
 }
 
-/* ── Focus state ─────────────────────────────────────────────────────────── */
-/* All focus states (numbers 1–4 + Known): green-tinted bg, green text */
+/* ── Focus state (Figma 4008:56485 — LingQStatusButton State=Focus) ───────── */
+/* New / Recognized / Familiar / Learned: green ring on a transparent fill. */
 .lingq-status-btn--focus {
-  background: var(--surfaces-action-primary-subtle, #f4fcef);
-  box-shadow: 0px 5.333px 10.667px -5.333px rgba(0, 0, 0, 0.15);
-  color: var(--typography-action-primary, #42a564);
+  border-color: var(--border-primary, #42a564);
+  background: transparent;
+  box-shadow: none;
+  color: var(--foreground-primary, #42a564);
 }
 
-/* Ignored + Focus: neutral grey background, muted icon */
+/* Known: light-green fill + green ring + green check. */
+.lingq-status-btn--known.lingq-status-btn--focus {
+  background: var(--surfaces-primary-subtle, #f4fcef);
+  border-color: var(--border-primary, #42a564);
+  color: var(--foreground-primary, #42a564);
+}
+
+/* Ignored: grey fill + grey ring + dark icon (NOT green). */
 .lingq-status-btn--ignored.lingq-status-btn--focus {
-  background: var(--color-grey-50, #f1f3f4);
-  color: var(--typography-muted, #6d7680);
+  background: var(--surfaces-default, #f1f3f4);
+  border-color: var(--border-default, #d1d6d9);
+  color: var(--typography-default, #0a0a0a);
 }

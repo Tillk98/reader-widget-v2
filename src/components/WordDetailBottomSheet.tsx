@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { Play, Tags, Coins, BookA, PanelRightOpen, PanelRightClose, X } from 'lucide-react';
+import { Play, Tags, Coins, BookA, PanelRightOpen, PanelRightClose, X, Plus, Check } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -626,10 +626,25 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           ) : (
             <div className="word-detail-sheet-header-content">
               <div className="word-detail-sheet-original-row">
-                <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play audio">
-                  <Play size={16} aria-hidden />
-                </button>
-                <p className="word-detail-sheet-original-text">{quoteLine}</p>
+                <div className="word-detail-sheet-original-row-left">
+                  <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play audio">
+                    <Play size={16} aria-hidden />
+                  </button>
+                  <p className="word-detail-sheet-original-text">{quoteLine}</p>
+                </div>
+                <div className="word-detail-sheet-header-btn-group">
+                  <button
+                    type="button"
+                    className="word-detail-sheet-vol-btn word-detail-sheet-close-btn"
+                    aria-label="Close word detail"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestClose();
+                    }}
+                  >
+                    <X size={16} aria-hidden />
+                  </button>
+                </div>
               </div>
               <div className="word-detail-sheet-meaning-row">
                 <p className="word-detail-sheet-meaning-text">{masterMeaning}</p>
@@ -750,11 +765,8 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                   footer={<AddMeaningRow onAdd={(text) => addSavedMeaning(text)} />}
                 />
 
-                <div className="word-detail-sheet-section-divider" aria-hidden />
                 <MeaningSection
                   label="MORE MEANINGS"
-                  spacious
-                  defaultOpen={false}
                   items={suggestedMeanings}
                   getKey={(m) => m}
                   renderItem={(m) => (
@@ -763,36 +775,62 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                 />
 
                 {phraseWords && phraseWords.length > 0 ? (
-                  <>
-                    <div className="word-detail-sheet-section-divider" aria-hidden />
-                    <MeaningSection
-                      label="WORDS IN THIS PHRASE"
-                      items={phraseWords}
-                      getKey={(w) => w.id}
-                      renderItem={(w) => (
-                        <MeaningListItem
-                          originalText={w.text}
-                          meaning={w.translation}
-                          cta="open"
-                          onCta={() => onPhraseWordOpen?.(w.id)}
-                        />
-                      )}
-                    />
-                  </>
+                  <MeaningSection
+                    label="WORDS IN THIS PHRASE"
+                    items={phraseWords}
+                    getKey={(w) => w.id}
+                    renderItem={(w) => (
+                      <MeaningListItem
+                        originalText={w.text}
+                        meaning={w.translation}
+                        cta="open"
+                        onCta={() => onPhraseWordOpen?.(w.id)}
+                      />
+                    )}
+                  />
                 ) : null}
               </>
             ) : null}
 
             {sentenceActive ? (
               <div className="word-detail-sheet-sentence">
-                {sentenceContexts.map((entry, i) => (
-                  <SentenceBlock
-                    key={`${entry.lessonTitle}-${entry.variant}-${i}`}
-                    entry={entry}
-                    onAudio={onSentenceAudio}
-                    onGoToLesson={onGoToLesson}
-                  />
-                ))}
+                {(() => {
+                  const current = sentenceContexts.filter((e) => e.variant === 'current');
+                  const past = sentenceContexts.filter((e) => e.variant !== 'current');
+                  return (
+                    <>
+                      {current.length > 0 ? (
+                        <section className="word-detail-sheet-sentence-section">
+                          {current.map((entry, i) => (
+                            <SentenceBlock
+                              key={`current-${i}`}
+                              entry={entry}
+                              onAudio={onSentenceAudio}
+                              onGoToLesson={onGoToLesson}
+                            />
+                          ))}
+                        </section>
+                      ) : null}
+                      {past.length > 0 ? (
+                        <section className="word-detail-sheet-sentence-section">
+                          <div className="word-detail-sheet-sentence-section__header">
+                            <span className="word-detail-sheet-sentence-section__label">
+                              PAST ENCOUNTERS
+                            </span>
+                          </div>
+                          {past.map((entry, i) => (
+                            <SentenceBlock
+                              key={`past-${i}`}
+                              entry={entry}
+                              onAudio={onSentenceAudio}
+                              onGoToLesson={onGoToLesson}
+                            />
+                          ))}
+                        </section>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </div>
             ) : null}
 
@@ -903,22 +941,31 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
             {sentenceActive ? (
               <div className="word-detail-sheet-term-list" role="list">
-                {sentenceTerms.map((t, i) => (
-                  <div
-                    key={`${t.term}-${i}`}
-                    className="word-detail-sheet-term-card"
-                    role="listitem"
-                  >
-                    <span
-                      className={`word-detail-sheet-term-dot ${t.variant === 'lingq' ? 'word-detail-sheet-term-dot--lingq' : ''}`}
-                      aria-hidden
-                    />
-                    <div className="word-detail-sheet-term-text">
-                      <span className="word-detail-sheet-term-word">{t.term}</span>
-                      <span className="word-detail-sheet-term-meaning">{t.meaning}</span>
-                    </div>
-                  </div>
-                ))}
+                {sentenceTerms.map((t, i) => {
+                  const isLingq = t.variant === 'lingq';
+                  return (
+                    <button
+                      key={`${t.term}-${i}`}
+                      type="button"
+                      className="word-detail-sheet-term-card"
+                      role="listitem"
+                      aria-label={
+                        isLingq ? `${t.term}: ${t.meaning}` : `Add ${t.term} as a LingQ`
+                      }
+                    >
+                      <span
+                        className={`word-detail-sheet-term-status ${isLingq ? 'word-detail-sheet-term-status--lingq' : 'word-detail-sheet-term-status--new'}`}
+                        aria-hidden
+                      >
+                        {isLingq ? <Check size={16} /> : <Plus size={16} />}
+                      </span>
+                      <span className="word-detail-sheet-term-text">
+                        <span className="word-detail-sheet-term-word">{t.term}</span>
+                        <span className="word-detail-sheet-term-meaning">{t.meaning}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             ) : null}
 

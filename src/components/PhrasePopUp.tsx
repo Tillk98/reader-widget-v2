@@ -37,7 +37,7 @@ interface PhrasePopUpProps {
   onGoogleTranslate?: () => void;
 }
 
-const PHRASE_LIMIT_NOTE = 'To create a phrase LingQ, please select up to 9 words from the same sentence.';
+const PHRASE_LIMIT_NOTE = 'Please select up to 9 words from the same sentence to LingQ a phrase.';
 
 export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
   phraseText,
@@ -149,7 +149,7 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
               onGoogleTranslate?.();
             }}
           >
-            <Languages size={18} strokeWidth={1.75} />
+            <Languages size={16} strokeWidth={2} />
             <span>Google Translate</span>
           </button>
           <p className="phrase-popup__note">{PHRASE_LIMIT_NOTE}</p>

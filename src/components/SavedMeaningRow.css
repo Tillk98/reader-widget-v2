@@ -1,43 +1,32 @@
-/* Saved meaning row — swipe-to-delete (Figma 3776:7544) + inline edit (Figma 3789:7189). */
+/*
+ * Saved meaning menu row (Figma MeaningMenuItem 4031:70509) —
+ * trailing grip handle + swipe-to-delete panel (4032:72154) + inline edit (3789:7189).
+ */
 .saved-meaning {
   position: relative;
-  width: 100%;
-  overflow: hidden;
-  background: var(--backgrounds-page, #ffffff);
-}
-
-/* ── Swipe-to-delete reveal ───────────────────────────────────── */
-.saved-meaning__delete {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-  width: 63px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: var(--surfaces-destructive-subtle, #fef2f2);
-  color: var(--text-destructive, #e5484d);
-  cursor: pointer;
+  min-height: 48px;
+  width: 100%;
+  padding: var(--spacing-spacing-xs, 4px);
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  background: var(--backgrounds-page, #ffffff);
+  box-sizing: border-box;
 }
 
-.saved-meaning__delete svg {
-  display: block;
-}
-
-/* ── Default state ─────────────────────────────────────────────── */
+/* ── Default state — content + grip handle ─────────────────────── */
 .saved-meaning__content {
   position: relative;
   z-index: 1;
-  width: 100%;
-  min-width: 0;
   display: flex;
   align-items: center;
-  padding: 12px 0;
+  justify-content: space-between;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--spacing-spacing-md, 12px);
+  border-radius: var(--radius-sm, 6px);
   box-sizing: border-box;
   cursor: text;
   touch-action: pan-y;
@@ -48,10 +37,49 @@
   flex: 1 1 auto;
   min-width: 0;
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 20px;
+  line-height: 18px;
   color: var(--typography-default, #000000);
+}
+
+.saved-meaning__handle {
+  cursor: grab;
+}
+
+/* ── Swipe-to-delete reveal ───────────────────────────────────── */
+.saved-meaning__delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-spacing-sm, 8px);
+  width: 100px;
+  margin: 0;
+  padding: var(--spacing-spacing-md, 12px) var(--spacing-spacing-lg, 16px);
+  border: none;
+  border-radius: 0 var(--radius-sm, 6px) var(--radius-sm, 6px) 0;
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+  color: var(--foreground-destructive, #dd2525);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.saved-meaning__delete svg {
+  display: block;
+}
+
+.saved-meaning__delete-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--foreground-destructive, #dd2525);
+  white-space: nowrap;
 }
 
 /* ── Edit state — single flex row: [input] [X] [+] ───────────── */
@@ -61,7 +89,8 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 12px 0;
+  min-height: 48px;
+  padding: var(--spacing-spacing-xs, 4px) var(--spacing-spacing-md, 16px);
   box-sizing: border-box;
   overflow: visible;
   background: var(--backgrounds-page, #ffffff);
@@ -75,14 +104,14 @@
   border: none;
   background: transparent;
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 20px;
+  line-height: 18px;
   color: var(--typography-default, #000000);
 }
 
 .saved-meaning__input::placeholder {
-  color: var(--text-muted, #6d7680);
+  color: var(--typography-muted, #6d7680);
 }
 
 .saved-meaning__input:focus {
@@ -116,7 +145,7 @@
 /* X — cancel, no fill */
 .saved-meaning__edit-btn--cancel {
   background: transparent;
-  color: var(--text-muted, #6d7680);
+  color: var(--typography-muted, #6d7680);
 }
 
 .saved-meaning__edit-btn--cancel:hover {
@@ -126,38 +155,40 @@
 /* + — save, blue-subtle fill */
 .saved-meaning__edit-btn--save {
   background: var(--surfaces-secondary-subtle, #f1f7fe);
-  color: var(--text-secondary, #2e75cd);
+  color: var(--typography-action-secondary, #2e75cd);
 }
 
 .saved-meaning__edit-btn--save:hover {
   background: #e3eefb;
 }
 
-/* ── Add a new meaning row ─────────────────────────────────────── */
+/* ── Add a new meaning row (leading "+" pill + label) ──────────── */
 .saved-meaning__add-new {
   display: flex;
   align-items: center;
+  gap: var(--spacing-spacing-md, 12px);
   width: 100%;
-  padding: 12px 0;
+  min-height: 48px;
+  padding: var(--spacing-spacing-md, 12px);
   margin: 0;
   border: none;
+  border-radius: var(--radius-sm, 6px);
   background: transparent;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
-  color: var(--text-secondary, #2e75cd);
   cursor: pointer;
   text-align: left;
   -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.15s ease;
+  transition: background-color 0.15s ease;
   box-sizing: border-box;
 }
 
 .saved-meaning__add-new:hover {
-  opacity: 0.8;
+  background: var(--surfaces-default, #f1f3f4);
 }
 
-.saved-meaning__add-new:active {
-  opacity: 0.6;
+.saved-meaning__add-new-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--typography-default, #000000);
 }

@@ -1,0 +1,101 @@
+/* Lesson header (Figma LessonHeader 4042:15342) — grey lesson box under the drag bar. */
+.lesson-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-spacing-sm, 8px);
+  background: var(--backgrounds-page, #ffffff);
+  border-bottom: 1px solid var(--border-default, #d1d6d9);
+  box-sizing: border-box;
+}
+
+.lesson-header__box {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-spacing-sm, 8px);
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: var(--spacing-spacing-sm, 8px);
+  border: 1px solid var(--border-default, #d1d6d9);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surfaces-default, #f1f3f4);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+  box-sizing: border-box;
+}
+
+.lesson-header__box:hover {
+  background: #e7eaec;
+}
+
+.lesson-header__box:active {
+  transform: scale(0.99);
+}
+
+.lesson-header__box:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.lesson-header__image {
+  display: block;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-2xs, 4px);
+  overflow: hidden;
+  background: var(--color-grey-200, #e3e5e7);
+}
+
+.lesson-header__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lesson-header__meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.lesson-header__title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--typography-default, #000000);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lesson-header__course {
+  display: flex;
+  gap: var(--spacing-spacing-xs, 4px);
+  min-width: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--typography-muted, #6d7680);
+}
+
+.lesson-header__course-name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lesson-header__page {
+  flex-shrink: 0;
+}

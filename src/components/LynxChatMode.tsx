@@ -61,7 +61,7 @@ export const LynxChatMode: React.FC<LynxChatModeProps> = ({ open, onClose, onSta
           aria-label="Close Lynx"
           onClick={onClose}
         >
-          <X size={24} strokeWidth={2} />
+          <X size={20} strokeWidth={2} />
         </button>
         <button
           type="button"

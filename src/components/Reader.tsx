@@ -6,6 +6,7 @@ import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
 import { QuickStatusPopup } from './QuickStatusPopup';
+import { PhrasePickTooltip } from './PhrasePickTooltip';
 import { PhrasePopUp, type PhraseWordItem } from './PhrasePopUp';
 import { countWords, isPunctuation, joinWordsText, joinWordsTranslation, MAX_PHRASE_WORDS } from '../utils/phrase';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
@@ -61,6 +62,8 @@ export const Reader: React.FC = () => {
   const [clickedWords, setClickedWords] = useState<Set<string>>(new Set());
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
   const [longPressWordId, setLongPressWordId] = useState<string | null>(null);
+  /** Active "Select a Phrase" pick: the long-pressed anchor word; the next tapped word completes the phrase. */
+  const [phrasePick, setPhrasePick] = useState<{ anchorId: string; anchorIndex: number } | null>(null);
   // Seed a mix of existing LingQ statuses so Review mode shows both saved terms and
   // unsaved ("+") terms out of the box (these words also read as LingQs in the lesson).
   const [wordStatusMap, setWordStatusMap] = useState<Record<string, LingQStatusType>>(() => {
@@ -432,6 +435,7 @@ export const Reader: React.FC = () => {
     setPhraseSelection(null);
     setPhraseDetailOpen(false);
     setPhraseHighlightIds(new Set());
+    setPhrasePick(null);
   }, []);
 
   /** Bounding rect spanning all words in the selection (viewport coords). */
@@ -453,6 +457,34 @@ export const Reader: React.FC = () => {
     return new DOMRect(left, top, right - left, bottom - top);
   }, []);
 
+  /** Build + show a phrase popup from an inclusive index range. Returns false for a single word. */
+  const commitPhraseRange = useCallback(
+    (start: number, end: number): boolean => {
+      const ids = phraseIdsFromRange(start, end);
+      if (ids.length <= 1) {
+        setPhraseHighlightIds(new Set());
+        return false;
+      }
+      setLongPressWordId(null); // a committed phrase supersedes the quick word menu
+      const words = ids.map(id => wordById.get(id)).filter((w): w is Word => Boolean(w));
+      const sentenceIds = new Set(ids.map(id => wordToSentenceIndex.get(id)));
+      const valid = sentenceIds.size === 1 && countWords(words) <= MAX_PHRASE_WORDS;
+      const wordItems: PhraseWordItem[] = words
+        .filter(w => !isPunctuation(w.text))
+        .map(w => ({ id: w.id, text: w.text, translation: w.translation ?? w.text }));
+      setPhraseSelection({
+        ids,
+        phraseText: joinWordsText(words),
+        meaning: joinWordsTranslation(words),
+        words: wordItems,
+        valid,
+      });
+      setPhraseHighlightIds(new Set(ids));
+      return true;
+    },
+    [phraseIdsFromRange, wordById, wordToSentenceIndex]
+  );
+
   /** Finalize an active phrase drag into a popup (or a single-word click). */
   const finalizePhraseSelection = useCallback(() => {
     const range = phraseRangeRef.current;
@@ -462,32 +494,14 @@ export const Reader: React.FC = () => {
       setPhraseHighlightIds(new Set());
       return;
     }
-    const ids = phraseIdsFromRange(range.start, range.end);
     /* A single word: let the trailing native click handle normal word selection. */
-    if (ids.length <= 1) {
-      setPhraseHighlightIds(new Set());
-      return;
-    }
-    const words = ids.map(id => wordById.get(id)).filter((w): w is Word => Boolean(w));
-    const sentenceIds = new Set(ids.map(id => wordToSentenceIndex.get(id)));
-    const valid = sentenceIds.size === 1 && countWords(words) <= MAX_PHRASE_WORDS;
-    const wordItems: PhraseWordItem[] = words
-      .filter(w => !isPunctuation(w.text))
-      .map(w => ({ id: w.id, text: w.text, translation: w.translation ?? w.text }));
-    setPhraseSelection({
-      ids,
-      phraseText: joinWordsText(words),
-      meaning: joinWordsTranslation(words),
-      words: wordItems,
-      valid,
-    });
-    setPhraseHighlightIds(new Set(ids));
+    if (!commitPhraseRange(range.start, range.end)) return;
     /* Suppress the trailing click so it doesn't select a word; auto-reset if none fires. */
     ignoreNextWordClick.current = true;
     setTimeout(() => {
       ignoreNextWordClick.current = false;
     }, 400);
-  }, [phraseIdsFromRange, wordById, wordToSentenceIndex]);
+  }, [commitPhraseRange]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -613,21 +627,66 @@ export const Reader: React.FC = () => {
     clearPhraseSelection();
   }, [currentPageIndex, mediaMode, sentenceMode, reviewMode, clearPhraseSelection]);
 
-  /** Long-press a word: show the quick Ignore/Known popup without selecting the word or setting status to New. */
+  /* Phrase-pick mode: tapping a word completes the phrase; tapping anywhere else cancels it. */
+  useEffect(() => {
+    if (!phrasePick) return;
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('.sentence-item')) return;
+      setPhrasePick(null);
+      setPhraseHighlightIds(new Set());
+    };
+    // Defer so the "Select a Phrase" tap that started this doesn't immediately cancel it.
+    const id = window.setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
+  }, [phrasePick]);
+
+  /** Long-press a word: show the quick Known / Ignore / Select-a-Phrase popup. */
   const handleWordLongPress = useCallback((wordId: string) => {
     setLongPressWordId(wordId);
     setSnackbar(null);
+    setPhrasePick(null);
+    setPhraseHighlightIds(new Set());
   }, []);
 
-  /** User started dragging after the long-press popup appeared — dismiss it. */
-  const handleWordLongPressCancel = useCallback(() => {
+  /** Dragging after the popup appears now drives the menu (drag-to-select), so keep it open. */
+  const handleWordLongPressCancel = useCallback(() => {}, []);
+
+  /**
+   * "Select a Phrase" tapped: close the popup and enter phrase-pick mode anchored on the
+   * long-pressed word. The next word the user taps completes the phrase (calendar-range style).
+   */
+  const handleStartPhrasePick = useCallback(() => {
+    if (!longPressWordId) return;
+    const index = currentPageWordIndex.get(longPressWordId);
     setLongPressWordId(null);
-  }, []);
+    if (index === undefined) return;
+    /* Defuse any in-flight drag-phrase so its trailing finalize doesn't clear the anchor highlight. */
+    phraseModeRef.current = false;
+    phraseRangeRef.current = null;
+    setPhraseSelection(null);
+    setPhraseDetailOpen(false);
+    setSnackbar(null);
+    setPhrasePick({ anchorId: longPressWordId, anchorIndex: index });
+    /* Keep the anchor word highlighted so it's clear it's the phrase's starting point. */
+    setPhraseHighlightIds(new Set([longPressWordId]));
+  }, [longPressWordId, currentPageWordIndex]);
 
   const handleWordClick = useCallback(
     (wordId: string) => {
       if (ignoreNextWordClick.current) {
         ignoreNextWordClick.current = false;
+        return;
+      }
+      /* "Select a Phrase" mode: this tap is the phrase's end word (anchor → here, inclusive). */
+      if (phrasePick) {
+        const endIndex = currentPageWordIndex.get(wordId);
+        if (endIndex !== undefined) commitPhraseRange(phrasePick.anchorIndex, endIndex);
+        else setPhraseHighlightIds(new Set());
+        setPhrasePick(null);
         return;
       }
       if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
@@ -657,16 +716,11 @@ export const Reader: React.FC = () => {
         });
       }
     },
-    [selectedWordId, knownWords, ignoredWords, mediaMode, lesson.hasVideo]
+    [selectedWordId, knownWords, ignoredWords, mediaMode, lesson.hasVideo, phrasePick, currentPageWordIndex, commitPhraseRange]
   );
-
-  /** In sentence mode the meaning popup only appears for words tapped in the sentence,
-   * not for selections made from the vocabulary list (which already show meanings). */
-  const [sentencePopupSuppressed, setSentencePopupSuppressed] = useState(false);
 
   const handleSentenceWordSelect = useCallback(
     (wordId: string) => {
-      setSentencePopupSuppressed(false);
       handleWordClick(wordId);
     },
     [handleWordClick]
@@ -674,7 +728,6 @@ export const Reader: React.FC = () => {
 
   const handleSentenceListSelect = useCallback(
     (wordId: string) => {
-      setSentencePopupSuppressed(true);
       handleWordClick(wordId);
     },
     [handleWordClick]
@@ -768,7 +821,6 @@ export const Reader: React.FC = () => {
 
   /** Tap a vocabulary list item (term): open the full word detail sheet (no status bar / popup). */
   const handleListOpenDetail = useCallback((wordId: string) => {
-    setSentencePopupSuppressed(true);
     setSelectedWordId(wordId);
     setListDetailOpen(true);
     setWordDetailPanelMode(false); // list/review detail always uses the bottom sheet
@@ -1168,7 +1220,7 @@ export const Reader: React.FC = () => {
                 aria-label="Close lesson"
                 onClick={handleCloseLesson}
               >
-                <Library size={24} strokeWidth={2} />
+                <Library size={20} strokeWidth={2} />
               </button>
               <div className="reader-progress-bar-wrap">
                 <div
@@ -1222,10 +1274,8 @@ export const Reader: React.FC = () => {
                     onWordSelect={handleSentenceWordSelect}
                     onListWordSelect={handleSentenceListSelect}
                     onListWordOpenDetail={handleListOpenDetail}
+                    onListWordStatusChange={(wordId, status) => handleStatusChange(wordId, status)}
                     onDeselect={handleClosePopup}
-                    horizontalList={sentenceHorizontalList}
-                    onMarkKnown={(wordId) => handleStatusChange(wordId, 'Known')}
-                    onMarkIgnored={(wordId) => handleStatusChange(wordId, 'Ignored')}
                   />
                 ) : isLessonMediaMode ? (
                   <div className="reader-video-scroll">
@@ -1354,10 +1404,18 @@ export const Reader: React.FC = () => {
             onClose={() => setReviewFilterOpen(false)}
             value={reviewFilter}
             onApply={setReviewFilter}
+            lessonTitle={lesson.title}
+            lessonSource={lesson.source ?? ''}
+            lessonImageSrc={lessonImage}
+            onLessonClick={() => {
+              setCourseInfoOpen(true);
+              window.setTimeout(() => setReviewFilterOpen(false), 320);
+            }}
           />
-          {/* Compact popup → floating card (tablet) or bottom sheet (mobile). */}
+          {/* Compact popup → floating card (tablet) or bottom sheet (mobile).
+              Not shown in sentence mode — the horizontal word list handles word interaction there. */}
           {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen &&
-           !(isSentenceView && sentencePopupSuppressed) && !(isTablet && wordDetailPanelMode) && (
+           !isSentenceView && !(isTablet && wordDetailPanelMode) && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
@@ -1550,9 +1608,11 @@ export const Reader: React.FC = () => {
             handleStatusChange(longPressWordId, status);
             setLongPressWordId(null);
           }}
+          onSelectPhrase={handleStartPhrasePick}
           onClose={() => setLongPressWordId(null)}
         />
       )}
+      {phrasePick && <PhrasePickTooltip />}
     </div>
   );
 };

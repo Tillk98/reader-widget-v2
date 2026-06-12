@@ -1,182 +1,158 @@
-/* Review filter menu — method / scope / status (Figma 3185:5330). */
-
+/* Review filter menu (Figma ReviewFilterMenu 4089:63186) — segmented toggles + status range bar. */
 .review-filter {
   display: flex;
   flex-direction: column;
   width: 100%;
+  padding-bottom: var(--spacing-spacing-md, 12px);
   box-sizing: border-box;
-  padding: 0 16px 16px;
   font-family: 'DM Sans', sans-serif;
 }
 
 .review-filter__section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .review-filter__section-header {
-  margin: 0;
-  padding: 4px 12px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-spacing-md, 12px);
+  box-sizing: border-box;
+}
+
+.review-filter__section-label {
+  font-family: 'DM Sans', sans-serif;
   font-size: 12px;
+  font-weight: 600;
   line-height: 16px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: #6d7680;
+  color: var(--foreground-muted, #49525b);
 }
 
-.review-filter__section-header--with-info {
+/* ── Segmented toggle (Review Method / Scope) ───────────────────────────── */
+.review-filter__toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-spacing-sm, 8px);
+  margin: 0 var(--spacing-spacing-md, 12px);
+  padding: var(--spacing-spacing-xs, 4px);
+  border: 1px solid var(--color-grey-100, #f1f3f4);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--backgrounds-page, #ffffff);
+  box-sizing: border-box;
 }
 
-.review-filter__info {
-  color: #6d7680;
-}
-
-/* --- Segmented controls (Method / Scope) --- */
-.review-filter__segmented {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin: 0 12px;
-  padding: 4px;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
-}
-
-.review-filter__segment {
+.review-filter__toggle-option {
   flex: 1 1 0;
   min-width: 0;
-  padding: 8px 16px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  font-family: inherit;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 18px;
-  text-align: center;
-  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 10px;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--backgrounds-page, #ffffff);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--foreground-muted, #49525b);
+  white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.review-filter__segment:hover:not(.review-filter__segment--active) {
-  background: #f4f5f6;
+.review-filter__toggle-option:hover:not(.review-filter__toggle-option--active) {
+  background: var(--color-grey-50, #f8f9fa);
 }
 
-.review-filter__segment--active {
-  background: #f1f7fe;
-  border-color: #2e75cd;
-  color: #2e75cd;
+.review-filter__toggle-option--active {
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  color: var(--foreground-secondary, #2e75cd);
+  cursor: default;
 }
 
-/* --- Status range bar --- */
+/* ── Status range bar ───────────────────────────────────────────────────── */
+.review-filter__status {
+  display: flex;
+  flex-direction: column;
+  margin: 0 var(--spacing-spacing-md, 12px);
+}
+
 .review-filter__status-bar {
+  width: 100%;
+  padding: var(--spacing-spacing-sm, 8px) var(--spacing-spacing-md, 12px);
+  border: 1px solid var(--color-grey-100, #f1f3f4);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--backgrounds-page, #ffffff);
+  box-sizing: border-box;
+}
+
+.review-filter__status-track {
   position: relative;
-  margin: 0 12px;
-  padding: 4px;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
-  touch-action: none;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 32px;
 }
 
 .review-filter__status-highlights {
   position: absolute;
-  inset: 4px;
+  inset: 0;
   pointer-events: none;
 }
 
-.review-filter__status-highlight {
+/* Combined green pill behind a contiguous run of selected statuses. */
+.review-filter__status-pill {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: #f1f7fe;
-  border: 1px solid #2e75cd;
-  border-radius: 999px;
-  box-sizing: border-box;
-}
-
-.review-filter__status-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  z-index: 1;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surfaces-primary-subtle, #f4fcef);
 }
 
 .review-filter__status-seg {
+  position: relative;
+  z-index: 1;
   flex: 1 1 0;
   min-width: 0;
-  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1c1c1e;
-  transition: color 0.12s ease;
-  user-select: none;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--typography-default, #0a0a0a);
+  transition: color 0.15s ease, transform 0.1s ease;
 }
 
-.review-filter__status-seg--selected {
-  color: #2e75cd;
+.review-filter__status-seg svg {
+  display: block;
+}
+
+.review-filter__status-seg:active {
+  transform: scale(0.92);
+}
+
+.review-filter__status-seg:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--radius-pill, 999px);
 }
 
 .review-filter__status-num {
-  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   font-size: 16px;
+  font-weight: 600;
   line-height: 20px;
 }
 
-/* --- Divider + actions --- */
-.review-filter__divider {
-  height: 1px;
-  width: 100%;
-  margin: 8px 0;
-  background: #e3e5e7;
-}
-
-.review-filter__actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-}
-
-.review-filter__btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 18px;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.review-filter__btn:active {
-  transform: scale(0.97);
-}
-
-.review-filter__btn--cancel {
-  background: #f1f3f4;
-  color: #000;
-}
-
-.review-filter__btn--cancel:hover {
-  background: #e8eaec;
-}
-
-.review-filter__btn--update {
-  background: #2e75cd;
-  color: #fff;
-}
-
-.review-filter__btn--update:hover {
-  background: #2868b8;
+.review-filter__status-seg--selected {
+  color: var(--foreground-primary, #42a564);
 }

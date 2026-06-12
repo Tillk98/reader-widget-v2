@@ -1,8 +1,5 @@
-/*
- * Menu section (Figma MeaningsMenu 4031:70514 / MenuContainer 4029:12351).
- * Caption header + rounded white menu with hairline dividers between rows.
- */
-.meaning-section {
+/* Menu (Figma Menu 4042:13136) — caption + rounded white container with divided rows. */
+.ui-menu-section {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -11,26 +8,27 @@
   box-sizing: border-box;
 }
 
-.meaning-section__header {
+.ui-menu-section__header {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: var(--spacing-spacing-md, 12px);
+  padding: var(--spacing-spacing-sm, 8px) var(--spacing-spacing-lg, 16px) var(--spacing-spacing-xs, 4px);
   box-sizing: border-box;
 }
 
-.meaning-section__label {
+.ui-menu-section__label {
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--typography-muted, #6d7680);
 }
 
-/* Rounded menu container — rows are flush, radius clips the first/last row. */
-.meaning-menu {
+.ui-menu {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   border-radius: var(--radius-lg, 12px);
   overflow: clip;
@@ -38,14 +36,7 @@
   box-sizing: border-box;
 }
 
-.meaning-menu__container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-spacing-xs, 4px);
-  width: 100%;
-}
-
-.meaning-menu__divider {
+.ui-menu__divider {
   flex-shrink: 0;
   width: 100%;
   height: 1px;

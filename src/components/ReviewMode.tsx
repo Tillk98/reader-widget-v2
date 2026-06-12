@@ -86,7 +86,7 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
           aria-label="Close review"
           onClick={onClose}
         >
-          <X size={24} strokeWidth={2} />
+          <X size={20} strokeWidth={2} />
         </button>
 
         {/* Filter pill — centered absolutely so the side buttons don't affect its position */}

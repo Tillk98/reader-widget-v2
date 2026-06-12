@@ -1,85 +1,121 @@
-/* Shared meanings list row (Figma 3776:7542 "MeaningListItem"). */
-.meaning-list-item {
+/* Shared menu row (Figma MeaningMenuItem 4031:70509). */
+.meaning-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  min-height: 48px;
   width: 100%;
+  padding: var(--spacing-spacing-xs, 4px);
+  border-radius: var(--radius-sm, 6px);
+  box-sizing: border-box;
   background: var(--backgrounds-page, #ffffff);
 }
 
-.meaning-list-item__content {
+.meaning-menu-item__content {
   display: flex;
-  align-items: center;
-  gap: 10px;
   flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   min-width: 0;
-  padding: 12px 0;
+  padding: var(--spacing-spacing-md, 12px);
+  border-radius: var(--radius-sm, 6px);
   box-sizing: border-box;
 }
 
-.meaning-list-item__content--button {
+.meaning-menu-item__content--button {
+  width: 100%;
   margin: 0;
   border: none;
   background: none;
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-.meaning-list-item__text {
+.meaning-menu-item__content--button:hover {
+  background: var(--surfaces-default, #f1f3f4);
+}
+
+.meaning-menu-item__text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.meaning-list-item__source {
+.meaning-menu-item__text--stacked {
+  gap: 0;
+}
+
+.meaning-menu-item__source {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--typography-muted, #6d7680);
+}
+
+.meaning-menu-item__meaning {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: 18px;
-  color: var(--typography-muted, #6d7680);
-}
-
-.meaning-list-item__meaning {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
   color: var(--typography-default, #000000);
 }
 
-.meaning-list-item__cta {
-  flex-shrink: 0;
+.meaning-menu-item__btnset {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border: none;
-  border-radius: 4px;
+  gap: var(--spacing-spacing-sm, 8px);
+  flex-shrink: 0;
 }
 
-.meaning-list-item__cta svg {
+/*
+ * Circular reader button (Figma ReaderButton) — small pill icon button used inside menu rows.
+ * Shared by More Meanings (+), phrase words (chevron) and saved meanings (drag handle).
+ */
+.reader-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  background: #ffffff;
+  box-shadow: 0px 1px 4px -2px rgba(0, 0, 0, 0.2);
+  color: var(--typography-default, #000000);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.reader-btn svg {
   display: block;
 }
 
-.meaning-list-item__cta--add {
-  background: var(--surfaces-secondary-subtle, #f1f7fe);
+.reader-btn--plain {
+  color: var(--typography-muted, #6d7680);
+}
+
+.reader-btn--accent {
+  background: var(--surfaces-tertiary-subtle, #f4f7fb);
   color: var(--typography-action-secondary, #2e75cd);
-  cursor: pointer;
-  transition: filter 0.15s ease, transform 0.1s ease;
 }
 
-.meaning-list-item__cta--add:hover {
-  filter: brightness(0.97);
+button.reader-btn:hover {
+  box-shadow: 0px 2px 6px -2px rgba(0, 0, 0, 0.25);
 }
 
-.meaning-list-item__cta--add:active {
-  transform: scale(0.94);
+button.reader-btn:active {
+  transform: scale(0.92);
 }
 
-.meaning-list-item__cta--open {
-  background: var(--surfaces-default, #f1f3f4);
-  color: var(--typography-default, #000000);
+button.reader-btn:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
 }

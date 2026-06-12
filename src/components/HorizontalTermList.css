@@ -1,17 +1,16 @@
-/* Horizontal scrollable term list — fixed just above the bottom bar */
+/*
+ * Horizontal swipable vocabulary list (Figma 3931:57582) — in-flow below the
+ * sentence translation. Full-bleed to the screen edges; cards scroll horizontally.
+ */
 .h-term-list {
-  position: fixed;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  left: 0;
-  right: 0;
-  z-index: 100;
-
   display: flex;
   flex-direction: row;
   gap: 12px;
+  width: auto;
+  margin: 0 -16px;
+  padding: 4px 16px 8px;
   overflow-x: auto;
   overflow-y: visible;
-  padding: 4px 16px 8px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   touch-action: pan-x;
@@ -28,42 +27,107 @@
   display: none;
 }
 
-/* Individual card */
+/* Lets the last cards scroll all the way to the left anchor (negative right margin
+   cancels the list's right padding so it adds no visible gap at rest). */
+.h-term-list__tail {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: calc(100% - 96px);
+  margin-right: -16px;
+  pointer-events: none;
+}
+
+/* Individual card (Figma TermCard 2195:6555 / 2195:6557) */
 .h-term-card {
   flex-shrink: 0;
   display: flex;
   flex-direction: row;
   align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
   background: var(--backgrounds-page, #ffffff);
-  border: 1px solid var(--border-default, #e3e5e7);
-  border-radius: 8px;
+  border: 1px solid var(--border-default, #d1d6d9);
+  border-radius: var(--radius-md, 8px);
   box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  cursor: pointer;
+  /* Scrolling is JS-driven; disabling native touch panning lets the long-press
+     drag-to-select gesture work without the page scrolling underneath it. */
+  touch-action: none;
   transition: border-color 0.15s ease;
 }
 
-.h-term-card--selected {
+.h-term-card--selected,
+.h-term-card--open {
   border-color: var(--border-primary, #42a564);
 }
 
-.h-term-card--known {
-  background: var(--surfaces-primary-subtle, #f4fcef);
-  border-color: var(--border-primary, #42a564);
+/* New word (Figma 2195:6555) — blue-filled card, no badge; tap promotes to a LingQ. */
+.h-term-card--new {
+  gap: 0;
+  margin: 0;
+  padding: 8px 16px 8px 12px;
+  background: var(--surfaces-tertiary-subtle, #f4f7fb);
+  border-color: var(--foreground-secondary, #2e75cd);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-.h-term-card--ignored {
-  background: var(--surfaces-destructive-subtle, #fef2f2);
-  border-color: var(--border-destructive, #dd2525);
+.h-term-card--new:active {
+  transform: scale(0.97);
 }
 
-/* Left clickable section: badge + text */
+.h-term-card--new:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Status badge — also the popover trigger */
+.h-term-card__badge {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50px;
+  border: 0.8px solid var(--icons-action-primary, #42a564);
+  background: var(--backgrounds-elevated, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icons-action-primary, #42a564);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.h-term-card__badge:active {
+  transform: scale(0.92);
+}
+
+.h-term-card__badge:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.h-term-card__badge svg {
+  display: block;
+}
+
+.h-term-card__badge-num {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 16px;
+  color: inherit;
+}
+
+/* Term + meaning (clickable → word detail) */
 .h-term-card__meta {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  padding: 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -72,49 +136,11 @@
   white-space: nowrap;
 }
 
-/* Status badge */
-.h-term-card__badge {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50px;
-  border: 0.8px solid var(--icons-action-primary, #42a564);
-  background: var(--backgrounds-elevated, #ffffff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--icons-action-primary, #42a564);
-}
-
-.h-term-card__badge--add {
-  border-color: var(--text-secondary, #2e75cd);
-  color: var(--text-secondary, #2e75cd);
-}
-
-.h-term-card__badge--known {
-  background: var(--surfaces-primary-subtle, #f4fcef);
-}
-
-.h-term-card__badge--ignored {
-  border-color: var(--text-destructive, #dd2525);
-  background: var(--surfaces-destructive-subtle, #fef2f2);
-  color: var(--text-destructive, #dd2525);
-}
-
-.h-term-card__badge-num {
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 16px;
-  color: var(--icons-action-primary, #42a564);
-}
-
-/* Term + meaning stacked */
 .h-term-card__text {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
+  gap: 0;
 }
 
 .h-term-card__term {
@@ -122,7 +148,7 @@
   font-weight: 500;
   font-size: 16px;
   line-height: 20px;
-  color: var(--text-default, #000000);
+  color: var(--typography-default, #000000);
   white-space: nowrap;
 }
 
@@ -131,43 +157,11 @@
   font-weight: 400;
   font-size: 14px;
   line-height: 18px;
-  color: var(--text-muted, #6d7680);
+  color: var(--typography-muted, #6d7680);
   white-space: nowrap;
 }
 
-/* Vertical divider between left and right sections */
-.h-term-card__divider {
-  width: 1px;
-  align-self: stretch;
-  background: var(--border-default, #e3e5e7);
-  flex-shrink: 0;
-}
-
-/* Action buttons for untracked words */
-.h-term-card__actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  height: 100%;
-}
-
-.h-term-card__action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 4px;
-  background: var(--surfaces-default, #f1f3f4);
-  color: var(--text-default, #000000);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.12s ease, transform 0.1s ease;
-}
-
-.h-term-card__action-btn:active {
-  transform: scale(0.9);
+/* Portaled vertical status popover wrapper (positioned via inline style). */
+.h-term-status-popover {
+  z-index: 1200;
 }

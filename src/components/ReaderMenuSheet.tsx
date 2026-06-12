@@ -11,6 +11,8 @@ import {
   Settings,
 } from 'lucide-react';
 import { BottomSheet } from './BottomSheet';
+import { Menu } from './Menu';
+import { MenuItem } from './MenuItem';
 import lynxDefaultIcon from '../assets/lynx-default.png';
 import reviewDefaultIcon from '../assets/review-default.png';
 import './ReaderMenuSheet.css';
@@ -52,8 +54,6 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
   onPreviousLesson,
   onNextLesson,
   onShowTranslationChange,
-  horizontalListOn = false,
-  onHorizontalListChange,
   onRefresh,
   onAddToPlaylist,
   onTheme,
@@ -66,12 +66,9 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
   const [vocabListOn, setVocabListOn] = useState(true);
   const [autoPlayOn, setAutoPlayOn] = useState(false);
 
-  const toggleTranslation = () => {
-    setTranslationOn(prev => {
-      const next = !prev;
-      onShowTranslationChange?.(next);
-      return next;
-    });
+  const setTranslation = (next: boolean) => {
+    setTranslationOn(next);
+    onShowTranslationChange?.(next);
   };
 
   return (
@@ -119,153 +116,78 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
 
         <div className="reader-menu__content">
           {sentenceMode ? (
-            <section className="reader-menu__section">
-              <p className="reader-menu__section-header">Sentence Mode</p>
-              <div className="reader-menu__item">
-                <span className="reader-menu__item-label">
-                  <Languages size={16} strokeWidth={ICON_STROKE} className="reader-menu__item-icon" aria-hidden />
-                  <span className="reader-menu__item-text">Show Translation</span>
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={translationOn}
-                  aria-label="Show Translation"
-                  className={`reader-menu__toggle ${translationOn ? 'reader-menu__toggle--on' : ''}`}
-                  onClick={toggleTranslation}
-                >
-                  <span className="reader-menu__toggle-knob" />
-                </button>
-              </div>
-              <div className="reader-menu__item">
-                <span className="reader-menu__item-label">
-                  <img
-                    src={reviewDefaultIcon}
-                    alt=""
-                    className="reader-menu__item-icon reader-menu__item-icon--img"
-                  />
-                  <span className="reader-menu__item-text">Show Vocabulary List</span>
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={vocabListOn}
-                  aria-label="Show Vocabulary List"
-                  className={`reader-menu__toggle ${vocabListOn ? 'reader-menu__toggle--on' : ''}`}
-                  onClick={() => setVocabListOn(prev => !prev)}
-                >
-                  <span className="reader-menu__toggle-knob" />
-                </button>
-              </div>
-              <div className="reader-menu__item">
-                <span className="reader-menu__item-label">
-                  <Play size={16} strokeWidth={ICON_STROKE} className="reader-menu__item-icon" aria-hidden />
-                  <span className="reader-menu__item-text">Auto-Play Sentence Audio</span>
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={autoPlayOn}
-                  aria-label="Auto-Play Sentence Audio"
-                  className={`reader-menu__toggle ${autoPlayOn ? 'reader-menu__toggle--on' : ''}`}
-                  onClick={() => setAutoPlayOn(prev => !prev)}
-                >
-                  <span className="reader-menu__toggle-knob" />
-                </button>
-              </div>
-              <div className="reader-menu__item">
-                <span className="reader-menu__item-label">
-                  <img
-                    src={reviewDefaultIcon}
-                    alt=""
-                    className="reader-menu__item-icon reader-menu__item-icon--img"
-                  />
-                  <span className="reader-menu__item-text">Horizontal Term List</span>
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={horizontalListOn}
-                  aria-label="Horizontal Term List"
-                  className={`reader-menu__toggle ${horizontalListOn ? 'reader-menu__toggle--on' : ''}`}
-                  onClick={() => onHorizontalListChange?.(!horizontalListOn)}
-                >
-                  <span className="reader-menu__toggle-knob" />
-                </button>
-              </div>
-            </section>
+            <Menu label="Sentence Mode">
+              <MenuItem
+                icon={<Languages size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Show Translation"
+                toggle={translationOn}
+                onToggle={setTranslation}
+              />
+              <MenuItem
+                icon={<img src={reviewDefaultIcon} alt="" />}
+                label="Show Vocabulary List"
+                toggle={vocabListOn}
+                onToggle={setVocabListOn}
+              />
+              <MenuItem
+                icon={<Play size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Auto-Play Sentence Mode"
+                toggle={autoPlayOn}
+                onToggle={setAutoPlayOn}
+              />
+            </Menu>
           ) : (
-            <section className="reader-menu__section">
-              <p className="reader-menu__section-header">Page Mode</p>
-              <div className="reader-menu__item">
-                <span className="reader-menu__item-label">
-                  <Languages size={16} strokeWidth={ICON_STROKE} className="reader-menu__item-icon" aria-hidden />
-                  <span className="reader-menu__item-text">Show Translation</span>
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={translationOn}
-                  aria-label="Show Translation"
-                  className={`reader-menu__toggle ${translationOn ? 'reader-menu__toggle--on' : ''}`}
-                  onClick={toggleTranslation}
-                >
-                  <span className="reader-menu__toggle-knob" />
-                </button>
-              </div>
-            </section>
+            <Menu label="Page Mode">
+              <MenuItem
+                icon={<Languages size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Show Translation"
+                toggle={translationOn}
+                onToggle={setTranslation}
+              />
+            </Menu>
           )}
 
-          <div className="reader-menu__divider" role="separator" aria-hidden="true" />
+          <Menu label="Actions">
+            <MenuItem
+              icon={<RefreshCw size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+              label="Refresh"
+              onClick={onRefresh}
+            />
+            <MenuItem
+              icon={<ListPlus size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+              label="Add to Playlist"
+              onClick={onAddToPlaylist}
+              trailing={
+                <span className="ui-menu-item__add" aria-hidden>
+                  <Plus size={12} strokeWidth={ICON_STROKE} />
+                </span>
+              }
+            />
+          </Menu>
 
-          <section className="reader-menu__section">
-            <p className="reader-menu__section-header">Actions</p>
-            <button type="button" className="reader-menu__item reader-menu__item--button" onClick={onRefresh}>
-              <span className="reader-menu__item-label">
-                <RefreshCw size={16} strokeWidth={ICON_STROKE} className="reader-menu__item-icon" aria-hidden />
-                <span className="reader-menu__item-text">Refresh</span>
-              </span>
-              <span className="reader-menu__item-aside">10m ago</span>
-            </button>
-            <button type="button" className="reader-menu__item reader-menu__item--button" onClick={onAddToPlaylist}>
-              <span className="reader-menu__item-label">
-                <ListPlus size={16} strokeWidth={ICON_STROKE} className="reader-menu__item-icon" aria-hidden />
-                <span className="reader-menu__item-text">Add to Playlist</span>
-              </span>
-              <span className="reader-menu__tag reader-menu__add-tag" aria-hidden>
-                <Plus size={16} strokeWidth={ICON_STROKE} />
-                <span className="reader-menu__add-label">Add</span>
-              </span>
-            </button>
-          </section>
-
-          <div className="reader-menu__divider" role="separator" aria-hidden="true" />
-
-          <section className="reader-menu__section">
-            <p className="reader-menu__section-header">App</p>
-            <button type="button" className="reader-menu__item reader-menu__item--button" onClick={onTheme}>
-              <span className="reader-menu__item-label">
-                <CaseSensitive size={16} strokeWidth={ICON_STROKE} className="reader-menu__item-icon" aria-hidden />
-                <span className="reader-menu__item-text">Theme</span>
-              </span>
-            </button>
-            <button type="button" className="reader-menu__item reader-menu__item--button" onClick={onSettings}>
-              <span className="reader-menu__item-label">
-                <Settings size={16} strokeWidth={ICON_STROKE} className="reader-menu__item-icon" aria-hidden />
-                <span className="reader-menu__item-text">Settings</span>
-              </span>
-            </button>
-            <button type="button" className="reader-menu__item reader-menu__item--button" onClick={onHelp}>
-              <span className="reader-menu__item-label">
-                <img src={lynxDefaultIcon} alt="" className="reader-menu__item-icon reader-menu__item-icon--img" />
-                <span className="reader-menu__item-text">Help</span>
-              </span>
-              <span className="reader-menu__item-aside reader-menu__item-aside--link">
-                Chat with Lynx
-                <ChevronRight size={14} strokeWidth={ICON_STROKE} aria-hidden />
-              </span>
-            </button>
-          </section>
+          <Menu label="App">
+            <MenuItem
+              icon={<CaseSensitive size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+              label="Theme"
+              onClick={onTheme}
+            />
+            <MenuItem
+              icon={<Settings size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+              label="Settings"
+              onClick={onSettings}
+            />
+            <MenuItem
+              icon={<img src={lynxDefaultIcon} alt="" />}
+              label="Help"
+              onClick={onHelp}
+              trailing={
+                <span className="ui-menu-item__link">
+                  Chat with Lynx
+                  <ChevronRight size={14} strokeWidth={ICON_STROKE} aria-hidden />
+                </span>
+              }
+            />
+          </Menu>
         </div>
       </div>
     </BottomSheet>

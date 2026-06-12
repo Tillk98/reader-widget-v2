@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, GripVertical } from 'lucide-react';
 import './SavedMeaningRow.css';
 
-const DELETE_WIDTH = 63;
+/** Width of the revealed delete panel (trash icon + "Delete" label). */
+const DELETE_WIDTH = 100;
 /** Past this many px of left-swipe, release snaps the row open. */
-const SWIPE_OPEN_THRESHOLD = 28;
+const SWIPE_OPEN_THRESHOLD = 36;
 /** Movement under this many px counts as a tap (→ edit), not a swipe. */
 const TAP_MOVE_TOLERANCE = 8;
 
@@ -15,9 +16,10 @@ export interface SavedMeaningRowProps {
 }
 
 /**
- * Saved-meaning row with two interactions:
- * - swipe left  → reveals delete action (Figma 3776:7544)
- * - tap          → inline edit: single row with [input] [X cancel] [+ save] (Figma 3789:7189)
+ * Saved-meaning menu row (Figma MeaningMenuItem 4031:70509) with two interactions:
+ * - swipe left → reveals the red Delete panel (Figma 4032:72154)
+ * - tap        → inline edit: single row with [input] [X cancel] [+ save]
+ * The trailing grip handle is the reorder affordance shown in the design.
  */
 export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
   meaning,
@@ -168,6 +170,9 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
         onPointerCancel={handlePointerCancel}
       >
         <span className="saved-meaning__text">{meaning}</span>
+        <span className="reader-btn reader-btn--plain saved-meaning__handle" aria-hidden>
+          <GripVertical size={16} />
+        </span>
       </div>
       <button
         type="button"
@@ -180,7 +185,8 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
         }}
         onClick={onDelete}
       >
-        <Trash2 size={16} aria-hidden />
+        <Trash2 size={12} aria-hidden />
+        <span className="saved-meaning__delete-label">Delete</span>
       </button>
     </div>
   );
@@ -193,9 +199,9 @@ export interface AddMeaningRowProps {
 }
 
 /**
- * Persistent "Add a new meaning" row that lives at the bottom of the saved-meanings list.
+ * Persistent "Add a new meaning" menu row at the bottom of the saved-meanings list
+ * (Figma MeaningMenuItem 4031:70513 — leading "+" pill + label).
  * Tapping enters inline edit mode (same single-row style as SavedMeaningRow edit state).
- * After saving the new meaning the row reverts to its AddNew appearance.
  */
 export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
   const [editing, setEditing] = useState(false);
@@ -261,12 +267,11 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
   }
 
   return (
-    <button
-      type="button"
-      className="saved-meaning__add-new"
-      onClick={() => setEditing(true)}
-    >
-      + Add a new meaning
+    <button type="button" className="saved-meaning__add-new" onClick={() => setEditing(true)}>
+      <span className="reader-btn reader-btn--accent" aria-hidden>
+        <Plus size={16} />
+      </span>
+      <span className="saved-meaning__add-new-label">Add a new meaning</span>
     </button>
   );
 };

@@ -16,50 +16,57 @@ export interface MeaningListItemProps {
   onCta?: () => void;
 }
 
-/** Shared meanings list row — master component for More Meanings and Words in this Phrase. */
+/** Shared menu row (Figma MeaningMenuItem) — master component for More Meanings and Words in this Phrase. */
 export const MeaningListItem: React.FC<MeaningListItemProps> = ({
   meaning,
   originalText,
   cta,
   onCta,
 }) => {
+  const hasOriginal = originalText != null && originalText !== '';
   const text = (
-    <span className="meaning-list-item__text">
-      {originalText != null && originalText !== '' && (
-        <span className="meaning-list-item__source">{originalText}</span>
-      )}
-      <span className="meaning-list-item__meaning">{meaning}</span>
+    <span className={`meaning-menu-item__text${hasOriginal ? ' meaning-menu-item__text--stacked' : ''}`}>
+      {hasOriginal && <span className="meaning-menu-item__source">{originalText}</span>}
+      <span className="meaning-menu-item__meaning">{meaning}</span>
     </span>
   );
 
-  return (
-    <div className="meaning-list-item">
-      {cta === 'open' ? (
+  if (cta === 'open') {
+    return (
+      <div className="meaning-menu-item">
         <button
           type="button"
-          className="meaning-list-item__content meaning-list-item__content--button"
+          className="meaning-menu-item__content meaning-menu-item__content--button"
           onClick={onCta}
         >
           {text}
-          <span className="meaning-list-item__cta meaning-list-item__cta--open" aria-hidden>
-            <ChevronRight size={16} />
+          <span className="meaning-menu-item__btnset">
+            <span className="reader-btn reader-btn--plain" aria-hidden>
+              <ChevronRight size={16} />
+            </span>
           </span>
         </button>
-      ) : (
-        <div className="meaning-list-item__content">
-          {text}
-          {cta === 'add' && (
+      </div>
+    );
+  }
+
+  return (
+    <div className="meaning-menu-item">
+      <div className="meaning-menu-item__content">
+        {text}
+        {cta === 'add' && (
+          <span className="meaning-menu-item__btnset">
             <button
               type="button"
-              className="meaning-list-item__cta meaning-list-item__cta--add"
+              className="reader-btn reader-btn--accent"
               onClick={onCta}
               aria-label={`Add "${meaning}" to saved meanings`}
             >
               <Plus size={16} />
             </button>
-          )}
-        </div>
-      )}
+          </span>
+        )}
+      </div>
     </div>
   );
 };

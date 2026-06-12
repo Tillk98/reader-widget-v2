@@ -1,56 +1,48 @@
-import React, { useState } from 'react';
-import { ChevronUp } from 'lucide-react';
+import React from 'react';
 import './MeaningSection.css';
 
 export interface MeaningSectionProps<T> {
   /** Caption label, e.g. "SAVED MEANINGS". */
   label: string;
-  /** Whether the section starts expanded. */
-  defaultOpen?: boolean;
-  /** Adds 12px spacing between rows (More Meanings); otherwise rows are flush. */
-  spacious?: boolean;
   items: T[];
   getKey: (item: T) => string;
   renderItem: (item: T, index: number) => React.ReactNode;
-  /** Optional node rendered after the items list, inside the section (e.g. AddMeaningRow). */
+  /** Optional node rendered as the last menu row (e.g. AddMeaningRow). */
   footer?: React.ReactNode;
 }
 
-/** Collapsible meanings section — shared by Saved / More / Words in this Phrase. */
+/**
+ * Menu section (Figma MeaningsMenu / MenuContainer 4029:12351).
+ * Static caption header + rounded menu container with hairline dividers between rows.
+ */
 export function MeaningSection<T>({
   label,
-  defaultOpen = true,
-  spacious = false,
   items,
   getKey,
   renderItem,
   footer,
 }: MeaningSectionProps<T>) {
-  const [open, setOpen] = useState(defaultOpen);
+  const entries: { key: string; node: React.ReactNode }[] = items.map((item, i) => ({
+    key: getKey(item),
+    node: renderItem(item, i),
+  }));
+  if (footer != null) entries.push({ key: '__footer', node: footer });
 
   return (
     <section className="meaning-section">
-      <button
-        type="button"
-        className="meaning-section__header"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
+      <div className="meaning-section__header">
         <span className="meaning-section__label">{label}</span>
-        <ChevronUp
-          size={18}
-          aria-hidden
-          className={`meaning-section__chevron${open ? '' : ' meaning-section__chevron--collapsed'}`}
-        />
-      </button>
-      {open && (
-        <div className={`meaning-section__list${spacious ? ' meaning-section__list--spacious' : ''}`}>
-          {items.map((item, i) => (
-            <React.Fragment key={getKey(item)}>{renderItem(item, i)}</React.Fragment>
+      </div>
+      <div className="meaning-menu">
+        <div className="meaning-menu__container">
+          {entries.map((entry, i) => (
+            <React.Fragment key={entry.key}>
+              {i > 0 && <div className="meaning-menu__divider" aria-hidden />}
+              {entry.node}
+            </React.Fragment>
           ))}
-          {footer}
         </div>
-      )}
+      </div>
     </section>
   );
 }

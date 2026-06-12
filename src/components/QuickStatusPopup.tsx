@@ -1,20 +1,36 @@
-import React, { useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
+import { Check, EyeOff, Brackets } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
-import { LingQStatusButton } from './LingQStatusButton';
 import './QuickStatusPopup.css';
+
+type QsAction = 'known' | 'ignored' | 'phrase';
 
 interface QuickStatusPopupProps {
   resolveAnchorElement: () => HTMLElement | null;
   onStatusChange: (status: LingQStatusType) => void;
+  /** "Select a Phrase" chosen — start the tap-to-complete phrase selection. */
+  onSelectPhrase: () => void;
   onClose: () => void;
 }
+
+/** Status options always sit closest to the word; "Select a Phrase" is on the far side. */
+const STATUS_OPTIONS: { action: Exclude<QsAction, 'phrase'>; label: string }[] = [
+  { action: 'known', label: 'Known' },
+  { action: 'ignored', label: 'Ignore' },
+];
+
+const MOVE_THRESHOLD_PX = 6;
 
 export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
   resolveAnchorElement,
   onStatusChange,
+  onSelectPhrase,
   onClose,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState<QsAction | null>(null);
+  const movedRef = useRef(false);
+  const moveStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const calculatePosition = useCallback(() => {
     if (!popupRef.current) return;
@@ -32,15 +48,18 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     let left = anchorRect.left + anchorRect.width / 2 - pw / 2;
     if (left < 8) left = 8;
     if (left + pw > vw - 8) left = vw - 8 - pw;
-
     popupRef.current.style.left = `${left}px`;
 
     if (anchorRect.top - ph - gap >= 8) {
+      // Menu above the word → reverse rows so Known / Ignore sit nearest the word (bottom).
       popupRef.current.style.bottom = `${vh - anchorRect.top + gap}px`;
       popupRef.current.style.top = 'auto';
+      popupRef.current.style.flexDirection = 'column-reverse';
     } else {
+      // Menu below the word → Known / Ignore nearest the word (top), natural order.
       popupRef.current.style.top = `${anchorRect.bottom + gap}px`;
       popupRef.current.style.bottom = 'auto';
+      popupRef.current.style.flexDirection = 'column';
     }
   }, [resolveAnchorElement]);
 
@@ -58,48 +77,93 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     };
   }, [calculatePosition]);
 
+  const invoke = useCallback(
+    (action: QsAction) => {
+      if (action === 'known') onStatusChange('Known');
+      else if (action === 'ignored') onStatusChange('Ignored');
+      else onSelectPhrase();
+    },
+    [onStatusChange, onSelectPhrase]
+  );
+
+  /*
+   * One pointer model for both gestures:
+   * - long-press → drag onto an option → release selects it
+   * - long-press → release (no drag) → menu stays; a later tap on an option selects
+   * Also suppresses text selection while the menu is up, and closes on an outside tap / off-menu drag.
+   */
   useEffect(() => {
-    const isOutside = (target: EventTarget | null) => {
-      if (!(target instanceof Node)) return false;
-      return !popupRef.current?.contains(target);
+    const actionAt = (x: number, y: number): QsAction | null => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null;
+      const opt = el?.closest('[data-qs-action]') as HTMLElement | null;
+      return (opt?.getAttribute('data-qs-action') as QsAction | null) ?? null;
     };
-    const handleDown = (e: MouseEvent) => { if (isOutside(e.target)) onClose(); };
-    const handleTouch = (e: TouchEvent) => {
-      if (e.changedTouches.length > 0 && isOutside(e.changedTouches[0].target)) onClose();
+    const onMove = (e: PointerEvent) => {
+      if (moveStartRef.current == null) moveStartRef.current = { x: e.clientX, y: e.clientY };
+      else if (
+        Math.hypot(e.clientX - moveStartRef.current.x, e.clientY - moveStartRef.current.y) > MOVE_THRESHOLD_PX
+      ) {
+        movedRef.current = true;
+      }
+      setHovered(actionAt(e.clientX, e.clientY));
     };
-    document.addEventListener('mousedown', handleDown);
-    document.addEventListener('touchstart', handleTouch, { passive: true });
+    const onUp = (e: PointerEvent) => {
+      const action = actionAt(e.clientX, e.clientY);
+      if (action) {
+        invoke(action);
+        return;
+      }
+      if (movedRef.current) onClose(); // dragged and released off the menu → dismiss
+      setHovered(null);
+    };
+    const onDown = (e: PointerEvent) => {
+      movedRef.current = false;
+      moveStartRef.current = null;
+      if (!popupRef.current?.contains(e.target as Node)) onClose();
+    };
+    const onSelectStart = (e: Event) => e.preventDefault();
+
+    document.addEventListener('pointermove', onMove, true);
+    document.addEventListener('pointerup', onUp, true);
+    document.addEventListener('pointerdown', onDown, true);
+    document.addEventListener('selectstart', onSelectStart);
     return () => {
-      document.removeEventListener('mousedown', handleDown);
-      document.removeEventListener('touchstart', handleTouch);
+      document.removeEventListener('pointermove', onMove, true);
+      document.removeEventListener('pointerup', onUp, true);
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('selectstart', onSelectStart);
     };
-  }, [onClose]);
+  }, [invoke, onClose]);
+
+  const renderOption = (action: QsAction, label: string) => (
+    <button
+      key={action}
+      type="button"
+      data-qs-action={action}
+      className={`quick-status-popup__option${hovered === action ? ' quick-status-popup__option--hover' : ''}`}
+      aria-label={
+        action === 'phrase' ? 'Select a phrase' : action === 'known' ? 'Mark word as Known' : 'Ignore word'
+      }
+    >
+      <span className="quick-status-popup__mark" aria-hidden>
+        {action === 'known' ? (
+          <Check size={18} strokeWidth={2} />
+        ) : action === 'ignored' ? (
+          <EyeOff size={18} strokeWidth={2} />
+        ) : (
+          <Brackets size={18} strokeWidth={2} />
+        )}
+      </span>
+      <span className="quick-status-popup__label">{label}</span>
+    </button>
+  );
 
   return (
-    <div
-      ref={popupRef}
-      className="quick-status-popup"
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      <button
-        type="button"
-        className="quick-status-popup__option"
-        onClick={() => onStatusChange('Known')}
-        aria-label="Mark word as Known"
-      >
-        <LingQStatusButton status="Known" state="focus" tabIndex={-1} aria-hidden />
-        <span className="quick-status-popup__label">Known</span>
-      </button>
+    <div ref={popupRef} className="quick-status-popup" onPointerDown={(e) => e.stopPropagation()}>
+      {/* Fixed DOM order; calculatePosition flips flex-direction so Known / Ignore stay nearest the word. */}
+      {STATUS_OPTIONS.map((o) => renderOption(o.action, o.label))}
       <div className="quick-status-popup__divider" aria-hidden />
-      <button
-        type="button"
-        className="quick-status-popup__option"
-        onClick={() => onStatusChange('Ignored')}
-        aria-label="Ignore word"
-      >
-        <LingQStatusButton status="Ignored" state="focus" tabIndex={-1} aria-hidden />
-        <span className="quick-status-popup__label">Ignore</span>
-      </button>
+      {renderOption('phrase', 'Select a Phrase')}
     </div>
   );
 };

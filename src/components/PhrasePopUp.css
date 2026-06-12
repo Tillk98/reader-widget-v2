@@ -206,25 +206,37 @@
   display: block;
 }
 
-/* Invalid phrase variant (unchanged content). */
+/* Invalid phrase → Google Translate popup (Figma GoogleTranslatePopUp 4078:59784). */
 .phrase-popup--invalid {
-  max-width: min(320px, calc(100vw - 16px));
+  max-width: min(300px, calc(100vw - 16px));
+  background: var(--backgrounds-page, #ffffff);
+  border: 0.5px solid var(--border-default, #d1d6d9);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0px 4px 12px -4px rgba(0, 0, 0, 0.15);
+  overflow: clip;
 }
 
 .phrase-popup__invalid-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px;
+  padding: 12px 16px;
 }
 
 .phrase-popup__phrase {
   margin: 0;
-  font-family: Lora, serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 16px;
-  font-weight: 600;
-  line-height: 22px;
-  color: var(--typography-default, #000000);
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--typography-default, #0a0a0a);
+  /* Keep long selections compact: clamp to three lines with an ellipsis. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .phrase-popup__translate {
@@ -233,22 +245,21 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 16px;
-  border: 1px solid var(--ui-ctrl-border-light, #d1d6d9);
-  border-radius: var(--ui-ctrl-radius-md, 8px);
-  background: var(--ui-ctrl-surface-muted, #f7f9fa);
-  box-shadow: var(--ui-ctrl-shadow, 0 0 4px #e3e5e7);
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-2xs, 4px);
+  background: var(--surfaces-default, #f1f3f4);
   font-family: 'DM Sans', sans-serif;
   font-weight: 600;
   font-size: 14px;
   line-height: 18px;
-  color: var(--typography-default, #000000);
+  color: var(--typography-default, #0a0a0a);
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .phrase-popup__translate:hover {
-  background: var(--ui-ctrl-surface-hover, #eef1f3);
+  background: #e7eaec;
 }
 
 .phrase-popup__translate:active {
@@ -265,6 +276,7 @@
   margin: 0;
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
+  font-weight: 500;
   line-height: 16px;
-  color: var(--typography-muted, #6d7680);
+  color: var(--foreground-muted, #49525b);
 }

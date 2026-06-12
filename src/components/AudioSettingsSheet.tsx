@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { StepForward, Rabbit, Timer, Repeat2, Settings, ChevronsUpDown, ChevronRight } from 'lucide-react';
+import { StepForward, Gauge, Timer, Repeat2, CaseSensitive, Settings, ChevronRight } from 'lucide-react';
+import { Menu } from './Menu';
+import { MenuItem } from './MenuItem';
+import { LessonHeader } from './LessonHeader';
 import lynxIcon from '../assets/lynx-default.png';
 import './AudioSettingsSheet.css';
 
@@ -7,8 +10,7 @@ const DRAG_DISMISS_PX = 40;
 const ICON_STROKE = 2;
 
 const PLAYBACK_SPEEDS = ['0.5x', '0.75x', '1.0x', '1.25x', '1.5x', '2.0x'] as const;
-const TIMER_LABELS = ['Off', '5 min', '10 min', '30 min'] as const;
-const LOOP_LABELS = ['Off', 'Lesson', 'Sentence'] as const;
+const TIMER_LABELS = ['None', '5 min', '10 min', '30 min'] as const;
 
 export interface AudioSettingsSheetProps {
   open: boolean;
@@ -20,9 +22,14 @@ export interface AudioSettingsSheetProps {
   lessonPageLabel?: string;
   /** Tapping the lesson header opens the course info sheet. */
   onLessonClick?: () => void;
+  onTheme?: () => void;
+  onSettings?: () => void;
+  onHelp?: () => void;
   /** Fixed bottom chrome for lesson layout / LingQ (sheet + safe area). */
   onChromeHeightChange?: (heightPx: number) => void;
 }
+
+const noop = () => {};
 
 export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
   open,
@@ -32,6 +39,9 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
   lessonImageSrc,
   lessonPageLabel = '1/5',
   onLessonClick,
+  onTheme,
+  onSettings,
+  onHelp,
   onChromeHeightChange,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -42,7 +52,7 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
   const [autoAdvance, setAutoAdvance] = useState(true);
   const [playbackSpeedIndex, setPlaybackSpeedIndex] = useState(2);
   const [timerIndex, setTimerIndex] = useState(0);
-  const [loopIndex, setLoopIndex] = useState(0);
+  const [loopOn, setLoopOn] = useState(false);
 
   useLayoutEffect(() => {
     if (!onChromeHeightChange) return;
@@ -79,10 +89,6 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
 
   const cycleTimer = useCallback(() => {
     setTimerIndex(i => (i + 1) % TIMER_LABELS.length);
-  }, []);
-
-  const cycleLoop = useCallback(() => {
-    setLoopIndex(i => (i + 1) % LOOP_LABELS.length);
   }, []);
 
   const handleDragPointerDown = useCallback((e: React.PointerEvent) => {
@@ -143,107 +149,68 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
           </button>
 
           {(lessonTitle || lessonImageSrc) && (
-            <div className="audio-settings-sheet__lesson-row">
-              <button
-                type="button"
-                className="audio-settings-sheet__lesson"
-                onClick={onLessonClick}
-                aria-label="Open course details"
-              >
-                <div className="audio-settings-sheet__lesson-image">
-                  {lessonImageSrc ? <img src={lessonImageSrc} alt="" /> : null}
-                </div>
-                <div className="audio-settings-sheet__lesson-meta">
-                  {lessonTitle ? (
-                    <p className="audio-settings-sheet__lesson-title">{lessonTitle}</p>
-                  ) : null}
-                  <div className="audio-settings-sheet__lesson-course">
-                    {lessonSource ? (
-                      <span className="audio-settings-sheet__lesson-course-name">{lessonSource}</span>
-                    ) : null}
-                    {lessonPageLabel ? (
-                      <span className="audio-settings-sheet__lesson-page">({lessonPageLabel})</span>
-                    ) : null}
-                  </div>
-                </div>
-              </button>
-            </div>
+            <LessonHeader
+              title={lessonTitle}
+              source={lessonSource}
+              pageLabel={lessonPageLabel}
+              imageSrc={lessonImageSrc}
+              onClick={onLessonClick}
+            />
           )}
 
-          <section className="audio-settings-sheet__section">
-            <p className="audio-settings-sheet__section-header">AUDIO MODE</p>
+          <div className="audio-settings-sheet__content">
+            <Menu label="Audio Mode">
+              <MenuItem
+                icon={<StepForward size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Auto-Advance"
+                info
+                toggle={autoAdvance}
+                onToggle={setAutoAdvance}
+              />
+              <MenuItem
+                icon={<Gauge size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Playback Speed"
+                value={PLAYBACK_SPEEDS[playbackSpeedIndex]}
+                onClick={cyclePlaybackSpeed}
+              />
+              <MenuItem
+                icon={<Timer size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Timer"
+                value={TIMER_LABELS[timerIndex]}
+                onClick={cycleTimer}
+              />
+              <MenuItem
+                icon={<Repeat2 size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Loop Audio"
+                toggle={loopOn}
+                onToggle={setLoopOn}
+              />
+            </Menu>
 
-            <div className="audio-settings-sheet__item">
-              <span className="audio-settings-sheet__label audio-settings-sheet__label--stacked">
-                <StepForward size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
-                <span className="audio-settings-sheet__item-text">
-                  <span className="audio-settings-sheet__item-title">Auto-Advance</span>
-                  <span className="audio-settings-sheet__item-desc">Play without page/sentence breaks.</span>
-                </span>
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={autoAdvance}
-                aria-label="Auto-Advance"
-                className={`audio-settings-sheet__toggle ${autoAdvance ? 'audio-settings-sheet__toggle--on' : ''}`}
-                onClick={() => setAutoAdvance(v => !v)}
-              >
-                <span className="audio-settings-sheet__toggle-knob" />
-              </button>
-            </div>
-
-            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button" onClick={cyclePlaybackSpeed}>
-              <span className="audio-settings-sheet__label">
-                <Rabbit size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
-                <span className="audio-settings-sheet__item-title">Playback Speed</span>
-              </span>
-              <span className="audio-settings-sheet__value">{PLAYBACK_SPEEDS[playbackSpeedIndex]}</span>
-            </button>
-
-            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button" onClick={cycleTimer}>
-              <span className="audio-settings-sheet__label">
-                <Timer size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
-                <span className="audio-settings-sheet__item-title">Timer</span>
-              </span>
-              <span className="audio-settings-sheet__value">{TIMER_LABELS[timerIndex]}</span>
-            </button>
-
-            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button" onClick={cycleLoop}>
-              <span className="audio-settings-sheet__label">
-                <Repeat2 size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
-                <span className="audio-settings-sheet__item-title">Loop Audio</span>
-              </span>
-              <span className="audio-settings-sheet__value audio-settings-sheet__value--select">
-                {LOOP_LABELS[loopIndex]}
-                <ChevronsUpDown size={16} strokeWidth={ICON_STROKE} aria-hidden />
-              </span>
-            </button>
-          </section>
-
-          <div className="audio-settings-sheet__divider" aria-hidden />
-
-          <section className="audio-settings-sheet__section">
-            <p className="audio-settings-sheet__section-header">APP</p>
-
-            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button">
-              <span className="audio-settings-sheet__label">
-                <Settings size={16} strokeWidth={ICON_STROKE} className="audio-settings-sheet__item-icon" aria-hidden />
-                <span className="audio-settings-sheet__item-title">Settings</span>
-              </span>
-            </button>
-
-            <button type="button" className="audio-settings-sheet__item audio-settings-sheet__item--button">
-              <span className="audio-settings-sheet__label">
-                <img src={lynxIcon} alt="" className="audio-settings-sheet__item-icon audio-settings-sheet__item-icon--img" aria-hidden />
-                <span className="audio-settings-sheet__item-title">Help</span>
-              </span>
-              <span className="audio-settings-sheet__value audio-settings-sheet__value--select">
-                Chat with Lynx
-                <ChevronRight size={16} strokeWidth={ICON_STROKE} aria-hidden />
-              </span>
-            </button>
-          </section>
+            <Menu label="App">
+              <MenuItem
+                icon={<CaseSensitive size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Theme"
+                onClick={onTheme ?? noop}
+              />
+              <MenuItem
+                icon={<Settings size={16} strokeWidth={ICON_STROKE} aria-hidden />}
+                label="Settings"
+                onClick={onSettings ?? noop}
+              />
+              <MenuItem
+                icon={<img src={lynxIcon} alt="" />}
+                label="Help"
+                onClick={onHelp ?? noop}
+                trailing={
+                  <span className="ui-menu-item__link">
+                    Chat with Lynx
+                    <ChevronRight size={14} strokeWidth={ICON_STROKE} aria-hidden />
+                  </span>
+                }
+              />
+            </Menu>
+          </div>
         </div>
       </div>
     </div>

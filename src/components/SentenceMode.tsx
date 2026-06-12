@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react';
 import type { Sentence, Word } from '../data/lesson';
 import type { LingQStatusType } from './LingQStatusBar';
-import { VocabTermList } from './VocabTermList';
 import { HorizontalTermList } from './HorizontalTermList';
 import './SentenceMode.css';
 
@@ -41,13 +40,15 @@ export interface SentenceModeProps {
   onListWordSelect: (wordId: string) => void;
   /** Tap a vocabulary list item (word + gloss): opens the full word detail sheet. */
   onListWordOpenDetail: (wordId: string) => void;
+  /** Set the status of a vocabulary word from its inline status popover. */
+  onListWordStatusChange?: (wordId: string, status: LingQStatusType) => void;
   /** Clear the current selection (e.g. tapping the page background). */
   onDeselect: () => void;
   /** Swipe-right on a vocab tile — mark the word as Known. */
   onMarkKnown?: (wordId: string) => void;
   /** Swipe-left on a vocab tile — mark the word as Ignored. */
   onMarkIgnored?: (wordId: string) => void;
-  /** Controlled: show the horizontal scrollable term list instead of the vertical one. */
+  /** Deprecated — the sentence vocabulary list is always the horizontal swipable list now. */
   horizontalList?: boolean;
 }
 
@@ -61,12 +62,9 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
   wordStatusMap,
   selectedWordId,
   onWordSelect,
-  onListWordSelect,
   onListWordOpenDetail,
+  onListWordStatusChange,
   onDeselect,
-  onMarkKnown,
-  onMarkIgnored,
-  horizontalList = false,
 }) => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [sentenceSticky, setSentenceSticky] = useState(false);
@@ -153,12 +151,6 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     tile?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  /** Tap a list item's status badge: LingQ status bar only. */
-  const handleListStatus = (wordId: string) => {
-    if (suppressClick.current) return;
-    onListWordSelect(wordId);
-  };
-
   /** Tap a list item's term: open the full word detail sheet. */
   const handleListDetail = (wordId: string) => {
     if (suppressClick.current) return;
@@ -182,7 +174,7 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
       onPointerUp={handlePointerUp}
       onClick={handleBackgroundClick}
     >
-      <div className={['sentence-mode__inner', horizontalList && 'sentence-mode__inner--horizontal'].filter(Boolean).join(' ')}>
+      <div className="sentence-mode__inner">
         <div className="sentence-mode__content">
           <p ref={sentenceRef} className="sentence-mode__sentence">
             {sentence.words.map((w, i) => {
@@ -226,32 +218,16 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
           {showTranslation && <p className="sentence-mode__sentence-translation">{sentenceTranslation}</p>}
         </div>
 
-        {!horizontalList && (
-          <VocabTermList
-            className="sentence-mode__vocab"
-            items={vocabWords}
-            wordStatusMap={wordStatusMap}
-            selectedWordId={selectedWordId}
-            onSelect={handleListStatus}
-            onOpenDetail={handleListDetail}
-            onMarkKnown={onMarkKnown}
-            onMarkIgnored={onMarkIgnored}
-          />
-        )}
-      </div>
-
-      {horizontalList && (
         <HorizontalTermList
           items={vocabWords}
           wordStatusMap={wordStatusMap}
           selectedWordId={selectedWordId}
-          onSelect={handleListStatus}
-          onMarkKnown={onMarkKnown}
-          onMarkIgnored={onMarkIgnored}
+          onOpenDetail={handleListDetail}
+          onStatusChange={(wordId, status) => onListWordStatusChange?.(wordId, status)}
         />
-      )}
+      </div>
 
-      {sentenceSticky && !horizontalList && (
+      {sentenceSticky && (
         <div className="sentence-mode__sticky">
           <p className="sentence-mode__sentence">
             {sentence.words.map((w, i) => {
