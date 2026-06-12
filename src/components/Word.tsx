@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import type { Word as WordType } from '../data/lesson';
 import './Word.css';
+
+const LONG_PRESS_MS = 450;
+const DRAG_CANCEL_PX = 6;
 
 interface WordProps {
   word: WordType;
@@ -9,6 +12,10 @@ interface WordProps {
   isClicked: boolean;
   isLingQ: boolean;
   onClick: (wordId: string) => void;
+  /** Called when the user holds the word for LONG_PRESS_MS without releasing. Does NOT trigger onClick. */
+  onLongPress?: (wordId: string) => void;
+  /** Called when the user starts dragging after the long-press popup has appeared. */
+  onLongPressCancel?: () => void;
   isKnown: boolean;
   isIgnored: boolean;
   /** Part of an in-progress / active phrase selection. */
@@ -25,14 +32,89 @@ export const Word: React.FC<WordProps> = ({
   isClicked,
   isLingQ,
   onClick,
+  onLongPress,
+  onLongPressCancel,
   isKnown,
   isIgnored,
   isPhraseSelected = false,
   isPhraseStart = false,
   isPhraseEnd = false,
 }) => {
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPressRef = useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (isKnown || isIgnored) return;
+    if (e.button !== 0) return;
+    didLongPressRef.current = false;
+
+    const origin = { x: e.clientX, y: e.clientY };
+    let longPressHasFired = false;
+
+    const onWindowMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - origin.x;
+      const dy = ev.clientY - origin.y;
+      if (Math.sqrt(dx * dx + dy * dy) > DRAG_CANCEL_PX) {
+        if (longPressHasFired) {
+          // Drag after popup appeared → dismiss the popup
+          onLongPressCancel?.();
+          cleanup();
+        } else {
+          // Drag before popup appeared → cancel the pending timer
+          if (longPressTimerRef.current !== null) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+          }
+          cleanup();
+        }
+      }
+    };
+
+    const onWindowUp = () => {
+      if (longPressTimerRef.current !== null) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      cleanup();
+    };
+    const onWindowCancel = () => {
+      if (longPressTimerRef.current !== null) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      cleanup();
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onWindowMove);
+      window.removeEventListener('pointerup', onWindowUp);
+      window.removeEventListener('pointercancel', onWindowCancel);
+    };
+
+    window.addEventListener('pointermove', onWindowMove);
+    window.addEventListener('pointerup', onWindowUp);
+    window.addEventListener('pointercancel', onWindowCancel);
+
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      longPressHasFired = true;
+      didLongPressRef.current = true;
+      onLongPress?.(word.id);
+      // Keep move/up/cancel listeners running — onWindowMove will call onLongPressCancel if the user drags.
+    }, LONG_PRESS_MS);
+  };
+
+  // Safety-net handlers (the window listeners above handle the real work).
+  const handlePointerMove = () => { /* handled at window level */ };
+  const handlePointerUp = () => { /* handled at window level */ };
+  const handlePointerCancel = () => { /* handled at window level */ };
+
   const handleClick = () => {
     if (isKnown || isIgnored) return;
+    if (didLongPressRef.current) {
+      didLongPressRef.current = false;
+      return;
+    }
     onClick(word.id);
   };
 
@@ -48,8 +130,13 @@ export const Word: React.FC<WordProps> = ({
     <span
       id={domId ?? word.id}
       className={getClassName()}
-      onClick={handleClick}
       style={{ cursor: isKnown || isIgnored ? 'default' : 'pointer' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onClick={handleClick}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {word.text}
     </span>

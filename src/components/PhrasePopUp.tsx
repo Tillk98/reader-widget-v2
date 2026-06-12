@@ -1,5 +1,8 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
 import { ChevronRight, Languages } from 'lucide-react';
+import type { LingQStatusType } from './LingQStatusBar';
+import { LingQStatusBar } from './LingQStatusBar';
+import { LingQStatusButton } from './LingQStatusButton';
 import './PhrasePopUp.css';
 
 export interface PhraseWordItem {
@@ -19,6 +22,10 @@ interface PhrasePopUpProps {
   words: PhraseWordItem[];
   /** A valid phrase is ≤ 9 words within a single sentence. */
   valid: boolean;
+  /** LingQ status of the phrase (drives the badge in the header card). */
+  status?: LingQStatusType;
+  /** Called when the user picks a new status from the inline status picker. */
+  onStatusChange?: (status: LingQStatusType) => void;
   /** Re-query on each layout/scroll so the popup stays aligned with the selection. */
   getAnchorRect: () => DOMRect | null;
   onClose: () => void;
@@ -37,15 +44,18 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
   meaning,
   words,
   valid,
+  status = 'New',
   getAnchorRect,
   onClose,
   onExpand,
   onWordOpen,
   onGoogleTranslate,
+  onStatusChange,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   /** 'above' → popup sits above the selection (list rendered above the meaning header). */
   const [placement, setPlacement] = useState<'above' | 'below'>('above');
+  const [showStatusBar, setShowStatusBar] = useState(false);
 
   const calculatePosition = useCallback(() => {
     const el = popupRef.current;
@@ -89,6 +99,16 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
       window.removeEventListener('scroll', handleUpdate, true);
       window.removeEventListener('resize', handleUpdate);
     };
+  }, [calculatePosition]);
+
+  /* Re-run positioning whenever the popup resizes (e.g. status-bar morph
+     expanding the meaning card) so the right-edge clamp stays accurate. */
+  useEffect(() => {
+    const el = popupRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => calculatePosition());
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [calculatePosition]);
 
   useEffect(() => {
@@ -139,44 +159,63 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
   }
 
   const header = (
-    <button
-      type="button"
-      className="phrase-popup__header"
-      onClick={(e) => {
-        e.stopPropagation();
-        onExpand?.();
-      }}
-    >
-      <span className="phrase-popup__meaning">{meaning || 'Meaning'}</span>
-      <span className="phrase-popup__header-chevron" aria-hidden>
-        <ChevronRight size={14} />
-      </span>
-    </button>
+    <div className={`phrase-popup__meaning-card${showStatusBar ? ' phrase-popup__meaning-card--status-mode' : ''}`}>
+      {/* Always in DOM — cross-fades with the status bar on badge tap */}
+      <div
+        className="phrase-popup__meaning-header"
+        role="button"
+        tabIndex={0}
+        onClick={(e) => { e.stopPropagation(); onExpand?.(); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onExpand?.(); } }}
+      >
+        <LingQStatusButton
+          status={status}
+          state="focus"
+          onClick={(e) => { e.stopPropagation(); setShowStatusBar(prev => !prev); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label={`Status ${status}, tap to change`}
+          aria-expanded={showStatusBar}
+        />
+        <span className="phrase-popup__meaning">{meaning || 'Meaning'}</span>
+      </div>
+      <div className="phrase-popup__meaning-statusbar" aria-hidden={!showStatusBar}>
+        <LingQStatusBar
+          variant="floating"
+          status={status}
+          onStatusChange={(newStatus) => {
+            onStatusChange?.(newStatus);
+            setShowStatusBar(false);
+          }}
+        />
+      </div>
+    </div>
   );
 
   const list = (
-    <div className="phrase-popup__list">
-      {words.map((w, i) => (
-        <React.Fragment key={w.id}>
-          {i > 0 && <div className="phrase-popup__row-divider" aria-hidden />}
-          <button
-            type="button"
-            className="phrase-popup__row"
-            onClick={(e) => {
-              e.stopPropagation();
-              onWordOpen?.(w.id);
-            }}
-          >
-            <span className="phrase-popup__row-text">
-              <span className="phrase-popup__row-source">{w.text}</span>
-              <span className="phrase-popup__row-def">{w.translation}</span>
-            </span>
-            <span className="phrase-popup__row-chevron" aria-hidden>
-              <ChevronRight size={12} />
-            </span>
-          </button>
-        </React.Fragment>
-      ))}
+    <div className="phrase-popup__list-card">
+      <div className="phrase-popup__list">
+        {words.map((w, i) => (
+          <React.Fragment key={w.id}>
+            {i > 0 && <div className="phrase-popup__row-divider" aria-hidden />}
+            <button
+              type="button"
+              className="phrase-popup__row"
+              onClick={(e) => {
+                e.stopPropagation();
+                onWordOpen?.(w.id);
+              }}
+            >
+              <span className="phrase-popup__row-text">
+                <span className="phrase-popup__row-source">{w.text}</span>
+                <span className="phrase-popup__row-def">{w.translation}</span>
+              </span>
+              <span className="phrase-popup__row-chevron" aria-hidden>
+                <ChevronRight size={12} />
+              </span>
+            </button>
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   );
 
@@ -190,13 +229,11 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
       {placement === 'above' ? (
         <>
           {list}
-          <div className="phrase-popup__divider" aria-hidden />
           {header}
         </>
       ) : (
         <>
           {header}
-          <div className="phrase-popup__divider" aria-hidden />
           {list}
         </>
       )}

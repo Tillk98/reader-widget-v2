@@ -1122,14 +1122,14 @@ button.note-field__box {
 }
 
 
-/* Footer — status bar + Lynx button (Figma 3518:5968) */
+/* Footer — status bar + Lynx button (Figma 4011:11766) */
 .word-detail-sheet-footer {
   flex-shrink: 0;
   padding: var(--spacing-spacing-lg, 16px) var(--spacing-spacing-lg, 16px)
     var(--spacing-spacing-xl, 24px);
   padding-bottom: calc(var(--spacing-spacing-xl, 24px) + env(safe-area-inset-bottom, 0px));
-  background: var(--backgrounds-accent, #f4f7fb);
-  border-top: 1px solid var(--border-default, #e3e5e7);
+  background: var(--backgrounds-tertiary, #e6ecf4);
+  border-top: 1px solid var(--border-default, #d1d6d9);
 }
 
 .word-detail-sheet-footer-row {

@@ -1,0 +1,71 @@
+/* QuickStatusPopup — long-press "Known / Ignore" fast-track popup (Figma 4008:56612) */
+
+.quick-status-popup {
+  position: fixed;
+  z-index: 130;
+  display: flex;
+  align-items: stretch;
+  background: var(--backgrounds-page, #ffffff);
+  border-radius: 6px;
+  box-shadow: 0px 4px 12px -4px rgba(0, 0, 0, 0.15);
+  border: 0.5px solid var(--border-default, #d1d6d9);
+  font-family: 'DM Sans', sans-serif;
+  user-select: none;
+  pointer-events: auto;
+  overflow: hidden;
+  animation: quick-status-popup-in 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: bottom center;
+}
+
+@keyframes quick-status-popup-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.quick-status-popup__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.quick-status-popup__option:hover {
+  background: var(--color-grey-50, #f8f9fa);
+}
+
+.quick-status-popup__option:active {
+  transform: scale(0.97);
+}
+
+.quick-status-popup__option:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.quick-status-popup__label {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--typography-default, #000000);
+}
+
+.quick-status-popup__divider {
+  width: 1px;
+  flex-shrink: 0;
+  background: var(--color-grey-100, #f1f3f4);
+  align-self: stretch;
+}

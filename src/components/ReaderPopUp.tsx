@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
+import { LingQStatusBar } from './LingQStatusBar';
+import { LingQStatusButton } from './LingQStatusButton';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
 import './ReaderPopUp.css';
 
@@ -44,6 +45,8 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   const [showBottomSheet, setShowBottomSheet] = useState(() => panelMode === true);
   /** Local override after editing meaning in the expanded sheet */
   const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
+  /** Whether the floating status-picker bar is open */
+  const [showStatusBar, setShowStatusBar] = useState(false);
 
   // Notify Reader that the sheet is open when we auto-expand in panel mode.
   useEffect(() => {
@@ -53,6 +56,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
 
   useEffect(() => {
     setMeaningOverride(undefined);
+    setShowStatusBar(false);
   }, [wordId, wordTranslation]);
 
   const effectiveTranslation = meaningOverride ?? wordTranslation;
@@ -67,6 +71,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     const anchorRect = anchorEl.getBoundingClientRect();
     const popupRect = popupRef.current.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     const gap = 6;
     const popupWidth = popupRect.width || 80;
 
@@ -74,15 +79,16 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     if (left < 8) left = 8;
     if (left + popupWidth > viewportWidth - 8) left = viewportWidth - 8 - popupWidth;
 
-    const bottom = window.innerHeight - anchorRect.top + gap;
+    const bottom = viewportHeight - anchorRect.top + gap;
 
     popupRef.current.style.left = `${left}px`;
     popupRef.current.style.bottom = `${bottom}px`;
+
   }, [resolveAnchorElement]);
 
   useLayoutEffect(() => {
     calculatePosition();
-  }, [calculatePosition, meaning, wordTransliteration, showBottomSheet]);
+  }, [calculatePosition, meaning, wordTransliteration, showBottomSheet, showStatusBar]);
 
   useEffect(() => {
     const handleUpdate = () => calculatePosition();
@@ -92,6 +98,16 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       window.removeEventListener('scroll', handleUpdate, true);
       window.removeEventListener('resize', handleUpdate);
     };
+  }, [calculatePosition]);
+
+  /* Re-run positioning whenever the popup resizes (e.g. status-bar morph
+     expanding the card width) so the right-edge clamp stays accurate. */
+  useEffect(() => {
+    const el = popupRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => calculatePosition());
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [calculatePosition]);
 
   useEffect(() => {
@@ -138,6 +154,17 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     setShowBottomSheet(true);
   };
 
+  const handleStatusBadgeClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.stopPropagation();
+    setShowStatusBar((prev) => !prev);
+  };
+
+  const handleFloatingStatusChange = (newStatus: LingQStatusType) => {
+    onWordStatusChange?.(newStatus);
+    setShowStatusBar(false);
+    onClose();
+  };
+
   if (showBottomSheet) {
     // On tablet (no panel mode yet): show as a floating positioned card instead of a bottom sheet.
     const useFloating = isTablet === true && !panelMode;
@@ -161,21 +188,33 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   return (
     <div
       ref={popupRef}
-      className="reader-popup-widget"
+      className={`reader-popup-widget${showStatusBar ? ' reader-popup-widget--status-mode' : ''}`}
       role="tooltip"
-      onClick={handleExpandClick}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className="reader-popup-widget-header">
+      {/* Always in DOM so CSS can cross-fade between the two states */}
+      <div className="reader-popup-widget-header" onClick={handleExpandClick}>
+        <LingQStatusButton
+          status={wordStatus}
+          state="focus"
+          onClick={handleStatusBadgeClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label={`Status ${wordStatus}, tap to change`}
+          aria-expanded={showStatusBar}
+        />
         <div className="reader-popup-widget-term">
           <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
           {wordTransliteration != null && wordTransliteration !== '' && (
             <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
           )}
         </div>
-        <div className="reader-popup-widget-chevron-btn" aria-hidden>
-          <ChevronRight size={16} />
-        </div>
+      </div>
+      <div className="reader-popup-widget-statusbar" aria-hidden={!showStatusBar}>
+        <LingQStatusBar
+          variant="floating"
+          status={wordStatus}
+          onStatusChange={handleFloatingStatusChange}
+        />
       </div>
     </div>
   );

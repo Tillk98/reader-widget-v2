@@ -18,7 +18,6 @@ import {
   LineChart,
 } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
-import { ActiveSelectionBar } from './ActiveSelectionBar';
 import { ReaderMenuSheet } from './ReaderMenuSheet';
 import { CourseInfoSheet } from './CourseInfoSheet';
 import sentenceDefaultIcon from '../assets/sentence-default.png';
@@ -81,9 +80,6 @@ export interface ReaderBottomBarProps {
   audioMiniActive?: boolean;
 }
 
-/** After the sheet is open, wait this long before swapping the LingQ strip for the default play / menu row. */
-const WORD_DETAIL_DEFAULT_CHROME_DELAY_MS = 1000;
-
 /** Lucide stroke width for expanded list menu (Figma 1.5px). */
 const MENU_ICON_STROKE = 1.5;
 
@@ -106,12 +102,12 @@ const EXPANDED_MENU_GRID_MAIN = EXPANDED_SECONDARY_ITEMS.slice(0, 6);
 const EXPANDED_MENU_SETTINGS_ITEM = EXPANDED_SECONDARY_ITEMS[6]!;
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
-  mediaMode = 'none',
+  mediaMode: _mediaMode = 'none',
   isVideoPlaying = false,
   lessonImageSrc,
   selectedWordId,
-  selectedWordStatus = 'New',
-  onSelectedWordStatusChange,
+  selectedWordStatus: _selectedWordStatus = 'New',
+  onSelectedWordStatusChange: _onSelectedWordStatusChange,
   onPlay,
   onToggleVideoPlayback,
   onExpandVideoBar,
@@ -132,7 +128,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   hasVideo = false,
   onVideoMode,
   anchorAboveVideoBarPx,
-  wordDetailSheetOpen = false,
+  wordDetailSheetOpen: _wordDetailSheetOpen = false,
   expandedMenuLayout = 'list',
   menuHeaderTitle,
   menuHeaderSubtitle,
@@ -144,54 +140,17 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onShowTranslation,
   horizontalListOn,
   onHorizontalListChange,
-  audioMiniActive = false,
+  audioMiniActive: _audioMiniActive = false,
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
   const [menuSheetOpen, setMenuSheetOpen] = useState(false);
   const [courseInfoOpen, setCourseInfoOpen] = useState(false);
-  const [defaultChromeAfterSheetDelay, setDefaultChromeAfterSheetDelay] = useState(false);
   /** Mutually exclusive reader tool toggle (Figma SentenceActive / ReviewActive states). */
   const [activeTool, setActiveTool] = useState<'none' | 'review' | 'sentence'>('none');
   const actionsContainerRef = useRef<HTMLDivElement>(null);
 
   const hasWordSelected = selectedWordId != null;
-
-  useEffect(() => {
-    if (!wordDetailSheetOpen) {
-      setDefaultChromeAfterSheetDelay(false);
-      return;
-    }
-    const id = window.setTimeout(() => {
-      setDefaultChromeAfterSheetDelay(true);
-    }, WORD_DETAIL_DEFAULT_CHROME_DELAY_MS);
-    return () => window.clearTimeout(id);
-  }, [wordDetailSheetOpen]);
-
-  /**
-   * Default play / menu row when no word selected, or after word-detail sheet delay in page mode.
-   * In video / audio lesson mode (inline lesson + media bar), the strip hides after the delay but is not replaced
-   * by the default row — there is no separate default menu in that layout.
-   */
-  const isLessonMediaMode = mediaMode === 'video' || mediaMode === 'audio';
-  const showDefaultChrome =
-    !hasWordSelected ||
-    (wordDetailSheetOpen && defaultChromeAfterSheetDelay && !isLessonMediaMode);
-  /** LingQ strip: word selected, and either sheet not open yet or still inside the pre-default delay while sheet is open. */
-  const showActiveSelection =
-    hasWordSelected &&
-    (!wordDetailSheetOpen || !defaultChromeAfterSheetDelay);
-
-  /** Keep default chrome in DOM while morphing out so the pill can transition into the LingQ strip (page mode only).
-   * Skip morph when opening LingQ from collapsed audio mini — there is no default row to morph from. */
-  const renderDefaultChromeLayer =
-    showDefaultChrome ||
-    (hasWordSelected && showActiveSelection && mediaMode === 'none' && !audioMiniActive);
-  const isDefaultChromeMorphingOut =
-    hasWordSelected &&
-    showActiveSelection &&
-    mediaMode === 'none' &&
-    !showDefaultChrome &&
-    !audioMiniActive;
+  void hasWordSelected;
 
   useEffect(() => {
     if (!isActionsExpanded) return;
@@ -257,19 +216,8 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
           : undefined
       }
     >
-      <div
-        className={`reader-bottom-bar-inner ${showActiveSelection ? 'reader-bottom-bar-inner--stack' : ''}`}
-      >
-        {renderDefaultChromeLayer && (
-          <div
-            className={[
-              'reader-bottom-bar-default-row',
-              isDefaultChromeMorphingOut && 'reader-bottom-bar-default-row--morph-out',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            aria-hidden={isDefaultChromeMorphingOut}
-          >
+      <div className="reader-bottom-bar-inner">
+        <div className="reader-bottom-bar-default-row">
             <div className="reader-bottom-bar-play-area">
               <div
                 className={[
@@ -591,26 +539,15 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                 )}
               </div>
             </div>
-            <button
-              type="button"
-              className="reader-bottom-bar-side-btn"
-              onClick={onLynxAI}
-              aria-label="Lynx AI"
-            >
-              <img src={lynxDefaultIcon} alt="" className="reader-bottom-bar-side-btn-icon" />
-            </button>
-          </div>
-        )}
-
-        {showActiveSelection && (
-          <ActiveSelectionBar
-            key={selectedWordId ?? 'selection'}
-            selectedWordId={selectedWordId}
-            selectedWordStatus={selectedWordStatus}
-            onSelectedWordStatusChange={onSelectedWordStatusChange!}
-            onLynx={onLynxAI}
-          />
-        )}
+          <button
+            type="button"
+            className="reader-bottom-bar-side-btn"
+            onClick={onLynxAI}
+            aria-label="Lynx AI"
+          >
+            <img src={lynxDefaultIcon} alt="" className="reader-bottom-bar-side-btn-icon" />
+          </button>
+        </div>
       </div>
     </div>
   );
