@@ -101,6 +101,8 @@ export const Reader: React.FC = () => {
   const dragStartX = useRef<number>(0);
   const dragOffsetPx = useRef<number>(0);
   const ignoreNextWordClick = useRef(false);
+  /** Timestamp (ms) when phrase-pick mode was entered — used to suppress ghost clicks on mobile. */
+  const phrasePickStartTimeRef = useRef<number>(0);
   /** Skip ResizeObserver pagination while swiping — avoids remounting pages mid-gesture (white flash). */
   const isPageSwipeDraggingRef = useRef(false);
   /** Block pagination recalculation briefly after a page change (resize often fires during transform; recalc remounts rows → flash). */
@@ -550,6 +552,9 @@ export const Reader: React.FC = () => {
     /* Clear any stale "ignore next click" flag left over from the long-press release so the
      * very first tap in phrase-pick mode is never silently swallowed. */
     ignoreNextWordClick.current = false;
+    /* Record entry time so ghost clicks on mobile (synthetic events fired within ~150 ms
+     * after the popup tap) are suppressed in handleWordClick. */
+    phrasePickStartTimeRef.current = Date.now();
     setPhraseSelection(null);
     setPhraseDetailOpen(false);
     setSnackbar(null);
@@ -566,6 +571,10 @@ export const Reader: React.FC = () => {
       }
       /* "Select a Phrase" mode: this tap is the phrase's end word (anchor → here, inclusive). */
       if (phrasePick) {
+        /* Suppress ghost clicks on mobile: iOS/Android fire a synthetic click ~50–150 ms
+         * after the "Select a Phrase" popup tap, landing on whatever word is now visible
+         * at those coordinates. Deliberate taps always arrive >300 ms later. */
+        if (Date.now() - phrasePickStartTimeRef.current < 300) return;
         const endIndex = currentPageWordIndex.get(wordId);
         if (endIndex !== undefined) commitPhraseRange(phrasePick.anchorIndex, endIndex);
         else setPhraseHighlightIds(new Set());
