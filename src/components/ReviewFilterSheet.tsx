@@ -166,11 +166,6 @@ export const ReviewFilterSheet: React.FC<ReviewFilterSheetProps> = ({
   onClose,
   value,
   onApply,
-  lessonTitle,
-  lessonSource,
-  lessonImageSrc,
-  lessonPageLabel = '1/5',
-  onLessonClick,
 }) => {
   return (
     <BottomSheet open={open} onClose={onClose} ariaLabel="Review filter" className="review-filter-sheet">

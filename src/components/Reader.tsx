@@ -1364,10 +1364,7 @@ export const Reader: React.FC = () => {
               audioMiniActive={audioMiniPlayerOpen}
               expandedMenuLayout={lesson.expandedMenuLayout ?? 'list'}
               mediaMode={mediaMode}
-              isVideoPlaying={
-                ((mediaMode === 'video' || mediaMode === 'audio') && !isPlaybackPaused) ||
-                (audioMiniPlayerOpen && !isPlaybackPaused)
-              }
+              isVideoPlaying={audioMiniPlayerOpen && !isPlaybackPaused}
               lessonImageSrc={lessonImage}
               wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen || phraseDetailOpen || (isTablet && wordDetailPanelMode && selectedWordId != null)}
               selectedWordId={selectedWordId}
