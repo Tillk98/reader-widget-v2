@@ -181,10 +181,34 @@ const TermCard: React.FC<TermCardProps> = ({
     }
   };
 
+  /**
+   * Resolve the status under the drag pointer. The press menu is a vertical list of
+   * content-width pills separated by 8px gaps, so a pixel-exact elementFromPoint hit
+   * test misses the gaps and any row narrower than the pointer's x — which made
+   * drag-select skip rows and jitter on the longer (6-row) status list. Instead we
+   * snap to the row nearest the pointer's Y, treating the list as vertical bands.
+   */
   const statusAtPoint = (x: number, y: number): LingQStatusType | null => {
-    const el = document.elementFromPoint(x, y) as HTMLElement | null;
-    const row = el?.closest('[data-status]') as HTMLElement | null;
-    return (row?.getAttribute('data-status') as LingQStatusType | null) ?? null;
+    // Only one press popover is open at a time (opening one closes the tap menu).
+    const pop = document.querySelector('.h-term-status-popover');
+    if (!pop) return null;
+    const pr = pop.getBoundingClientRect();
+    // Must be roughly over the menu horizontally; release well outside selects nothing.
+    const X_SLOP = 24;
+    if (x < pr.left - X_SLOP || x > pr.right + X_SLOP) return null;
+    let best: HTMLElement | null = null;
+    let bestDist = Infinity;
+    for (const row of pop.querySelectorAll<HTMLElement>('[data-status]')) {
+      const r = row.getBoundingClientRect();
+      const dist = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = row;
+      }
+    }
+    // Far above/below every row (e.g. still over the card) → no selection.
+    if (!best || bestDist > 40) return null;
+    return (best.getAttribute('data-status') as LingQStatusType | null) ?? null;
   };
 
   const endPress = useCallback(
