@@ -149,6 +149,16 @@ const TermCard: React.FC<TermCardProps> = ({
   onPressActiveChange,
 }) => {
   const rootRef = useRef<HTMLElement | null>(null);
+  // Stable ref callback. An inline `ref={el => rootRef.current = el}` gets a fresh
+  // identity every render, so React detaches it (current → null) then re-attaches
+  // on each re-render — and a child's layout effect runs *before* the parent ref is
+  // re-attached. That left the popover's recalc reading a null anchor on the render
+  // that opens it, so it stayed hidden. (Masked in dev by StrictMode's extra effect
+  // pass; broke in production.) A stable callback is only invoked on mount/unmount,
+  // so rootRef stays populated across re-renders.
+  const setRootRef = useCallback((el: HTMLElement | null) => {
+    rootRef.current = el;
+  }, []);
   const isTracked = status !== undefined;
   const learningNum = status ? LEARNING_NUMBER[status] : undefined;
 
@@ -195,18 +205,6 @@ const TermCard: React.FC<TermCardProps> = ({
     longPressFired.current = false;
     startPos.current = { x: e.clientX, y: e.clientY };
     pointerIdRef.current = e.pointerId;
-    // Capture the pointer up-front for touch. While a touch pointer is uncaptured
-    // the browser's gesture arbitration (scroll/selection) can fire a pointercancel
-    // mid-hold, which clears the timer before the long-press ever opens the menu —
-    // this is why the hold worked with a mouse but not on mobile. Capturing here
-    // keeps the pointer stream on this card so the 350ms timer can complete.
-    if (e.pointerType !== 'mouse') {
-      try {
-        rootRef.current?.setPointerCapture(e.pointerId);
-      } catch {
-        /* element gone / invalid pointer — fall back to the timer-time capture */
-      }
-    }
     clearTimer();
     pressTimer.current = window.setTimeout(() => {
       pressTimer.current = null;
@@ -277,9 +275,7 @@ const TermCard: React.FC<TermCardProps> = ({
     return (
       <button
         type="button"
-        ref={(el) => {
-          rootRef.current = el;
-        }}
+        ref={setRootRef}
         className="h-term-card h-term-card--new"
         {...pressHandlers}
         onClick={(e) => {
@@ -304,9 +300,7 @@ const TermCard: React.FC<TermCardProps> = ({
   // LingQ (tracked): numbered badge opens the (persistent) tap menu; long-press opens the drag menu.
   return (
     <div
-      ref={(el) => {
-        rootRef.current = el;
-      }}
+      ref={setRootRef}
       className={['h-term-card', isSelected && 'h-term-card--selected', (isOpen || pressOpen) && 'h-term-card--open']
         .filter(Boolean)
         .join(' ')}
