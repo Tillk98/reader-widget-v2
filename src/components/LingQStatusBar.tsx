@@ -28,7 +28,7 @@ const LEARNING_LABELS: Record<LingQStatusType, string> = {
   Familiar: 'Familiar',
   Learned: 'Learned',
   Known: 'Known',
-  Ignored: 'Ignored',
+  Ignored: 'Ignore',
 };
 const LEARNING_NUMBERS: Record<LingQStatusType, string> = {
   New: '1',
@@ -196,11 +196,11 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
             className={`lingq-status-chip lingq-status-chip--ignored ${isIgnored ? 'lingq-status-chip--active' : ''}`}
             onClick={() => onStatusChange('Ignored')}
             aria-pressed={isIgnored}
-            aria-label="Ignored"
+            aria-label="Ignore"
           >
             <EyeOff size={14} aria-hidden />
             {isIgnored && (
-              <span className="lingq-status-chip__label">Ignored</span>
+              <span className="lingq-status-chip__label">Ignore</span>
             )}
           </button>
           <button

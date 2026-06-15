@@ -42,6 +42,9 @@ export const DictionaryMenuSheet: React.FC<DictionaryMenuSheetProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
   const dragFrom = useRef<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  /** Id of the active-dictionary item whose delete panel is currently revealed (swipe-left). */
+  const [revealedDeleteId, setRevealedDeleteId] = useState<string | null>(null);
+  const swipeStart = useRef<{ x: number; id: string } | null>(null);
 
   const handleGripDown = useCallback((e: React.PointerEvent, index: number) => {
     e.preventDefault();
@@ -81,6 +84,22 @@ export const DictionaryMenuSheet: React.FC<DictionaryMenuSheetProps> = ({
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
   }, []);
 
+  const handleDictItemPointerDown = useCallback((e: React.PointerEvent, id: string) => {
+    if ((e.target as HTMLElement).closest('.dictionary-menu__grip')) return;
+    swipeStart.current = { x: e.clientX, id };
+    if (revealedDeleteId !== null && revealedDeleteId !== id) {
+      setRevealedDeleteId(null);
+    }
+  }, [revealedDeleteId]);
+
+  const handleDictItemPointerUp = useCallback((e: React.PointerEvent, id: string) => {
+    if (!swipeStart.current || swipeStart.current.id !== id) return;
+    const dx = e.clientX - swipeStart.current.x;
+    if (dx < -30) setRevealedDeleteId(id);
+    else if (dx > 10) setRevealedDeleteId(null);
+    swipeStart.current = null;
+  }, []);
+
   return (
     <BottomSheet
       open={open}
@@ -89,69 +108,83 @@ export const DictionaryMenuSheet: React.FC<DictionaryMenuSheetProps> = ({
       className="dictionary-menu-sheet"
     >
       <div className="dictionary-menu">
+
+        {/* YOUR DICTIONARIES */}
         <section className="dictionary-menu__section">
           <p className="dictionary-menu__section-header">Your Dictionaries</p>
-          <div className="dictionary-menu__list" ref={listRef}>
+          <div className="dictionary-menu__card" ref={listRef}>
             {active.map((d, i) => (
-              <div
-                key={d.id}
-                data-dict-row
-                className={`dictionary-menu__item${
-                  draggingIndex === i ? ' dictionary-menu__item--dragging' : ''
-                }`}
-              >
-                <span className="dictionary-menu__label">
-                  <span
-                    className="dictionary-menu__grip"
-                    role="button"
-                    aria-label={`Reorder ${d.label}`}
-                    tabIndex={-1}
-                    onPointerDown={(e) => handleGripDown(e, i)}
-                    onPointerMove={handleGripMove}
-                    onPointerUp={handleGripUp}
-                    onPointerCancel={handleGripUp}
-                  >
-                    <GripVertical size={16} strokeWidth={ICON_STROKE} aria-hidden />
-                  </span>
-                  <span className="dictionary-menu__item-text">{d.label}</span>
-                </span>
-                <button
-                  type="button"
-                  className="dictionary-menu__action dictionary-menu__action--remove"
-                  aria-label={`Remove ${d.label}`}
-                  onClick={() => onRemove(d.id)}
+              <React.Fragment key={d.id}>
+                {i > 0 && <div className="dictionary-menu__row-divider" aria-hidden />}
+                <div
+                  data-dict-row
+                  className={[
+                    'dictionary-menu__dict-item',
+                    draggingIndex === i && 'dictionary-menu__dict-item--dragging',
+                    revealedDeleteId === d.id && 'dictionary-menu__dict-item--revealed',
+                  ].filter(Boolean).join(' ')}
+                  onPointerDown={(e) => handleDictItemPointerDown(e, d.id)}
+                  onPointerUp={(e) => handleDictItemPointerUp(e, d.id)}
                 >
-                  <Trash2 size={15} strokeWidth={ICON_STROKE} aria-hidden />
-                </button>
-              </div>
+                  <div className="dictionary-menu__item-content">
+                    <span className="dictionary-menu__item-text">{d.label}</span>
+                    <span
+                      className="dictionary-menu__grip"
+                      role="button"
+                      aria-label={`Reorder ${d.label}`}
+                      tabIndex={-1}
+                      onPointerDown={(e) => handleGripDown(e, i)}
+                      onPointerMove={handleGripMove}
+                      onPointerUp={handleGripUp}
+                      onPointerCancel={handleGripUp}
+                    >
+                      <GripVertical size={14} strokeWidth={ICON_STROKE} aria-hidden />
+                    </span>
+                  </div>
+                  <div className="dictionary-menu__delete-wrap">
+                    <button
+                      type="button"
+                      className="dictionary-menu__delete"
+                      aria-label={`Remove ${d.label}`}
+                      onClick={() => { onRemove(d.id); setRevealedDeleteId(null); }}
+                    >
+                      <Trash2 size={12} strokeWidth={ICON_STROKE} aria-hidden />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              </React.Fragment>
             ))}
           </div>
         </section>
 
-        <div className="dictionary-menu__divider" aria-hidden />
-
+        {/* MORE DICTIONARIES */}
         <section className="dictionary-menu__section">
           <p className="dictionary-menu__section-header">More Dictionaries</p>
-          {more.map((d) => (
-            <div key={d.id} className="dictionary-menu__item">
-              <span className="dictionary-menu__label">
-                <span className="dictionary-menu__item-text">{d.label}</span>
-              </span>
-              <button
-                type="button"
-                className="dictionary-menu__action dictionary-menu__action--add"
-                aria-label={`Add ${d.label}`}
-                onClick={() => onAdd(d.id)}
-              >
-                <Plus size={15} strokeWidth={ICON_STROKE} aria-hidden />
-              </button>
-            </div>
-          ))}
+          <div className="dictionary-menu__card">
+            {more.map((d, i) => (
+              <React.Fragment key={d.id}>
+                {i > 0 && <div className="dictionary-menu__row-divider" aria-hidden />}
+                <div className="dictionary-menu__dict-item">
+                  <div className="dictionary-menu__item-content">
+                    <span className="dictionary-menu__item-text">{d.label}</span>
+                    <button
+                      type="button"
+                      className="dictionary-menu__action dictionary-menu__action--add"
+                      aria-label={`Add ${d.label}`}
+                      onClick={() => onAdd(d.id)}
+                    >
+                      <Plus size={14} strokeWidth={ICON_STROKE} aria-hidden />
+                    </button>
+                  </div>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
         </section>
 
-        <div className="dictionary-menu__divider" aria-hidden />
-
-        <section className="dictionary-menu__section">
+        {/* LANGUAGE */}
+        <section className="dictionary-menu__section dictionary-menu__section--footer">
           <button
             type="button"
             className="dictionary-menu__item dictionary-menu__item--button"
@@ -167,6 +200,7 @@ export const DictionaryMenuSheet: React.FC<DictionaryMenuSheetProps> = ({
             </span>
           </button>
         </section>
+
       </div>
     </BottomSheet>
   );
