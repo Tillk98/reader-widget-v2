@@ -169,6 +169,9 @@ const TermCard: React.FC<TermCardProps> = ({
   const pointerIdRef = useRef<number | null>(null);
   /** Set when a long-press fired so the trailing click (tap action) is ignored. */
   const longPressFired = useRef(false);
+  /** True once the pointer has moved onto a status row after the press menu opened.
+   *  Used to distinguish a deliberate drag-to-select from a finger that never left the card. */
+  const draggedToOptionRef = useRef(false);
 
   useEffect(() => () => {
     if (pressTimer.current) clearTimeout(pressTimer.current);
@@ -211,18 +214,11 @@ const TermCard: React.FC<TermCardProps> = ({
     return (best.getAttribute('data-status') as LingQStatusType | null) ?? null;
   };
 
-  const endPress = useCallback(
-    (apply: boolean, x?: number, y?: number) => {
-      if (apply && x !== undefined && y !== undefined) {
-        const s = statusAtPoint(x, y);
-        if (s) onStatusChange(item.id, s);
-      }
-      setPressOpen(false);
-      setHovered(null);
-      onPressActiveChange(false);
-    },
-    [item.id, onStatusChange, onPressActiveChange]
-  );
+  const closePressMenu = useCallback(() => {
+    setPressOpen(false);
+    setHovered(null);
+    onPressActiveChange(false);
+  }, [onPressActiveChange]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
@@ -233,6 +229,7 @@ const TermCard: React.FC<TermCardProps> = ({
     pressTimer.current = window.setTimeout(() => {
       pressTimer.current = null;
       longPressFired.current = true;
+      draggedToOptionRef.current = false; // reset — track movement only after menu opens
       onClosePopover(); // close any open tap menu
       onPressActiveChange(true);
       setHovered(isTracked ? (status ?? null) : null);
@@ -244,7 +241,9 @@ const TermCard: React.FC<TermCardProps> = ({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (pressOpen) {
-      setHovered(statusAtPoint(e.clientX, e.clientY));
+      const s = statusAtPoint(e.clientX, e.clientY);
+      if (s !== null) draggedToOptionRef.current = true;
+      setHovered(s);
       return;
     }
     const sp = startPos.current;
@@ -258,7 +257,15 @@ const TermCard: React.FC<TermCardProps> = ({
   const handlePointerUp = (e: React.PointerEvent) => {
     clearTimer();
     if (pressOpen) {
-      endPress(true, e.clientX, e.clientY);
+      const s = statusAtPoint(e.clientX, e.clientY);
+      if (draggedToOptionRef.current && s) {
+        // Drag-to-select: pointer moved onto a status row then released → apply and close.
+        onStatusChange(item.id, s);
+        closePressMenu();
+      } else {
+        // Released without dragging to an option → keep menu open for a leisurely tap.
+        setHovered(null);
+      }
       rootRef.current?.releasePointerCapture?.(e.pointerId);
     }
     startPos.current = null;
@@ -267,7 +274,7 @@ const TermCard: React.FC<TermCardProps> = ({
   const handlePointerCancel = (e: React.PointerEvent) => {
     clearTimer();
     if (pressOpen) {
-      endPress(false);
+      closePressMenu();
       rootRef.current?.releasePointerCapture?.(e.pointerId);
     }
     startPos.current = null;
@@ -288,9 +295,12 @@ const TermCard: React.FC<TermCardProps> = ({
       anchorRef={rootRef}
       status={hovered ?? status ?? 'New'}
       statuses={isTracked ? undefined : NEW_WORD_STATUSES}
-      closeOnOutside={false}
-      onStatusChange={() => {}}
-      onClose={() => {}}
+      closeOnOutside={true}
+      onStatusChange={(s) => {
+        onStatusChange(item.id, s);
+        closePressMenu();
+      }}
+      onClose={closePressMenu}
     />
   ) : null;
 

@@ -525,6 +525,11 @@ export const Reader: React.FC = () => {
   /** Long-press a word: show the quick Known / Ignore / Select-a-Phrase popup. */
   const handleWordLongPress = useCallback((wordId: string) => {
     setLongPressWordId(wordId);
+    /* Cancel any in-progress page-swipe so the popup drag doesn't accumulate drag distance. */
+    setIsDragging(false);
+    setDragOffset(0);
+    dragOffsetPx.current = 0;
+    isPageSwipeDraggingRef.current = false;
     setSnackbar(null);
     setPhrasePick(null);
     setPhraseHighlightIds(new Set());
@@ -542,6 +547,9 @@ export const Reader: React.FC = () => {
     const index = currentPageWordIndex.get(longPressWordId);
     setLongPressWordId(null);
     if (index === undefined) return;
+    /* Clear any stale "ignore next click" flag left over from the long-press release so the
+     * very first tap in phrase-pick mode is never silently swallowed. */
+    ignoreNextWordClick.current = false;
     setPhraseSelection(null);
     setPhraseDetailOpen(false);
     setSnackbar(null);
@@ -1128,11 +1136,11 @@ export const Reader: React.FC = () => {
               className={contentClassName}
               style={readerContentVideoStyle}
               ref={contentRef}
-              onPointerDown={isPageMode && !sentenceMode ? handlePointerDown : undefined}
-              onPointerMove={isPageMode && !sentenceMode ? handlePointerMove : undefined}
-              onPointerUp={isPageMode && !sentenceMode ? e => handlePointerUp(e) : undefined}
-              onPointerLeave={isPageMode && !sentenceMode ? () => handlePointerUp() : undefined}
-              onPointerCancel={isPageMode && !sentenceMode ? handlePointerCancel : undefined}
+              onPointerDown={isPageMode && !sentenceMode && !longPressWordId ? handlePointerDown : undefined}
+              onPointerMove={isPageMode && !sentenceMode && !longPressWordId ? handlePointerMove : undefined}
+              onPointerUp={isPageMode && !sentenceMode && !longPressWordId ? e => handlePointerUp(e) : undefined}
+              onPointerLeave={isPageMode && !sentenceMode && !longPressWordId ? () => handlePointerUp() : undefined}
+              onPointerCancel={isPageMode && !sentenceMode && !longPressWordId ? handlePointerCancel : undefined}
             >
               <div className="reader-body-vt">
                 {isSentenceView ? (
