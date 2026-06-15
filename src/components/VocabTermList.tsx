@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CircleCheck, Trash2, Play, Check, Plus } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
+import { StatusPopover } from './StatusPopover';
 import './VocabTermList.css';
 
 const LEARNING_NUMBER: Partial<Record<LingQStatusType, number>> = {
@@ -32,8 +33,10 @@ export interface VocabTermListProps {
    * (Review mode). Tapping the "+" calls `onAdd`.
    */
   untrackedIds?: ReadonlySet<string>;
-  /** Tap the status badge: surfaces the LingQ status bar. */
+  /** Tap the status badge: opens the vertical status menu alongside the badge. */
   onSelect: (wordId: string) => void;
+  /** Pick a new status from the vertical status menu. */
+  onStatusChange?: (wordId: string, status: LingQStatusType) => void;
   /** Tap the term (word + gloss): opens the full word detail sheet. Falls back to `onSelect`. */
   onOpenDetail?: (wordId: string) => void;
   /** Tap the "+" on an untracked term: add it as a LingQ. */
@@ -56,7 +59,13 @@ interface SwipeableTileProps {
   untracked: boolean;
   isSelected: boolean;
   showDivider: boolean;
+  /** True when this tile's status menu is open. */
+  statusMenuOpen: boolean;
   onSelect: () => void;
+  /** Pick a new status from the open status menu. */
+  onStatusSelect: (status: LingQStatusType) => void;
+  /** Close this tile's status menu. */
+  onStatusMenuClose: () => void;
   onOpenDetail: () => void;
   onAdd: () => void;
   onAudio: () => void;
@@ -72,13 +81,17 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   untracked,
   isSelected,
   showDivider,
+  statusMenuOpen,
   onSelect,
+  onStatusSelect,
+  onStatusMenuClose,
   onOpenDetail,
   onAdd,
   onAudio,
   onMarkKnown,
   onMarkIgnored,
 }) => {
+  const statusBtnRef = useRef<HTMLButtonElement>(null);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [exitDir, setExitDir] = useState<'known' | 'ignored' | null>(null);
@@ -224,6 +237,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
               </button>
             ) : (
               <button
+                ref={statusBtnRef}
                 type="button"
                 className={[
                   'vocab-list__status',
@@ -233,6 +247,8 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
                   .filter(Boolean)
                   .join(' ')}
                 onClick={onSelect}
+                aria-haspopup="menu"
+                aria-expanded={statusMenuOpen}
                 aria-label={`Adjust status for ${word.text}`}
               >
                 {status === 'Known' ? (
@@ -241,6 +257,14 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
                   <span className="vocab-list__status-num">{number ?? ''}</span>
                 )}
               </button>
+            )}
+            {statusMenuOpen && !untracked && (
+              <StatusPopover
+                anchorRef={statusBtnRef}
+                status={status}
+                onStatusChange={onStatusSelect}
+                onClose={onStatusMenuClose}
+              />
             )}
             <button
               type="button"
@@ -280,6 +304,7 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
   selectedWordId,
   untrackedIds,
   onSelect,
+  onStatusChange,
   onOpenDetail,
   onAdd,
   onAudio,
@@ -291,6 +316,8 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
 
   // Local set of word IDs that have been swiped away — filtered out of the list.
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(new Set());
+  // Word whose vertical status menu is currently open (tapped its status badge).
+  const [statusMenuId, setStatusMenuId] = useState<string | null>(null);
 
   const visibleItems = useMemo(
     () => items.filter((w) => {
@@ -333,7 +360,10 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
             untracked={untracked}
             isSelected={selectedWordId === w.id}
             showDivider={i > 0}
-            onSelect={() => onSelect(w.id)}
+            statusMenuOpen={statusMenuId === w.id}
+            onSelect={() => setStatusMenuId((cur) => (cur === w.id ? null : w.id))}
+            onStatusSelect={(s) => onStatusChange?.(w.id, s)}
+            onStatusMenuClose={() => setStatusMenuId(null)}
             onOpenDetail={() => openDetail(w.id)}
             onAdd={() => onAdd?.(w.id)}
             onAudio={() => onAudio?.(w.id)}

@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  background: var(--backgrounds-page, #ffffff);
+  background: transparent;
   box-sizing: border-box;
 }
 
@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: var(--spacing-spacing-sm, 8px) var(--spacing-spacing-lg, 16px) var(--spacing-spacing-xs, 4px);
+  padding: var(--spacing-spacing-md, 12px);
   box-sizing: border-box;
 }
 
@@ -23,16 +23,18 @@
   line-height: 16px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--typography-muted, #6d7680);
+  color: var(--foreground-muted, #49525b);
 }
 
+/* Light-grey menu card — inset with a 12px horizontal gutter inside the white sheet
+   (Figma Menu 4042:13136 MenuContainer bg: --color/grey/50). */
 .ui-menu {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  margin: 0 var(--spacing-spacing-md, 12px);
   border-radius: var(--radius-lg, 12px);
   overflow: clip;
-  background: var(--backgrounds-page, #ffffff);
+  background: var(--color-grey-50, #f8f9fa);
   box-sizing: border-box;
 }
 

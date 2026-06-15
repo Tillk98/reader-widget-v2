@@ -1,9 +1,14 @@
 /* Review filter menu (Figma ReviewFilterMenu 4089:63186) — segmented toggles + status range bar. */
+
+/* White card background — matches the other menu sheets. */
+.review-filter-sheet .bottom-sheet__card {
+  background: var(--backgrounds-page, #ffffff);
+}
+
 .review-filter {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding-bottom: var(--spacing-spacing-md, 12px);
   box-sizing: border-box;
   font-family: 'DM Sans', sans-serif;
 }
@@ -12,6 +17,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  padding-bottom: var(--spacing-spacing-md, 12px);
   box-sizing: border-box;
 }
 

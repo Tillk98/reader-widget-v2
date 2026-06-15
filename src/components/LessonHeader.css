@@ -1,11 +1,10 @@
-/* Lesson header (Figma LessonHeader 4042:15342) — grey lesson box under the drag bar. */
+/* Lesson header (Figma LessonHeader 4042:15342) — white card with shadow under the drag bar. */
 .lesson-header {
   display: flex;
   align-items: center;
   width: 100%;
   padding: var(--spacing-spacing-sm, 8px);
-  background: var(--backgrounds-page, #ffffff);
-  border-bottom: 1px solid var(--border-default, #d1d6d9);
+  background: transparent;
   box-sizing: border-box;
 }
 
@@ -17,7 +16,7 @@
   min-width: 0;
   margin: 0;
   padding: var(--spacing-spacing-sm, 8px);
-  border: 1px solid var(--border-default, #d1d6d9);
+  border: none;
   border-radius: var(--radius-md, 8px);
   background: var(--surfaces-default, #f1f3f4);
   text-align: left;
@@ -29,7 +28,7 @@
 }
 
 .lesson-header__box:hover {
-  background: #e7eaec;
+  background: #f4f5f6;
 }
 
 .lesson-header__box:active {

@@ -1,5 +1,5 @@
-import React, { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { Play, Tags, Coins, BookA, PanelRightOpen, PanelRightClose, X, Plus, Check } from 'lucide-react';
+import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { Play, Tags, Coins, BookA, PanelRightOpen, PanelRightClose, X } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -25,6 +25,8 @@ import type { DictionaryMenuItem } from './DictionaryMenuSheet';
 import { MeaningListItem } from './MeaningListItem';
 import { MeaningSection } from './MeaningSection';
 import { AddMeaningRow, SavedMeaningRow } from './SavedMeaningRow';
+import { HorizontalTermList } from './HorizontalTermList';
+import type { VocabTermItem } from './VocabTermList';
 import {
   loadSavedMeanings,
   saveSavedMeanings,
@@ -156,6 +158,8 @@ export interface WordDetailBottomSheetProps {
   /** Stored sentence contexts (current lesson first). Defaults to Figma demo data. */
   sentenceContexts?: WordDetailSentenceContextEntry[];
   sentenceTerms?: WordDetailSentenceTerm[];
+  /** Called when a term card in the sentence term list is tapped — same as sentence mode's onOpenDetail. */
+  onSentenceTermOpen?: (termText: string) => void;
   onSentenceAudio?: (entry: WordDetailSentenceContextEntry) => void;
   onGoToLesson?: (entry: WordDetailSentenceContextEntry) => void;
   /** Lynx “Explain This” primary explanation (typewriter + settle animation uses this on first visit). */
@@ -202,6 +206,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   savedMeanings: savedMeaningsProp,
   sentenceContexts = DEFAULT_SENTENCE_CONTEXTS,
   sentenceTerms = DEFAULT_SENTENCE_TERMS,
+  onSentenceTermOpen,
   onSentenceAudio,
   onGoToLesson,
   lynxLatestBody = DEFAULT_LYNX_LATEST_BODY,
@@ -558,6 +563,39 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
       }
     },
     [moreDictionaries]
+  );
+
+  /** Convert sentenceTerms to the VocabTermItem array HorizontalTermList expects. */
+  const sentenceTermItems = useMemo(
+    (): VocabTermItem[] =>
+      sentenceTerms.map((t) => ({
+        id: t.term,
+        text: t.term,
+        translation: t.meaning || undefined,
+      })),
+    [sentenceTerms],
+  );
+
+  /**
+   * Mutable sentence-term statuses: initialised from the prop variants and updated
+   * locally when the user taps/long-presses a card to create or change a LingQ.
+   * Lazy initialiser avoids a flash where every card briefly appears as "new".
+   */
+  const [sentenceTermStatusMap, setSentenceTermStatusMap] = React.useState<
+    Record<string, LingQStatusType>
+  >(() => {
+    const map: Record<string, LingQStatusType> = {};
+    for (const t of sentenceTerms) {
+      if (t.variant === 'lingq') map[t.term] = 'Recognized';
+    }
+    return map;
+  });
+
+  const handleSentenceTermStatusChange = useCallback(
+    (wordId: string, status: LingQStatusType) => {
+      setSentenceTermStatusMap((prev) => ({ ...prev, [wordId]: status }));
+    },
+    [],
   );
 
   return (
@@ -940,33 +978,13 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
             ) : null}
 
             {sentenceActive ? (
-              <div className="word-detail-sheet-term-list" role="list">
-                {sentenceTerms.map((t, i) => {
-                  const isLingq = t.variant === 'lingq';
-                  return (
-                    <button
-                      key={`${t.term}-${i}`}
-                      type="button"
-                      className="word-detail-sheet-term-card"
-                      role="listitem"
-                      aria-label={
-                        isLingq ? `${t.term}: ${t.meaning}` : `Add ${t.term} as a LingQ`
-                      }
-                    >
-                      <span
-                        className={`word-detail-sheet-term-status ${isLingq ? 'word-detail-sheet-term-status--lingq' : 'word-detail-sheet-term-status--new'}`}
-                        aria-hidden
-                      >
-                        {isLingq ? <Check size={16} /> : <Plus size={16} />}
-                      </span>
-                      <span className="word-detail-sheet-term-text">
-                        <span className="word-detail-sheet-term-word">{t.term}</span>
-                        <span className="word-detail-sheet-term-meaning">{t.meaning}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <HorizontalTermList
+                items={sentenceTermItems}
+                wordStatusMap={sentenceTermStatusMap}
+                selectedWordId={wordText}
+                onOpenDetail={(id) => onSentenceTermOpen?.(id)}
+                onStatusChange={handleSentenceTermStatusChange}
+              />
             ) : null}
 
             {dictionariesActive ? (

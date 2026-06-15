@@ -1,0 +1,4 @@
+/* Portaled vertical status menu wrapper (positioned via inline style). */
+.status-popover {
+  z-index: 1200;
+}

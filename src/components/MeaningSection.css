@@ -8,7 +8,7 @@
   flex-direction: column;
   width: 100%;
   padding-bottom: var(--spacing-spacing-md, 12px);
-  background: var(--backgrounds-page, #ffffff);
+  background: transparent;
   box-sizing: border-box;
 }
 
@@ -32,10 +32,11 @@
 
 /* Rounded menu container — rows are flush, radius clips the first/last row. */
 .meaning-menu {
-  width: 100%;
+  margin: 0 var(--spacing-spacing-md, 12px);
+  width: calc(100% - 2 * var(--spacing-spacing-md, 12px));
   border-radius: var(--radius-lg, 12px);
   overflow: clip;
-  background: var(--backgrounds-page, #ffffff);
+  background: var(--color-grey-50, #f8f9fa);
   box-sizing: border-box;
 }
 

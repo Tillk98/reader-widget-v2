@@ -316,17 +316,17 @@
 
 /*
  * Scrollable content (middle only; not tags/terms).
- * Grey canvas — tab content sits in white "section" cards separated by 12px gaps.
+ * White canvas — tab content sits in grey (#f8f9fa) "section" cards separated by 12px gaps.
  */
 .word-detail-sheet-scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 0;
+  padding: 0 0 96px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-spacing-md, 12px);
-  background: var(--surfaces-default, #f1f3f4);
+  background: var(--backgrounds-page, #ffffff);
   text-align: left;
 }
 
@@ -366,14 +366,14 @@
   width: 100%;
 }
 
-/* White section card holding the current sentence / past encounters list. */
+/* Section wrapper — transparent; individual sentence blocks carry their own background. */
 .word-detail-sheet-sentence-section {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-spacing-xs, 8px);
   width: 100%;
   padding: var(--spacing-spacing-md, 12px);
-  background: var(--backgrounds-page, #ffffff);
+  background: transparent;
   box-sizing: border-box;
 }
 
@@ -403,11 +403,11 @@
 }
 
 .word-detail-sentence-block--current {
-  background: var(--color-blue-50, #f1f7fe);
+  background: #f9fbfd;
 }
 
 .word-detail-sentence-block--archived {
-  background: var(--backgrounds-elevated, #f8f9fa);
+  background: var(--backgrounds-page, #ffffff);
 }
 
 /* Collapsed stored sentence — only the original line; expands on click (Figma 2354:1328) */
@@ -561,106 +561,6 @@
   cursor: default;
 }
 
-.word-detail-sheet-term-list {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: var(--spacing-spacing-md, 16px);
-  align-items: stretch;
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
-}
-
-/* Term card (Figma TermCard 2195:6555 / 2195:6557) — bordered white card + status circle. */
-.word-detail-sheet-term-card {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--spacing-spacing-sm, 8px);
-  flex: 0 0 auto;
-  padding: var(--spacing-spacing-sm, 8px) var(--spacing-spacing-lg, 16px) var(--spacing-spacing-sm, 8px)
-    var(--spacing-spacing-md, 12px);
-  border: 1px solid var(--border-default, #d1d6d9);
-  border-radius: var(--radius-md, 8px);
-  background: var(--backgrounds-page, #ffffff);
-  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
-  box-sizing: border-box;
-  max-width: 100%;
-  cursor: pointer;
-  text-align: left;
-  transition: var(--ui-ctrl-transition);
-}
-
-.word-detail-sheet-term-card:hover {
-  box-shadow: var(--ui-ctrl-shadow-hover);
-}
-
-.word-detail-sheet-term-card:active {
-  transform: var(--ui-ctrl-press);
-}
-
-.word-detail-sheet-term-card:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: 2px;
-}
-
-/* Status circle (LingQStatusButton) — new word = blue "+" ring, LingQ = green check ring. */
-.word-detail-sheet-term-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50px;
-  border: 0.8px solid;
-  background: var(--backgrounds-elevated, #ffffff);
-  box-sizing: border-box;
-}
-
-.word-detail-sheet-term-status svg {
-  display: block;
-}
-
-.word-detail-sheet-term-status--new {
-  border-color: var(--foreground-secondary, #2e75cd);
-  color: var(--foreground-secondary, #2e75cd);
-}
-
-.word-detail-sheet-term-status--lingq {
-  border-color: var(--icons-action-primary, #42a564);
-  color: var(--icons-action-primary, #42a564);
-}
-
-.word-detail-sheet-term-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
-  min-width: 0;
-}
-
-.word-detail-sheet-term-word {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
-  color: var(--typography-default, #000000);
-  white-space: nowrap;
-}
-
-.word-detail-sheet-term-meaning {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 16px;
-  color: var(--typography-muted, #6d7680);
-  white-space: nowrap;
-}
-
 /* Tag row (Meanings tab; inside .word-detail-sheet-content-anchor) */
 .word-detail-sheet-tag-row {
   display: flex;
@@ -754,7 +654,7 @@
   gap: var(--spacing-spacing-sm, 12px);
   width: 100%;
   padding: var(--spacing-spacing-md, 12px);
-  background: var(--backgrounds-page, #ffffff);
+  background: var(--color-grey-50, #f8f9fa);
   box-sizing: border-box;
 }
 
@@ -774,7 +674,7 @@
 }
 
 .word-detail-sheet-lynx-card--elevated {
-  background: var(--backgrounds-elevated, #f8f9fa);
+  background: var(--backgrounds-page, #ffffff);
 }
 
 .word-detail-sheet-lynx-thinking {
@@ -952,7 +852,7 @@
   gap: var(--spacing-spacing-lg, 16px);
   width: 100%;
   padding: var(--spacing-spacing-md, 12px);
-  background: var(--backgrounds-page, #ffffff);
+  background: transparent;
   box-sizing: border-box;
 }
 

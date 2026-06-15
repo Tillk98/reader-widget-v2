@@ -11,7 +11,7 @@
   padding: var(--spacing-spacing-xs, 4px);
   border-radius: var(--radius-sm, 6px);
   overflow: hidden;
-  background: var(--backgrounds-page, #ffffff);
+  background: transparent;
   box-sizing: border-box;
 }
 
@@ -93,7 +93,7 @@
   padding: var(--spacing-spacing-xs, 4px) var(--spacing-spacing-md, 16px);
   box-sizing: border-box;
   overflow: visible;
-  background: var(--backgrounds-page, #ffffff);
+  background: transparent;
 }
 
 .saved-meaning__input {

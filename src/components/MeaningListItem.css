@@ -8,7 +8,7 @@
   padding: var(--spacing-spacing-xs, 4px);
   border-radius: var(--radius-sm, 6px);
   box-sizing: border-box;
-  background: var(--backgrounds-page, #ffffff);
+  background: transparent;
 }
 
 .meaning-menu-item__content {

@@ -25,8 +25,10 @@ export interface ReviewModeProps {
   /** Ids not yet saved as LingQs — shown with a blue "+" to add. */
   untrackedIds: ReadonlySet<string>;
   selectedWordId: string | null;
-  /** Tap the status badge: surfaces the LingQ status bar. */
+  /** Tap the status badge: opens the vertical status menu alongside the badge. */
   onSelect: (wordId: string) => void;
+  /** Pick a new status from the vertical status menu. */
+  onStatusChange?: (wordId: string, status: LingQStatusType) => void;
   /** Tap a term (word + gloss): opens the full word detail sheet. */
   onOpenDetail: (wordId: string) => void;
   /** Tap the "+" on an untracked term: add it as a LingQ. */
@@ -56,6 +58,7 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
   untrackedIds,
   selectedWordId,
   onSelect,
+  onStatusChange,
   onOpenDetail,
   onAdd,
   onDeselect,
@@ -119,6 +122,7 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
           selectedWordId={selectedWordId}
           untrackedIds={untrackedIds}
           onSelect={onSelect}
+          onStatusChange={onStatusChange}
           onOpenDetail={onOpenDetail}
           onAdd={onAdd}
           onMarkKnown={onMarkKnown}

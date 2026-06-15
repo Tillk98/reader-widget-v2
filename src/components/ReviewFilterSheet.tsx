@@ -1,7 +1,6 @@
 import React from 'react';
 import { EyeOff, Check } from 'lucide-react';
 import { BottomSheet } from './BottomSheet';
-import { LessonHeader } from './LessonHeader';
 import './ReviewFilterSheet.css';
 
 export type ReviewMethod = 'list' | 'cards';
@@ -176,16 +175,6 @@ export const ReviewFilterSheet: React.FC<ReviewFilterSheetProps> = ({
   return (
     <BottomSheet open={open} onClose={onClose} ariaLabel="Review filter" className="review-filter-sheet">
       <div className="review-filter">
-        {(lessonTitle || lessonImageSrc) && (
-          <LessonHeader
-            title={lessonTitle}
-            source={lessonSource}
-            pageLabel={lessonPageLabel}
-            imageSrc={lessonImageSrc}
-            onClick={onLessonClick}
-          />
-        )}
-
         <section className="review-filter__section">
           <div className="review-filter__section-header">
             <span className="review-filter__section-label">REVIEW METHOD</span>

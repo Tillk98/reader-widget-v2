@@ -572,7 +572,7 @@ export const Reader: React.FC = () => {
       setPhraseDetailOpen(false);
       setPhraseHighlightIds(new Set());
       setSnackbar(null);
-      if (selectedWordId === wordId) {
+        if (selectedWordId === wordId) {
         setSelectedWordId(null);
         setClickedWords(prev => {
           const newSet = new Set(prev);
@@ -580,8 +580,6 @@ export const Reader: React.FC = () => {
           return newSet;
         });
       } else {
-        /** Do not start audio mini exit here — LingQ uses ReaderBottomBar while a word is selected, but
-         * `audioMiniPlayerOpen` stays true so the collapsed mini returns when selection clears (see `showAudioMiniAsBottomBar`). */
         setSelectedWordId(wordId);
         setWordStatusMap(prev => ({ ...prev, [wordId]: prev[wordId] ?? 'New' }));
         setClickedWords(prev => {
@@ -866,12 +864,12 @@ export const Reader: React.FC = () => {
   /** Top slot player + fade + top padding (video lessons only). */
   const isVideoChrome = mediaMode === 'video';
 
-  /** Audio mini replaces the default bottom bar (not stacked above it). */
+  /** Audio mini replaces the default bottom bar (not stacked above it).
+   * Word selection does not affect this — in audio mini mode the bottom bar stays as the mini player. */
   const showAudioMiniAsBottomBar =
     (audioMiniPlayerOpen || audioMiniExitAnimating) &&
     mediaMode === 'none' &&
-    lesson.hasVideo !== true &&
-    (selectedWordId == null || audioMiniExitAnimating);
+    lesson.hasVideo !== true;
 
   const contentClassName = [
     'reader-content',
@@ -908,8 +906,6 @@ export const Reader: React.FC = () => {
         }
     : undefined;
 
-  const lingqStripAnchorAboveVideoBarPx =
-    isLessonMediaMode && selectedWordId != null ? effectiveLessonBottomChromePx : undefined;
 
   /** CSS vars: top stack for video chrome; bottom offset for lesson text fade above expanded media bar. */
   const readerRootStyle: React.CSSProperties | undefined = (() => {
@@ -1270,6 +1266,7 @@ export const Reader: React.FC = () => {
             untrackedIds={reviewUntrackedIds}
             selectedWordId={selectedWordId}
             onSelect={handleReviewSelect}
+            onStatusChange={handleStatusChange}
             onOpenDetail={handleListOpenDetail}
             onAdd={handleReviewAdd}
             onDeselect={handleClosePopup}
@@ -1362,7 +1359,7 @@ export const Reader: React.FC = () => {
               />
             );
           })()}
-          {(!isLessonMediaMode || selectedWordId != null) && !showAudioMiniAsBottomBar && (
+          {!isLessonMediaMode && !showAudioMiniAsBottomBar && (
             <ReaderBottomBar
               audioMiniActive={audioMiniPlayerOpen}
               expandedMenuLayout={lesson.expandedMenuLayout ?? 'list'}
@@ -1371,7 +1368,6 @@ export const Reader: React.FC = () => {
                 ((mediaMode === 'video' || mediaMode === 'audio') && !isPlaybackPaused) ||
                 (audioMiniPlayerOpen && !isPlaybackPaused)
               }
-              anchorAboveVideoBarPx={lingqStripAnchorAboveVideoBarPx}
               lessonImageSrc={lessonImage}
               wordDetailSheetOpen={wordDetailSheetOpen || listDetailOpen || phraseDetailOpen || (isTablet && wordDetailPanelMode && selectedWordId != null)}
               selectedWordId={selectedWordId}
