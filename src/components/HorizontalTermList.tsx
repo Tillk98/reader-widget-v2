@@ -195,6 +195,18 @@ const TermCard: React.FC<TermCardProps> = ({
     longPressFired.current = false;
     startPos.current = { x: e.clientX, y: e.clientY };
     pointerIdRef.current = e.pointerId;
+    // Capture the pointer up-front for touch. While a touch pointer is uncaptured
+    // the browser's gesture arbitration (scroll/selection) can fire a pointercancel
+    // mid-hold, which clears the timer before the long-press ever opens the menu —
+    // this is why the hold worked with a mouse but not on mobile. Capturing here
+    // keeps the pointer stream on this card so the 350ms timer can complete.
+    if (e.pointerType !== 'mouse') {
+      try {
+        rootRef.current?.setPointerCapture(e.pointerId);
+      } catch {
+        /* element gone / invalid pointer — fall back to the timer-time capture */
+      }
+    }
     clearTimer();
     pressTimer.current = window.setTimeout(() => {
       pressTimer.current = null;
