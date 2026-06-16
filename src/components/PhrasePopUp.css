@@ -40,7 +40,7 @@
   flex-shrink: 0;
 }
 
-/* Header: status badge + meaning text */
+/* Header: meaning text (tap to expand to the detail sheet) */
 .phrase-popup__meaning-header {
   display: flex;
   align-items: center;
@@ -65,17 +65,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Status menu — replaces the word list card (same slot) when the status badge is tapped.
-   The vertical bar carries its own card chrome; stretch it to the popup width like the list. */
-.phrase-popup__status-menu {
-  width: 100%;
-  flex-shrink: 0;
-}
-
-.phrase-popup__status-menu .lingq-status-bar--vertical {
-  width: 100%;
 }
 
 /* Word list card – separate floating card. */

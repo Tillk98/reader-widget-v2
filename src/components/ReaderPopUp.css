@@ -618,8 +618,7 @@
   width: 100%;
 }
 
-/* The status badge opens the vertical status menu (StatusPopover, portaled to
- * <body>) anchored to the badge — the same menu used by sentence-mode term cards. */
+/* The compact popup is tappable to expand into the word-detail sheet. */
 .reader-popup-widget:not(.reader-popup-widget--expanded) {
   cursor: pointer;
 }

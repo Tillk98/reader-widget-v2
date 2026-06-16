@@ -1329,16 +1329,11 @@ export const Reader: React.FC = () => {
               meaning={phraseSelection.meaning}
               words={phraseSelection.words}
               valid={phraseSelection.valid}
-              status={phraseStatusMap[phraseSelection.ids.join('-')] ?? 'New'}
               getAnchorRect={() => phraseAnchorRectFromIds(phraseSelection.ids)}
               onClose={clearPhraseSelection}
               onExpand={phraseSelection.valid ? () => setPhraseDetailOpen(true) : undefined}
               onWordOpen={handlePhraseWordOpen}
               onGoogleTranslate={() => {}}
-              onStatusChange={(status) => {
-                const key = phraseSelection.ids.join('-');
-                setPhraseStatusMap(prev => ({ ...prev, [key]: status }));
-              }}
             />
           )}
           {phraseDetailOpen && phraseSelection && (() => {
@@ -1491,6 +1486,8 @@ export const Reader: React.FC = () => {
         <QuickStatusPopup
           key={longPressWordId}
           resolveAnchorElement={resolveLongPressAnchorElement}
+          variant={lingqWords.has(longPressWordId) ? 'full' : 'quick'}
+          currentStatus={wordStatusMap[longPressWordId] ?? 'New'}
           onStatusChange={(status) => {
             handleStatusChange(longPressWordId, status);
             setLongPressWordId(null);

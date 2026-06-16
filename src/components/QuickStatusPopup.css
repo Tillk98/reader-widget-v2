@@ -38,7 +38,8 @@
   gap: 8px;
   min-height: 32px;
   padding: 4px 8px;
-  border: none;
+  /* Transparent baseline border so the active state can add a coloured border with no shift. */
+  border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
@@ -46,12 +47,28 @@
   white-space: nowrap;
   text-align: left;
   color: var(--typography-default, #0a0a0a);
-  transition: background 0.12s ease, transform 0.1s ease;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
 }
 
 .quick-status-popup__option:hover,
 .quick-status-popup__option--hover {
   background: rgba(0, 0, 0, 0.04);
+}
+
+/* Active (current) status — mirrors the vertical status menu (lingq-status-vrow--active). */
+.quick-status-popup__option--active.quick-status-popup__option--learning,
+.quick-status-popup__option--active.quick-status-popup__option--known {
+  border-color: var(--border-primary, #42a564);
+  color: var(--foreground-primary, #42a564);
+}
+
+.quick-status-popup__option--active.quick-status-popup__option--known {
+  background: var(--surfaces-primary-subtle, #f4fcef);
+}
+
+.quick-status-popup__option--active.quick-status-popup__option--ignored {
+  border-color: var(--border-default, #d1d6d9);
+  background: var(--surfaces-default, #f1f3f4);
 }
 
 .quick-status-popup__option:active {
@@ -69,7 +86,10 @@
   justify-content: center;
   flex-shrink: 0;
   min-width: 18px;
-  color: var(--typography-default, #0a0a0a);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: inherit;
 }
 
 .quick-status-popup__mark svg {
@@ -81,7 +101,7 @@
   font-weight: 500;
   line-height: 18px;
   letter-spacing: 0;
-  color: var(--typography-default, #0a0a0a);
+  color: inherit;
 }
 
 /* Full-width divider — bleeds past the popup's horizontal padding. */

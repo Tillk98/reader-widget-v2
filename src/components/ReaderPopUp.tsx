@@ -1,15 +1,7 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
 import type { LingQStatusType } from './LingQStatusBar';
-import { LingQStatusButton } from './LingQStatusButton';
-import { StatusPopover } from './StatusPopover';
 import { WordDetailBottomSheet } from './WordDetailBottomSheet';
-import { statusRowAtPoint } from '../utils/statusMenu';
 import './ReaderPopUp.css';
-
-/** Hold duration before a long-press on the popup opens the status menu. */
-const LONG_PRESS_MS = 350;
-/** Movement under this keeps a press a hold; above it cancels (matches the term-card slop). */
-const PRESS_MOVE_CANCEL_PX = 10;
 
 interface ReaderPopUpProps {
   wordId: string;
@@ -46,22 +38,11 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   onTogglePanelMode,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
-  const pressTimer = useRef<number | null>(null);
-  const pressStart = useRef<{ x: number; y: number } | null>(null);
-  const pointerIdRef = useRef<number | null>(null);
-  /** Set when a long-press fired so the trailing click (expand) is ignored. */
-  const longPressFired = useRef(false);
-  /** True once the pointer has dragged onto a status row after the press menu opened. */
-  const draggedToOptionRef = useRef(false);
-  /** Status row currently under the drag pointer (highlights it live). */
-  const [hovered, setHovered] = useState<LingQStatusType | null>(null);
   // If panel mode is already active (e.g. user tapped a new word while the panel was open),
   // skip the compact popup and go straight to the full sheet so the panel stays persistent.
   const [showBottomSheet, setShowBottomSheet] = useState(() => panelMode === true);
   /** Local override after editing meaning in the expanded sheet */
   const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
-  /** Whether the vertical status-picker menu is open */
-  const [showStatusBar, setShowStatusBar] = useState(false);
 
   // Notify Reader that the sheet is open when we auto-expand in panel mode.
   useEffect(() => {
@@ -71,7 +52,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
 
   useEffect(() => {
     setMeaningOverride(undefined);
-    setShowStatusBar(false);
   }, [wordId, wordTranslation]);
 
   const effectiveTranslation = meaningOverride ?? wordTranslation;
@@ -138,8 +118,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       const bar = document.querySelector('.reader-bottom-bar');
       if (bar && bar.contains(target)) return false;
       const hitEl = hitElement(target);
-      /* Portaled vertical status menu lives outside popupRef: tapping a row must not clear selection */
-      if (hitEl?.closest('.status-popover')) return false;
       /* Inline lesson media bar (sibling of bottom bar): interacting must not clear word selection */
       if (hitEl?.closest('[data-video-mode-bar]')) return false;
       if (hitEl?.closest('[data-audio-settings-sheet]')) return false;
@@ -165,98 +143,10 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     };
   }, [onClose, resolveAnchorElement]);
 
-  useEffect(() => () => {
-    if (pressTimer.current) clearTimeout(pressTimer.current);
-  }, []);
-
-  const clearPressTimer = () => {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  };
-
-  const statusMenuEl = () => document.querySelector('.status-popover');
-
-  // Long-press anywhere on the popup opens the status menu — same as tapping the badge.
-  // While the finger stays down it can drag through the menu and release on a row to pick it.
-  const handlePopupPointerDown = (e: React.PointerEvent) => {
-    e.stopPropagation();
-    if (e.button !== 0) return;
-    longPressFired.current = false;
-    pressStart.current = { x: e.clientX, y: e.clientY };
-    pointerIdRef.current = e.pointerId;
-    clearPressTimer();
-    pressTimer.current = window.setTimeout(() => {
-      pressTimer.current = null;
-      longPressFired.current = true;
-      draggedToOptionRef.current = false; // reset — track movement only after the menu opens
-      setHovered(null);
-      setShowStatusBar(true);
-      const id = pointerIdRef.current;
-      if (id != null) popupRef.current?.setPointerCapture?.(id);
-    }, LONG_PRESS_MS);
-  };
-
-  const handlePopupPointerMove = (e: React.PointerEvent) => {
-    if (showStatusBar) {
-      const s = statusRowAtPoint(statusMenuEl(), e.clientX, e.clientY);
-      if (s !== null) draggedToOptionRef.current = true;
-      setHovered(s);
-      return;
-    }
-    const sp = pressStart.current;
-    if (sp && pressTimer.current && Math.hypot(e.clientX - sp.x, e.clientY - sp.y) > PRESS_MOVE_CANCEL_PX) {
-      clearPressTimer();
-    }
-  };
-
-  const handlePopupPointerUp = (e: React.PointerEvent) => {
-    clearPressTimer();
-    if (showStatusBar) {
-      const id = pointerIdRef.current;
-      if (id != null) popupRef.current?.releasePointerCapture?.(id);
-      const s = statusRowAtPoint(statusMenuEl(), e.clientX, e.clientY);
-      if (draggedToOptionRef.current && s) {
-        // Drag-to-select: released over a status row → apply and close.
-        handleStatusChange(s);
-      } else {
-        // Released without dragging to an option → keep the menu open for a tap.
-        setHovered(null);
-      }
-    }
-    pressStart.current = null;
-  };
-
-  const handlePopupPointerCancel = (e: React.PointerEvent) => {
-    clearPressTimer();
-    if (showStatusBar) {
-      popupRef.current?.releasePointerCapture?.(e.pointerId);
-      setShowStatusBar(false);
-      setHovered(null);
-    }
-    pressStart.current = null;
-  };
-
   const handleExpandClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
-    if (longPressFired.current) {
-      longPressFired.current = false;
-      return;
-    }
     onWordDetailSheetOpen?.();
     setShowBottomSheet(true);
-  };
-
-  const handleStatusBadgeClick = (e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-    setShowStatusBar((prev) => !prev);
-  };
-
-  const handleStatusChange = (newStatus: LingQStatusType) => {
-    onWordStatusChange?.(newStatus);
-    setShowStatusBar(false);
-    onClose();
   };
 
   if (showBottomSheet) {
@@ -284,22 +174,9 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       ref={popupRef}
       className="reader-popup-widget"
       role="tooltip"
-      onPointerDown={handlePopupPointerDown}
-      onPointerMove={handlePopupPointerMove}
-      onPointerUp={handlePopupPointerUp}
-      onPointerCancel={handlePopupPointerCancel}
-      onContextMenu={(e) => e.preventDefault()}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="reader-popup-widget-header" onClick={handleExpandClick}>
-        <LingQStatusButton
-          status={wordStatus}
-          state="focus"
-          onClick={handleStatusBadgeClick}
-          onPointerDown={(e) => e.stopPropagation()}
-          aria-haspopup="menu"
-          aria-label={`Status ${wordStatus}, tap to change`}
-          aria-expanded={showStatusBar}
-        />
         <div className="reader-popup-widget-term">
           <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
           {wordTransliteration != null && wordTransliteration !== '' && (
@@ -307,15 +184,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
           )}
         </div>
       </div>
-      {showStatusBar && (
-        <StatusPopover
-          anchorRef={popupRef}
-          placement="block"
-          status={hovered ?? wordStatus}
-          onStatusChange={handleStatusChange}
-          onClose={() => setShowStatusBar(false)}
-        />
-      )}
     </div>
   );
 };

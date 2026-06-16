@@ -3,7 +3,8 @@ import { Check, EyeOff, Brackets } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import './QuickStatusPopup.css';
 
-type QsAction = 'known' | 'ignored' | 'phrase';
+/** A row is either a status to apply, or the "Select a Phrase" action. */
+type QsAction = LingQStatusType | 'phrase';
 
 interface QuickStatusPopupProps {
   resolveAnchorElement: () => HTMLElement | null;
@@ -11,13 +12,28 @@ interface QuickStatusPopupProps {
   /** "Select a Phrase" chosen — start the tap-to-complete phrase selection. */
   onSelectPhrase: () => void;
   onClose: () => void;
+  /**
+   * `quick` (default) — new/blue words: just Known / Ignore (the fast-track).
+   * `full`            — LingQs (tracked words): the complete status menu, which is more
+   *                     useful than Known / Ignore for a word already being learned.
+   */
+  variant?: 'quick' | 'full';
+  /** Current status of the word — highlighted as active in the `full` variant. */
+  currentStatus?: LingQStatusType;
 }
 
-/** Status options always sit closest to the word; "Select a Phrase" is on the far side. */
-const STATUS_OPTIONS: { action: Exclude<QsAction, 'phrase'>; label: string }[] = [
-  { action: 'known', label: 'Known' },
-  { action: 'ignored', label: 'Ignore' },
-];
+/** New/blue words can only fast-track to Known or Ignored. */
+const QUICK_STATUSES: LingQStatusType[] = ['Known', 'Ignored'];
+/** LingQs get the full status range, in learning order. */
+const FULL_STATUSES: LingQStatusType[] = ['New', 'Recognized', 'Familiar', 'Learned', 'Known', 'Ignored'];
+
+const STATUS_NUMBERS: Partial<Record<LingQStatusType, string>> = {
+  New: '1', Recognized: '2', Familiar: '3', Learned: '4',
+};
+const STATUS_LABELS: Record<LingQStatusType, string> = {
+  New: 'New', Recognized: 'Recognized', Familiar: 'Familiar', Learned: 'Learned', Known: 'Known', Ignored: 'Ignore',
+};
+const statusTone = (s: LingQStatusType) => (s === 'Ignored' ? 'ignored' : s === 'Known' ? 'known' : 'learning');
 
 const MOVE_THRESHOLD_PX = 6;
 
@@ -26,11 +42,16 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
   onStatusChange,
   onSelectPhrase,
   onClose,
+  variant = 'quick',
+  currentStatus,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<QsAction | null>(null);
   const movedRef = useRef(false);
   const moveStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const isFull = variant === 'full';
+  const statuses = isFull ? FULL_STATUSES : QUICK_STATUSES;
 
   const calculatePosition = useCallback(() => {
     if (!popupRef.current) return;
@@ -51,17 +72,18 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     popupRef.current.style.left = `${left}px`;
 
     if (anchorRect.top - ph - gap >= 8) {
-      // Menu above the word → reverse rows so Known / Ignore sit nearest the word (bottom).
+      // Menu above the word. The quick (2-row) menu reverses so Known / Ignore sit nearest the
+      // word; the full menu keeps reading order (New → Ignore → Select a Phrase at the very end).
       popupRef.current.style.bottom = `${vh - anchorRect.top + gap}px`;
       popupRef.current.style.top = 'auto';
-      popupRef.current.style.flexDirection = 'column-reverse';
+      popupRef.current.style.flexDirection = isFull ? 'column' : 'column-reverse';
     } else {
-      // Menu below the word → Known / Ignore nearest the word (top), natural order.
+      // Menu below the word → natural order.
       popupRef.current.style.top = `${anchorRect.bottom + gap}px`;
       popupRef.current.style.bottom = 'auto';
       popupRef.current.style.flexDirection = 'column';
     }
-  }, [resolveAnchorElement]);
+  }, [resolveAnchorElement, isFull]);
 
   useLayoutEffect(() => {
     calculatePosition();
@@ -79,9 +101,8 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
 
   const invoke = useCallback(
     (action: QsAction) => {
-      if (action === 'known') onStatusChange('Known');
-      else if (action === 'ignored') onStatusChange('Ignored');
-      else onSelectPhrase();
+      if (action === 'phrase') onSelectPhrase();
+      else onStatusChange(action);
     },
     [onStatusChange, onSelectPhrase]
   );
@@ -135,35 +156,55 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     };
   }, [invoke, onClose]);
 
-  const renderOption = (action: QsAction, label: string) => (
-    <button
-      key={action}
-      type="button"
-      data-qs-action={action}
-      className={`quick-status-popup__option${hovered === action ? ' quick-status-popup__option--hover' : ''}`}
-      aria-label={
-        action === 'phrase' ? 'Select a phrase' : action === 'known' ? 'Mark word as Known' : 'Ignore word'
-      }
-    >
-      <span className="quick-status-popup__mark" aria-hidden>
-        {action === 'known' ? (
-          <Check size={18} strokeWidth={2} />
-        ) : action === 'ignored' ? (
-          <EyeOff size={18} strokeWidth={2} />
-        ) : (
-          <Brackets size={18} strokeWidth={2} />
-        )}
-      </span>
-      <span className="quick-status-popup__label">{label}</span>
-    </button>
-  );
+  const renderStatusOption = (status: LingQStatusType) => {
+    const number = STATUS_NUMBERS[status];
+    const active = isFull && currentStatus === status;
+    return (
+      <button
+        key={status}
+        type="button"
+        data-qs-action={status}
+        className={[
+          'quick-status-popup__option',
+          `quick-status-popup__option--${statusTone(status)}`,
+          active && 'quick-status-popup__option--active',
+          hovered === status && 'quick-status-popup__option--hover',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        aria-label={STATUS_LABELS[status]}
+        aria-pressed={active}
+      >
+        <span className="quick-status-popup__mark" aria-hidden>
+          {number !== undefined ? (
+            number
+          ) : status === 'Known' ? (
+            <Check size={18} strokeWidth={2} />
+          ) : (
+            <EyeOff size={18} strokeWidth={2} />
+          )}
+        </span>
+        <span className="quick-status-popup__label">{STATUS_LABELS[status]}</span>
+      </button>
+    );
+  };
 
   return (
     <div ref={popupRef} className="quick-status-popup" onPointerDown={(e) => e.stopPropagation()}>
-      {/* Fixed DOM order; calculatePosition flips flex-direction so Known / Ignore stay nearest the word. */}
-      {STATUS_OPTIONS.map((o) => renderOption(o.action, o.label))}
+      {/* Fixed DOM order; calculatePosition may flip flex-direction (quick menu only). */}
+      {statuses.map(renderStatusOption)}
       <div className="quick-status-popup__divider" aria-hidden />
-      {renderOption('phrase', 'Select a Phrase')}
+      <button
+        type="button"
+        data-qs-action="phrase"
+        className={`quick-status-popup__option${hovered === 'phrase' ? ' quick-status-popup__option--hover' : ''}`}
+        aria-label="Select a phrase"
+      >
+        <span className="quick-status-popup__mark" aria-hidden>
+          <Brackets size={18} strokeWidth={2} />
+        </span>
+        <span className="quick-status-popup__label">Select a Phrase</span>
+      </button>
     </div>
   );
 };
