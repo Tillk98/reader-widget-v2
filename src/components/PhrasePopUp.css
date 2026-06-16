@@ -24,9 +24,9 @@
 /* ── Meaning card ─────────────────────────────────────────────────────── */
 
 /*
- * Card shell: provides the white background, border, shadow and entry
- * animation target. Padding and gap live on the inner children so
- * max-width: 0 can fully collapse each side without a phantom gap.
+ * Card shell: provides the white background, border and shadow. The status badge
+ * opens the vertical status menu (StatusPopover, portaled to <body>) anchored to
+ * the badge — the same menu used by sentence-mode term cards.
  */
 .phrase-popup__meaning-card {
   display: flex;
@@ -40,7 +40,7 @@
   flex-shrink: 0;
 }
 
-/* Header: status badge + meaning text — collapses when status picker opens */
+/* Header: status badge + meaning text */
 .phrase-popup__meaning-header {
   display: flex;
   align-items: center;
@@ -49,53 +49,13 @@
   overflow: hidden;
   flex-shrink: 0;
   cursor: pointer;
-  max-width: 600px;
-  transition:
-    max-width    0.26s ease-out,
-    padding-left 0.26s ease-out,
-    padding-right 0.26s ease-out,
-    opacity      0.18s ease;
+  width: 100%;
 }
 
 .phrase-popup__meaning-header:focus-visible {
   outline: var(--ui-focus-ring, 2px solid #2e75cd);
   outline-offset: -2px;
 }
-
-.phrase-popup__meaning-card--status-mode .phrase-popup__meaning-header {
-  max-width: 0;
-  padding-left: 0;
-  padding-right: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Status picker: hidden by default, expands when status badge is tapped */
-.phrase-popup__meaning-statusbar {
-  overflow: hidden;
-  flex-shrink: 0;
-  max-width: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    max-width 0.28s ease-out,
-    opacity   0.2s ease 0.08s;
-}
-
-.phrase-popup__meaning-card--status-mode .phrase-popup__meaning-statusbar {
-  max-width: 320px;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Strip the floating bar's own card shell — the meaning card is the container */
-.phrase-popup__meaning-card--status-mode .lingq-status-bar--floating {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
-}
-
 
 .phrase-popup__meaning {
   font-weight: 600;
@@ -105,6 +65,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Status menu — replaces the word list card (same slot) when the status badge is tapped.
+   The vertical bar carries its own card chrome; stretch it to the popup width like the list. */
+.phrase-popup__status-menu {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.phrase-popup__status-menu .lingq-status-bar--vertical {
+  width: 100%;
 }
 
 /* Word list card – separate floating card. */

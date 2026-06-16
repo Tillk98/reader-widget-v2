@@ -112,21 +112,23 @@
   gap: 0;
 }
 
+/* Original term — top, subdued (Figma Footnote Medium). */
 .h-term-card__term {
   font-family: 'DM Sans', sans-serif;
   font-weight: 500;
-  font-size: 16px;
-  line-height: 20px;
-  color: var(--typography-default, #000000);
-  white-space: nowrap;
-}
-
-.h-term-card__meaning {
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 400;
   font-size: 14px;
   line-height: 18px;
   color: var(--typography-muted, #6d7680);
+  white-space: nowrap;
+}
+
+/* Meaning — bottom, prominent (Figma Body Semibold; matches the meaning popup). */
+.h-term-card__meaning {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--typography-default, #000000);
   white-space: nowrap;
 }
 
