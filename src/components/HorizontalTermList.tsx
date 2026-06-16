@@ -1,15 +1,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LingQStatusBar, type LingQStatusType } from './LingQStatusBar';
+import { LingQStatusButton } from './LingQStatusButton';
 import type { VocabTermItem } from './VocabTermList';
 import './HorizontalTermList.css';
-
-const LEARNING_NUMBER: Partial<Record<LingQStatusType, number>> = {
-  New: 1,
-  Recognized: 2,
-  Familiar: 3,
-  Learned: 4,
-};
 
 /** Reserved space at the bottom of the viewport (reader bottom bar + safe area). */
 const BOTTOM_RESERVED_PX = 96;
@@ -160,7 +154,6 @@ const TermCard: React.FC<TermCardProps> = ({
     rootRef.current = el;
   }, []);
   const isTracked = status !== undefined;
-  const learningNum = status ? LEARNING_NUMBER[status] : undefined;
 
   const [pressOpen, setPressOpen] = useState(false);
   const [hovered, setHovered] = useState<LingQStatusType | null>(null);
@@ -340,9 +333,9 @@ const TermCard: React.FC<TermCardProps> = ({
         .join(' ')}
       {...pressHandlers}
     >
-      <button
-        type="button"
-        className="h-term-card__badge h-term-card__badge--lingq"
+      <LingQStatusButton
+        status={status}
+        state="focus"
         onClick={(e) => {
           e.stopPropagation();
           if (longPressFired.current) {
@@ -353,9 +346,7 @@ const TermCard: React.FC<TermCardProps> = ({
         }}
         aria-label={`Change status for ${item.text}`}
         aria-expanded={isOpen}
-      >
-        <span className="h-term-card__badge-num">{learningNum}</span>
-      </button>
+      />
 
       <button
         type="button"

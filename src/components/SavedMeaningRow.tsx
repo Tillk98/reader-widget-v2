@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, X, GripVertical } from 'lucide-react';
 import './SavedMeaningRow.css';
 
-/** Width of the revealed delete panel (trash icon + "Delete" label). */
-const DELETE_WIDTH = 100;
-/** Past this many px of left-swipe, release snaps the row open. */
-const SWIPE_OPEN_THRESHOLD = 36;
 /** Movement under this many px counts as a tap (→ edit), not a swipe. */
 const TAP_MOVE_TOLERANCE = 8;
+/** Left-swipe past this fraction of the row width commits the delete on release. */
+const DELETE_COMMIT_RATIO = 0.5;
+/** Slide-out duration before the row is removed, kept in sync with the CSS transition. */
+const DELETE_ANIM_MS = 200;
 
 export interface SavedMeaningRowProps {
   meaning: string;
@@ -28,9 +28,14 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
 }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(meaning);
+  /** Px the content is dragged left; the red delete layer is revealed behind it. */
   const [offset, setOffset] = useState(0);
+  /** True while dragging (transition off, content tracks the finger 1:1). */
   const [active, setActive] = useState(false);
+  /** True once past the commit point — release will delete (solid-red cue). */
+  const [armed, setArmed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
 
   const startX = useRef(0);
   const startY = useRef(0);
@@ -38,6 +43,12 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
   const dragging = useRef(false);
   const engaged = useRef(false);
   const moved = useRef(false);
+  /** Row width measured at gesture start — defines the commit midpoint and max travel. */
+  const rowWidth = useRef(0);
+  /** Live mirror of `offset` so the pointer-up handler reads the final value, not a stale closure. */
+  const offsetRef = useRef(0);
+  /** Guards against a double delete (gesture + a stray click during the slide-out). */
+  const deleting = useRef(false);
 
   useEffect(() => {
     if (!editing) setDraft(meaning);
@@ -53,18 +64,32 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
     }
   }, [editing]);
 
-  const open = offset > 0;
+  const setOffsetValue = useCallback((next: number) => {
+    offsetRef.current = next;
+    setOffset(next);
+  }, []);
 
-  const snap = useCallback(
-    () => setOffset(offset >= SWIPE_OPEN_THRESHOLD ? DELETE_WIDTH : 0),
-    [offset],
-  );
+  /** Snap the content back to rest (no deletion). */
+  const resetOffset = useCallback(() => {
+    setArmed(false);
+    setOffsetValue(0);
+  }, [setOffsetValue]);
+
+  /** Slide the row fully out, then remove it. */
+  const commitDelete = useCallback(() => {
+    if (deleting.current) return;
+    deleting.current = true;
+    setActive(false);
+    setOffsetValue(rowWidth.current);
+    window.setTimeout(onDelete, DELETE_ANIM_MS);
+  }, [onDelete, setOffsetValue]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (editing) return;
+    rowWidth.current = rowRef.current?.offsetWidth ?? 0;
     startX.current = e.clientX;
     startY.current = e.clientY;
-    startOffset.current = offset;
+    startOffset.current = offsetRef.current;
     dragging.current = true;
     engaged.current = false;
     moved.current = false;
@@ -87,7 +112,10 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
         return;
       }
     }
-    setOffset(Math.max(0, Math.min(DELETE_WIDTH, startOffset.current - dx)));
+    const max = rowWidth.current;
+    const next = Math.max(0, Math.min(max, startOffset.current - dx));
+    setOffsetValue(next);
+    setArmed(max > 0 && next >= max * DELETE_COMMIT_RATIO);
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -96,18 +124,23 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
     setActive(false);
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
     if (!moved.current) {
-      if (open) setOffset(0);
-      else setEditing(true);
+      setEditing(true);
       return;
     }
-    snap();
+    const max = rowWidth.current;
+    if (max > 0 && offsetRef.current >= max * DELETE_COMMIT_RATIO) {
+      commitDelete();
+    } else {
+      resetOffset();
+    }
   };
 
-  const handlePointerCancel = () => {
+  const handlePointerCancel = (e: React.PointerEvent) => {
     if (!dragging.current) return;
     dragging.current = false;
     setActive(false);
-    snap();
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    resetOffset();
   };
 
   const handleCancel = () => {
@@ -159,11 +192,26 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
     );
   }
 
-  /* ── Default / delete-revealed state ────────────────────────── */
+  /* ── Default / swipe-to-delete state ────────────────────────── */
   return (
-    <div className={`saved-meaning${open ? ' saved-meaning--open' : ''}`}>
+    <div className="saved-meaning" ref={rowRef}>
+      {/* Red layer behind the content, revealed from the right as the content slides left. */}
+      <button
+        type="button"
+        className={`saved-meaning__delete${armed ? ' saved-meaning__delete--armed' : ''}`}
+        aria-label={`Delete ${meaning}`}
+        tabIndex={-1}
+        onClick={commitDelete}
+      >
+        <Trash2 size={12} aria-hidden />
+        <span className="saved-meaning__delete-label">Delete</span>
+      </button>
       <div
         className="saved-meaning__content"
+        style={{
+          transform: `translateX(${-offset}px)`,
+          transition: active ? 'none' : `transform ${DELETE_ANIM_MS}ms ease`,
+        }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -174,20 +222,6 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
           <GripVertical size={16} />
         </span>
       </div>
-      <button
-        type="button"
-        className="saved-meaning__delete"
-        aria-label={`Delete ${meaning}`}
-        tabIndex={open ? 0 : -1}
-        style={{
-          transform: `translateX(${DELETE_WIDTH - offset}px)`,
-          transition: active ? 'none' : 'transform 0.18s ease',
-        }}
-        onClick={onDelete}
-      >
-        <Trash2 size={12} aria-hidden />
-        <span className="saved-meaning__delete-label">Delete</span>
-      </button>
     </div>
   );
 };

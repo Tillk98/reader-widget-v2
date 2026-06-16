@@ -131,24 +131,6 @@
   transform: scale(0.92);
 }
 
-.vocab-list__status-num {
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 16px;
-  color: #42a564;
-}
-
-.vocab-list__status--known {
-  background: #42a564;
-  border-color: #42a564;
-  color: #fff;
-}
-
-.vocab-list__status--ignored {
-  border-color: #c4c8cc;
-  color: #6d7680;
-}
-
 /* Untracked word (Review mode): blue "+" to add it as a LingQ. */
 .vocab-list__status--add {
   border-color: #2e75cd;

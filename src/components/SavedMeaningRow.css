@@ -16,6 +16,7 @@
 }
 
 /* ── Default state — content + grip handle ─────────────────────── */
+/* Opaque so it fully covers the red delete layer at rest; slides left to reveal it. */
 .saved-meaning__content {
   position: relative;
   z-index: 1;
@@ -27,10 +28,12 @@
   min-width: 0;
   padding: var(--spacing-spacing-md, 12px);
   border-radius: var(--radius-sm, 6px);
+  background: var(--color-grey-50, #f8f9fa);
   box-sizing: border-box;
   cursor: text;
   touch-action: pan-y;
   user-select: none;
+  will-change: transform;
 }
 
 .saved-meaning__text {
@@ -48,25 +51,36 @@
 }
 
 /* ── Swipe-to-delete reveal ───────────────────────────────────── */
+/* Full-bleed layer behind the content (inset matches the row's 4px padding so it
+   aligns with the content box). The trash + label sit at the right edge and are
+   uncovered as the content slides left. */
 .saved-meaning__delete {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
+  inset: var(--spacing-spacing-xs, 4px);
+  z-index: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: var(--spacing-spacing-sm, 8px);
-  width: 100px;
   margin: 0;
   padding: var(--spacing-spacing-md, 12px) var(--spacing-spacing-lg, 16px);
   border: none;
-  border-radius: 0 var(--radius-sm, 6px) var(--radius-sm, 6px) 0;
+  border-radius: var(--radius-sm, 6px);
   background: var(--surfaces-destructive-subtle, #fef2f2);
   color: var(--foreground-destructive, #dd2525);
   cursor: pointer;
   box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Past the midpoint: release commits the delete — solid-red "armed" cue. */
+.saved-meaning__delete--armed,
+.saved-meaning__delete--armed .saved-meaning__delete-label {
+  color: #ffffff;
+}
+
+.saved-meaning__delete--armed {
+  background: var(--foreground-destructive, #dd2525);
 }
 
 .saved-meaning__delete svg {

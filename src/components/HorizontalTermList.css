@@ -88,44 +88,8 @@
   outline-offset: 2px;
 }
 
-/* Status badge — also the popover trigger */
-.h-term-card__badge {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border-radius: 50px;
-  border: 0.8px solid var(--icons-action-primary, #42a564);
-  background: var(--backgrounds-elevated, #ffffff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--icons-action-primary, #42a564);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-.h-term-card__badge:active {
-  transform: scale(0.92);
-}
-
-.h-term-card__badge:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: 2px;
-}
-
-.h-term-card__badge svg {
-  display: block;
-}
-
-.h-term-card__badge-num {
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  line-height: 16px;
-  color: inherit;
-}
+/* Status badge — the LingQStatusButton (Figma 4008:56485) is the popover trigger.
+   Visuals live in LingQStatusButton.css; nothing card-specific to override here. */
 
 /* Term + meaning (clickable → word detail) */
 .h-term-card__meta {

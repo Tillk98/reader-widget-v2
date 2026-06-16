@@ -1,15 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CircleCheck, Trash2, Play, Check, Plus } from 'lucide-react';
+import { CircleCheck, Trash2, Play, Plus } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
+import { LingQStatusButton } from './LingQStatusButton';
 import { StatusPopover } from './StatusPopover';
 import './VocabTermList.css';
-
-const LEARNING_NUMBER: Partial<Record<LingQStatusType, number>> = {
-  New: 1,
-  Recognized: 2,
-  Familiar: 3,
-  Learned: 4,
-};
 
 /** px of horizontal drag required to confirm a swipe action. */
 const SWIPE_THRESHOLD = 80;
@@ -55,7 +49,6 @@ export interface VocabTermListProps {
 interface SwipeableTileProps {
   word: VocabTermItem;
   status: LingQStatusType;
-  number: number | undefined;
   untracked: boolean;
   isSelected: boolean;
   showDivider: boolean;
@@ -77,7 +70,6 @@ interface SwipeableTileProps {
 const SwipeableTile: React.FC<SwipeableTileProps> = ({
   word,
   status,
-  number,
   untracked,
   isSelected,
   showDivider,
@@ -236,27 +228,15 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
                 <Plus size={18} strokeWidth={2.25} />
               </button>
             ) : (
-              <button
+              <LingQStatusButton
                 ref={statusBtnRef}
-                type="button"
-                className={[
-                  'vocab-list__status',
-                  status === 'Known' && 'vocab-list__status--known',
-                  status === 'Ignored' && 'vocab-list__status--ignored',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                status={status}
+                state="focus"
                 onClick={onSelect}
                 aria-haspopup="menu"
                 aria-expanded={statusMenuOpen}
                 aria-label={`Adjust status for ${word.text}`}
-              >
-                {status === 'Known' ? (
-                  <Check size={16} strokeWidth={2.25} />
-                ) : (
-                  <span className="vocab-list__status-num">{number ?? ''}</span>
-                )}
-              </button>
+              />
             )}
             {statusMenuOpen && !untracked && (
               <StatusPopover
@@ -350,13 +330,11 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
       {visibleItems.map((w, i) => {
         const untracked = untrackedIds?.has(w.id) ?? false;
         const status = wordStatusMap[w.id] ?? 'New';
-        const number = LEARNING_NUMBER[status];
         return (
           <SwipeableTile
             key={w.id}
             word={w}
             status={status}
-            number={number}
             untracked={untracked}
             isSelected={selectedWordId === w.id}
             showDivider={i > 0}
