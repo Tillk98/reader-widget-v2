@@ -1491,6 +1491,9 @@ export const Reader: React.FC = () => {
           onStatusChange={(status) => {
             handleStatusChange(longPressWordId, status);
             setLongPressWordId(null);
+            /* Close the meaning popup too, so drag-select matches tap-select (whose outside
+               pointerdown on the menu would otherwise be what dismisses the popup). */
+            handleClosePopup();
           }}
           onSelectPhrase={handleStartPhrasePick}
           onClose={() => setLongPressWordId(null)}
