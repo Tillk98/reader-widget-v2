@@ -1,0 +1,123 @@
+/* Sentence context block (Figma SentenceBlock 2354:1326) — blue-subtle card. */
+.sentence-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  padding: 4px 4px 12px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  box-sizing: border-box;
+  overflow: clip;
+}
+
+/* Top row — original sentence with a leading quote bar (min-h 48, p-12). */
+.sentence-block__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  width: 100%;
+  padding: var(--spacing-spacing-lg, 12px);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.sentence-block__original {
+  display: flex;
+  flex: 1 1 0;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sentence-block__quote-bar {
+  flex-shrink: 0;
+  width: 2px;
+  align-self: stretch;
+  min-height: 18px;
+  border-radius: 2px;
+  background: var(--foreground-muted, #49525b);
+}
+
+.sentence-block__original-text {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--foreground-muted, #49525b);
+}
+
+/* Below the original — lesson title, translation, actions (px-12, gap-8). */
+.sentence-block__expanded {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 0 var(--spacing-spacing-lg, 12px);
+  box-sizing: border-box;
+}
+
+.sentence-block__lesson {
+  margin: 0;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--foreground-muted, #49525b);
+}
+
+.sentence-block__translation {
+  margin: 0;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--foreground-default, #0a0a0a);
+}
+
+.sentence-block__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-spacing-lg, 12px);
+  width: 100%;
+}
+
+/* Transparent icon buttons (play / copy) — p-8, 16px icon. */
+.sentence-block__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 8px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foreground-default, #0a0a0a);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.sentence-block__btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.sentence-block__btn:active {
+  transform: scale(0.94);
+}
+
+.sentence-block__btn:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.sentence-block__btn svg {
+  display: block;
+}

@@ -77,31 +77,38 @@
   }
 }
 
-/* Header: meaning section + tabs (Figma 2259:2634) */
+/* Header: ContentHeader (term / meaning / tags) + tabs (Figma WidgetHeader 4446:87126) */
 .word-detail-sheet-header-block {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-spacing-sm, 12px);
+  gap: 0;
 }
 
-/* Bottom sheet header content (Figma 3989:42455 — BottomSheet state) */
+/* ContentHeader — each row carries its own px-12 padding (Figma 4446:87124) */
 .word-detail-sheet-header-content {
   flex-shrink: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0 var(--spacing-spacing-sm, 12px);
   box-sizing: border-box;
 }
 
+/* OriginalTerm row — play button + muted term text (Figma 4446:87048, px-12 py-6) */
 .word-detail-sheet-original-row {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-spacing-sm, 12px);
-  padding: 4px 0;
+  gap: var(--spacing-spacing-lg, 12px);
+  padding: 6px 12px;
+}
+
+/* Close button — absolute top-right of the drag chrome (Figma ReaderButton 4446:87313) */
+.word-detail-sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
 }
 
 .word-detail-sheet-original-row-left {
@@ -140,10 +147,13 @@
   text-overflow: ellipsis;
 }
 
+/* Meaning row — bold amalgamated meaning (Figma 4446:87122, p-12 h-44) */
 .word-detail-sheet-meaning-row {
   display: flex;
   align-items: center;
-  padding: 4px 0;
+  min-height: 44px;
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 /* Header meaning — plain read-only text (Figma 3989:42455) */
@@ -165,19 +175,18 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  padding: 0;
+  padding: 8px;
   border: none;
   border-radius: var(--ui-ctrl-radius-pill);
-  background: #ffffff;
-  box-shadow: 0px 1.333px 5.333px -2px rgba(0, 0, 0, 0.15);
-  color: var(--typography-default, #000000);
+  background: #f8f9fa;
+  color: var(--foreground-default, #0a0a0a);
   cursor: pointer;
   flex-shrink: 0;
   transition: var(--ui-ctrl-transition);
 }
 
 .word-detail-sheet-vol-btn:hover {
-  box-shadow: var(--ui-ctrl-shadow-hover);
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
 }
 
 .word-detail-sheet-vol-btn:active {
@@ -197,7 +206,7 @@
   box-sizing: border-box;
   padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-xs, 8px) var(--spacing-spacing-lg, 16px);
   border: none;
-  border-bottom: 1px solid var(--border-default, #e3e5e7);
+  border-bottom: 1px solid var(--border-default, #f1f3f4);
   border-radius: 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -354,177 +363,34 @@
   pointer-events: auto;
 }
 
-.word-detail-sheet-content-anchor .word-detail-sheet-tag-row {
-  padding: 0;
-}
-
-/* Sentence tab — stacked context blocks (Figma 2195:613, 2354:1327) */
+/* Sentence tab (Figma PageContent 4459:15723): current sentence + term scroll, then past
+   encounters. Block / menu styling is co-located in SentenceBlock.css / SentenceMenu.css. */
 .word-detail-sheet-sentence {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-spacing-md, 12px);
   width: 100%;
-}
-
-/* Section wrapper — transparent; individual sentence blocks carry their own background. */
-.word-detail-sheet-sentence-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-spacing-xs, 8px);
-  width: 100%;
   padding: var(--spacing-spacing-md, 12px);
-  background: transparent;
   box-sizing: border-box;
 }
 
-.word-detail-sheet-sentence-section__header {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.word-detail-sheet-sentence-section__label {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 16px;
-  text-transform: uppercase;
-  color: var(--typography-muted, #6d7680);
-}
-
-.word-detail-sentence-block {
+/* SentencesSection — current SentenceBlock + the term scroll directly under it. */
+.word-detail-sheet-sentence__group {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-spacing-xs, 8px);
-  width: 100%;
-  padding: var(--spacing-spacing-md, 16px);
-  border-radius: var(--radius-sm, 8px);
-  box-sizing: border-box;
-}
-
-.word-detail-sentence-block--current {
-  background: #f9fbfd;
-}
-
-.word-detail-sentence-block--archived {
-  background: var(--backgrounds-page, #ffffff);
-}
-
-/* Collapsed stored sentence — only the original line; expands on click (Figma 2354:1328) */
-.word-detail-sentence-block--collapsed {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: var(--spacing-spacing-md, 16px);
-  border: none;
-  background: var(--backgrounds-page, #ffffff);
-  border-radius: var(--radius-sm, 8px);
-  box-sizing: border-box;
-  cursor: pointer;
-  text-align: left;
-  transition: background-color 0.18s ease;
-}
-
-.word-detail-sentence-block--collapsed:hover {
-  background: var(--backgrounds-accent, #f4f7fb);
-}
-
-.word-detail-sentence-block--collapsed:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: 2px;
-}
-
-.word-detail-sentence-block--collapsed .word-detail-sentence-block__original-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.word-detail-sentence-block__caption {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: 24px;
   width: 100%;
 }
 
-.word-detail-sentence-block__lesson {
-  margin: 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 16px;
-  color: var(--typography-muted, #6d7680);
-  text-align: left;
+/* The term scroll bleeds to the sheet edges; re-anchor it to the 12px container inset. */
+.word-detail-sheet-sentence__group .h-term-list {
+  margin: 0 -12px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
-.word-detail-sentence-block__meta {
-  margin: 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 16px;
-  color: var(--typography-muted, #6d7680);
-  text-align: left;
-}
-
-.word-detail-sentence-block__translation {
-  margin: 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 20px;
-  color: var(--typography-default, #000000);
-  text-align: left;
-}
-
-.word-detail-sentence-block__original-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-}
-
-.word-detail-sentence-block__original-text-wrap {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 0;
-  flex: 1;
-  min-width: 0;
-}
-
-.word-detail-sentence-block__quote-bar {
-  display: block;
-  width: 3px;
-  flex-shrink: 0;
-  border-radius: 2px;
-  background: var(--typography-muted, #6d7680);
-  margin-right: 8px;
-  align-self: stretch;
-  min-height: 18px;
-}
-
-.word-detail-sentence-block__original-text {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 18px;
-  color: var(--typography-muted, #6d7680);
-  text-align: left;
-}
-
-.word-detail-sentence-block__actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--spacing-spacing-xs, 8px);
-  width: 100%;
+.word-detail-sheet-sentence__group .h-term-list__tail {
+  margin-right: -12px;
 }
 
 .word-detail-sheet-icon-btn {
@@ -561,22 +427,42 @@
   cursor: default;
 }
 
-/* Tag row (Meanings tab; inside .word-detail-sheet-content-anchor) */
+/* Tags section — in the shared header, between meaning and tabs (Figma TagsSection 4446:88355, p-12) */
 .word-detail-sheet-tag-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-spacing-md, 16px);
-  padding: 0 var(--spacing-spacing-md, 16px) var(--spacing-spacing-md, 16px);
+  gap: var(--spacing-spacing-lg, 12px);
+  padding: 12px;
+  min-width: 0;
+  max-height: 80px;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: max-height 0.28s var(--word-detail-sheet-ease, ease),
+    padding 0.28s var(--word-detail-sheet-ease, ease), opacity 0.2s ease;
 }
 
-.word-detail-sheet-tag-row-inner {
+/* Scrolled state — tags collapse to shrink the header (reappear back at the top). */
+.word-detail-sheet-tag-row--collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.word-detail-sheet-tag-list {
   display: flex;
   align-items: center;
-  gap: var(--spacing-spacing-md, 16px);
+  gap: var(--spacing-spacing-md, 12px);
   min-width: 0;
   flex: 1;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.word-detail-sheet-tag-list::-webkit-scrollbar {
+  display: none;
 }
 
 .word-detail-sheet-tags-btn {
@@ -584,19 +470,19 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 8px;
   border: none;
   border-radius: var(--ui-ctrl-radius-pill);
-  background: #ffffff;
-  box-shadow: 0px 2px 8px -2px rgba(0, 0, 0, 0.15);
-  color: var(--typography-default, #000000);
+  background: #f8f9fa;
+  color: var(--foreground-default, #0a0a0a);
   cursor: pointer;
   transition: var(--ui-ctrl-transition);
 }
 
 .word-detail-sheet-tags-btn:hover {
-  background: var(--ui-ctrl-surface-hover);
-  box-shadow: var(--ui-ctrl-shadow-hover);
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
 }
 
 .word-detail-sheet-tags-btn:active {
@@ -608,43 +494,22 @@
   outline-offset: 2px;
 }
 
+/* Tag pill — white card with hairline border (Figma Tag 4446:88358) */
 .word-detail-sheet-tag-pill {
-  flex-shrink: 0;
-  padding: var(--spacing-spacing-sm, 8px) var(--spacing-spacing-md, 12px);
-  border-radius: var(--radius-sm, 6px);
-  background: #ffffff;
-  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 20px;
-  color: var(--typography-default, #000000);
-  white-space: nowrap;
-}
-
-.word-detail-sheet-coin-badge {
   display: flex;
   align-items: center;
-  gap: var(--spacing-spacing-sm, 8px);
   flex-shrink: 0;
-  padding: 12px var(--spacing-spacing-lg, 16px);
-  border: none;
-  border-radius: var(--ui-ctrl-radius-pill);
-  background: #ffffff;
-  box-shadow: 0px 2px 8px -2px rgba(0, 0, 0, 0.15);
-}
-
-.word-detail-sheet-coin-count {
+  min-height: 36px;
+  padding: var(--spacing-spacing-sm, 6px) var(--spacing-spacing-lg, 12px);
+  border: 1px solid var(--border-default, #f1f3f4);
+  border-radius: var(--radius-xs, 4px);
+  background: var(--surfaces-default-subtle, #ffffff);
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 20px;
-  color: var(--typography-default, #000000);
-}
-
-.word-detail-sheet-coin-icon {
-  color: #f0ad00;
-  flex-shrink: 0;
+  line-height: 18px;
+  color: var(--foreground-default, #0a0a0a);
+  white-space: nowrap;
 }
 
 /* Explain This / Lynx (Figma 2195:5489, 2195:5597 — message actions) */
@@ -741,20 +606,19 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  padding: 0;
+  width: 32px;
+  height: 32px;
+  padding: 8px;
   border: none;
   border-radius: 999px;
-  background: #fff;
-  color: #1c1c1e;
-  box-shadow: 0px 1px 2px var(--color-grey-200, #e3e5e7);
+  background: transparent;
+  color: var(--foreground-default, #0a0a0a);
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .word-detail-sheet-dictionary-manage:hover {
-  background: #f4f5f6;
+  background: rgba(15, 23, 42, 0.06);
 }
 
 .word-detail-sheet-dictionary-manage:active {
@@ -782,17 +646,18 @@
   flex: 0 0 auto;
 }
 
+/* Dictionary chip — Figma Tag 4446:88237 (white, hairline border, radius 4). */
 .word-detail-sheet-dictionary-card {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-spacing-xs, 8px);
-  padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-md, 16px);
-  border: none;
-  border-radius: var(--ui-ctrl-radius-md);
-  background: #ffffff;
-  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
+  gap: var(--spacing-spacing-lg, 12px);
+  min-height: 36px;
+  padding: var(--spacing-spacing-sm, 6px) var(--spacing-spacing-lg, 12px);
+  border: 1px solid var(--border-default, #f1f3f4);
+  border-radius: var(--radius-xs, 4px);
+  background: var(--surfaces-default-subtle, #ffffff);
   cursor: pointer;
   font: inherit;
   box-sizing: border-box;
@@ -802,7 +667,6 @@
 
 .word-detail-sheet-dictionary-card:hover {
   background: var(--ui-ctrl-surface-hover);
-  box-shadow: var(--ui-ctrl-shadow-hover);
 }
 
 .word-detail-sheet-dictionary-card:active {
@@ -817,32 +681,32 @@
 .word-detail-sheet-dictionary-card__icon-wrap {
   display: block;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
 }
 
 .word-detail-sheet-dictionary-card__icon {
   display: block;
-  width: 32px;
-  height: 32px;
-  border-radius: 2.2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
   object-fit: cover;
 }
 
 .word-detail-sheet-dictionary-card__icon-placeholder {
   display: block;
-  width: 32px;
-  height: 32px;
-  border-radius: 2.2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
   background: rgba(109, 118, 128, 0.12);
 }
 
 .word-detail-sheet-dictionary-card__label {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 18px;
-  color: var(--typography-default, #000000);
+  color: var(--foreground-default, #0a0a0a);
 }
 
 /* Notes tab — editable note field with empty / focus / saved states (Figma 3200:5461) */
@@ -872,7 +736,7 @@
   width: 100%;
   min-height: 48px;
   padding: var(--spacing-spacing-md, 12px) var(--spacing-spacing-lg, 16px);
-  border: 1px solid var(--border-default, #d1d6d9);
+  border: 1px solid var(--border-default, #f1f3f4);
   border-radius: var(--radius-sm, 6px);
   background: var(--backgrounds-page, #ffffff);
   box-sizing: border-box;
@@ -885,8 +749,18 @@ button.note-field__box {
   color: inherit;
 }
 
+/* Focus — blue border, text on the left, inline cancel / save buttons on the right. */
 .note-field__box--focus {
-  border-color: var(--typography-action-secondary, #2e75cd);
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-spacing-xs, 8px);
+  border-color: var(--border-secondary, #2e75cd);
+}
+
+.note-field__box--focus .note-field__textarea {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .note-field__box:focus-visible {
@@ -948,62 +822,62 @@ button.note-field__box {
 
 .note-field__saved-body {
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
-  line-height: 18px;
-  color: var(--typography-default, #000000);
+  line-height: 20px;
+  color: var(--foreground-default, #0a0a0a);
   white-space: pre-wrap;
 }
 
-.note-field__buttons {
+/* Inline cancel / save circle buttons inside the focused note box (Figma ReaderButton 4032:72217). */
+.note-field__actions {
   display: flex;
   flex-direction: row;
-  gap: 12px;
-  width: 100%;
+  align-items: center;
+  gap: var(--spacing-spacing-md, 8px);
+  flex-shrink: 0;
 }
 
-.note-field__btn {
-  flex: 1;
-  min-width: 0;
+.note-field__action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-md, 16px);
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 6px;
   border: none;
-  border-radius: var(--radius-2xs, 4px);
+  border-radius: 999px;
+  box-shadow: 0px 1px 4px -2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 18px;
-  transition: var(--ui-ctrl-transition);
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.note-field__btn:active {
-  transform: var(--ui-ctrl-press);
+.note-field__action:active {
+  transform: scale(0.92);
 }
 
-.note-field__btn:focus-visible {
+.note-field__action:focus-visible {
   outline: var(--ui-focus-ring);
   outline-offset: 2px;
 }
 
-.note-field__btn--secondary {
-  background: var(--surfaces-default, #f1f3f4);
-  color: var(--typography-default, #000000);
+.note-field__action--cancel {
+  background: var(--surfaces-default-subtle, #ffffff);
+  color: var(--foreground-default, #0a0a0a);
 }
 
-.note-field__btn--secondary:hover {
-  background: #e7eaec;
+.note-field__action--cancel:hover {
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
 }
 
-.note-field__btn--primary {
-  background: var(--typography-action-secondary, #2e75cd);
-  color: #ffffff;
+.note-field__action--save {
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  color: var(--foreground-secondary, #2e75cd);
 }
 
-.note-field__btn--primary:hover {
-  background: #2a6abc;
+.note-field__action--save:hover {
+  background: #e3eefb;
 }
 
 .note-field__generate {
@@ -1011,18 +885,18 @@ button.note-field__box {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-spacing-xs, 8px);
+  gap: var(--spacing-spacing-md, 8px);
   width: 100%;
-  padding: var(--spacing-spacing-sm, 12px) var(--spacing-spacing-md, 16px);
-  border: 1px solid var(--typography-action-secondary, #2e75cd);
+  padding: var(--spacing-spacing-lg, 12px);
+  border: 1px solid var(--border-secondary, #2e75cd);
   border-radius: var(--radius-2xs, 4px);
-  background: var(--color-blue-50, #f1f7fe);
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 18px;
-  color: var(--typography-action-secondary, #2e75cd);
+  color: var(--foreground-secondary, #2e75cd);
   transition: var(--ui-ctrl-transition);
 }
 
@@ -1041,8 +915,8 @@ button.note-field__box {
 
 .note-field__generate-icon {
   display: block;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -1162,8 +1036,8 @@ button.note-field__box {
   padding: 12px;
   border: none;
   border-radius: var(--radius-pill, 999px);
-  background: #ffffff;
-  box-shadow: 0 1px 2px 0 var(--color-grey-200, #e3e5e7);
+  background: var(--surfaces-default-subtle, #ffffff);
+  box-shadow: 0px 2px 8px -2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: var(--ui-ctrl-transition);
 }

@@ -41,11 +41,11 @@
   z-index: 100;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   view-transition-name: reader-progress;
 }
 
-/* White circular pill buttons (close / stats) — Figma ReaderButton 3439:7051. */
+/* Flat grey circular icon buttons (close / stats) — Figma ReaderHeader 2824:61977. */
 .reader-header-button {
   flex: 0 0 auto;
   display: flex;
@@ -57,16 +57,15 @@
   box-sizing: border-box;
   border: none;
   border-radius: 999px;
-  background-color: #fff;
+  background-color: #f8f9fa;
   color: #1c1c1e;
-  box-shadow: 0 1.667px 6.667px -2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 .reader-header-button:hover {
-  background-color: #f4f5f6;
+  background-color: #f1f5f9;
 }
 
 .reader-header-button:active {
@@ -74,39 +73,10 @@
 }
 
 .reader-header-stats-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: block;
   object-fit: contain;
-}
-
-/* Review mode header filter pill ("Lesson • All") — Figma ViewFilter 2830:64483. */
-.reader-header-filter {
-  margin: 0 auto;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 999px;
-  background: #fff;
-  color: #1c1c1e;
-  box-shadow: 0 0 4px #d1d6d9;
-  cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-.reader-header-filter:active {
-  transform: scale(0.96);
-}
-
-.reader-header-filter-label {
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 18px;
-  white-space: nowrap;
 }
 
 /* Centered progress fills the space between the two pill buttons. */
@@ -122,33 +92,32 @@
   position: relative;
   width: 100%;
   height: 4px;
-  background-color: #e3e5e7;
+  background-color: #f8f9fa;
   border-radius: 999px;
   cursor: pointer;
   overflow: visible;
 }
 
-/* Mirrors .video-mode-bottom-bar__scrubber-fill (green) */
+/* Green gradient fill — Figma ProgressBarActive (#42a564 → #66b37a). */
 .reader-progress-fill {
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
-  background: var(--reader-progress-accent);
+  background: linear-gradient(90deg, #42a564 0%, #66b37a 100%);
   border-radius: 999px;
   transition: width 0.2s ease;
 }
 
-/* Mirrors .video-mode-bottom-bar__scrubber-thumb (green ring) */
+/* 8px hollow green ring — Figma ProgressThumb. */
 .reader-progress-thumb {
   position: absolute;
   top: 50%;
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background-color: #fff;
-  border: 2px solid var(--reader-progress-accent);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1.5px solid var(--reader-progress-accent);
   transform: translate(-50%, -50%);
   transition: left 0.2s ease;
   pointer-events: none;

@@ -462,24 +462,23 @@
   color: #6d7680;
 }
 
+/* Subtle flat grey circular nav buttons — Figma LessonInfo chevrons 4471:771315. */
 .reader-bottom-bar-menu-nav-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 0;
-  border: 1px solid var(--ui-ctrl-border-light);
+  padding: 8px;
+  border: none;
   border-radius: var(--ui-ctrl-radius-pill);
-  background: var(--ui-ctrl-surface);
-  color: #1a1a1a;
+  background: #f8f9fa;
+  color: #0a0a0a;
   cursor: pointer;
-  box-shadow: var(--ui-ctrl-shadow), var(--ui-ctrl-shadow-inset);
   transition: var(--ui-ctrl-transition);
 }
 
 .reader-bottom-bar-menu-nav-btn:hover {
   background: var(--ui-ctrl-surface-hover);
-  box-shadow: var(--ui-ctrl-shadow-hover), var(--ui-ctrl-shadow-inset);
 }
 
 .reader-bottom-bar-menu-nav-btn:active {

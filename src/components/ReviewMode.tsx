@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ListFilter } from 'lucide-react';
+import { X, Funnel, ChevronDown } from 'lucide-react';
 import type { Word } from '../data/lesson';
 import type { LingQStatusType } from './LingQStatusBar';
 import { BottomSheet } from './BottomSheet';
@@ -99,8 +99,9 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
           aria-label="Review filter"
           onClick={onOpenFilter}
         >
-          <ListFilter size={20} strokeWidth={2} />
+          <Funnel size={16} strokeWidth={2} />
           <span className="review-sheet__filter-label">{reviewFilterLabel}</span>
+          <ChevronDown size={16} strokeWidth={2} />
         </button>
 
         {/* Stats icon — right */}

@@ -41,8 +41,8 @@ export const MeaningListItem: React.FC<MeaningListItemProps> = ({
         >
           {text}
           <span className="meaning-menu-item__btnset">
-            <span className="reader-btn reader-btn--plain" aria-hidden>
-              <ChevronRight size={16} />
+            <span className="reader-btn reader-btn--subtle" aria-hidden>
+              <ChevronRight size={12} />
             </span>
           </span>
         </button>
@@ -62,7 +62,7 @@ export const MeaningListItem: React.FC<MeaningListItemProps> = ({
               onClick={onCta}
               aria-label={`Add "${meaning}" to saved meanings`}
             >
-              <Plus size={16} />
+              <Plus size={12} />
             </button>
           </span>
         )}

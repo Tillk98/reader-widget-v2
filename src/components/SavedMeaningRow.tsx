@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, X, GripVertical } from 'lucide-react';
+import { Plus, Check, Trash2, X, GripVertical } from 'lucide-react';
 import './SavedMeaningRow.css';
 
 /** Movement under this many px counts as a tap (→ edit), not a swipe. */
@@ -13,6 +13,8 @@ export interface SavedMeaningRowProps {
   meaning: string;
   onSave: (text: string) => void;
   onDelete: () => void;
+  /** When false, tapping the row does nothing (no inline edit) — e.g. dictionary rows. */
+  editable?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
   meaning,
   onSave,
   onDelete,
+  editable = true,
 }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(meaning);
@@ -124,7 +127,7 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
     setActive(false);
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
     if (!moved.current) {
-      setEditing(true);
+      if (editable) setEditing(true);
       return;
     }
     const max = rowWidth.current;
@@ -178,7 +181,7 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
           aria-label="Cancel edit"
           onClick={handleCancel}
         >
-          <X size={16} aria-hidden />
+          <X size={12} aria-hidden />
         </button>
         <button
           type="button"
@@ -186,7 +189,7 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
           aria-label="Save meaning"
           onClick={handleSave}
         >
-          <Plus size={16} aria-hidden />
+          <Check size={12} aria-hidden />
         </button>
       </div>
     );
@@ -218,8 +221,8 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
         onPointerCancel={handlePointerCancel}
       >
         <span className="saved-meaning__text">{meaning}</span>
-        <span className="reader-btn reader-btn--plain saved-meaning__handle" aria-hidden>
-          <GripVertical size={16} />
+        <span className="meaning-item-handle saved-meaning__handle" aria-hidden>
+          <GripVertical size={14} />
         </span>
       </div>
     </div>
@@ -286,7 +289,7 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
           aria-label="Cancel"
           onClick={handleCancel}
         >
-          <X size={16} aria-hidden />
+          <X size={12} aria-hidden />
         </button>
         <button
           type="button"
@@ -294,7 +297,7 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
           aria-label="Save new meaning"
           onClick={handleSave}
         >
-          <Plus size={16} aria-hidden />
+          <Check size={12} aria-hidden />
         </button>
       </div>
     );
@@ -303,7 +306,7 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
   return (
     <button type="button" className="saved-meaning__add-new" onClick={() => setEditing(true)}>
       <span className="reader-btn reader-btn--accent" aria-hidden>
-        <Plus size={16} />
+        <Plus size={12} />
       </span>
       <span className="saved-meaning__add-new-label">Add a new meaning</span>
     </button>

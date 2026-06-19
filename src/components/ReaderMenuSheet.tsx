@@ -81,7 +81,7 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
             onClick={onPreviousLesson}
             aria-label="Previous lesson"
           >
-            <ChevronLeft size={16} strokeWidth={ICON_STROKE} />
+            <ChevronLeft size={16} strokeWidth={2} />
           </button>
           <button
             type="button"
@@ -110,7 +110,7 @@ export const ReaderMenuSheet: React.FC<ReaderMenuSheetProps> = ({
             onClick={onNextLesson}
             aria-label="Next lesson"
           >
-            <ChevronRight size={16} strokeWidth={ICON_STROKE} />
+            <ChevronRight size={16} strokeWidth={2} />
           </button>
         </div>
 

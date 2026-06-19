@@ -8,7 +8,7 @@
   align-items: center;
   min-height: 48px;
   width: 100%;
-  padding: var(--spacing-spacing-xs, 4px);
+  padding: 0;
   border-radius: var(--radius-sm, 6px);
   overflow: hidden;
   background: transparent;
@@ -25,6 +25,7 @@
   justify-content: space-between;
   gap: 10px;
   flex: 1 1 auto;
+  min-height: 48px;
   min-width: 0;
   padding: var(--spacing-spacing-md, 12px);
   border-radius: var(--radius-sm, 6px);
@@ -56,7 +57,7 @@
    uncovered as the content slides left. */
 .saved-meaning__delete {
   position: absolute;
-  inset: var(--spacing-spacing-xs, 4px);
+  inset: 0;
   z-index: 0;
   display: flex;
   align-items: center;
@@ -104,7 +105,7 @@
   gap: 8px;
   width: 100%;
   min-height: 48px;
-  padding: var(--spacing-spacing-xs, 4px) var(--spacing-spacing-md, 16px);
+  padding: 4px var(--spacing-spacing-lg, 12px);
   box-sizing: border-box;
   overflow: visible;
   background: transparent;
@@ -132,20 +133,22 @@
   outline: none;
 }
 
-/* Small square icon buttons inside the edit row */
+/* 24px circular icon buttons inside the edit row (Figma CloseButton / SaveButton 4446:85357) */
 .saved-meaning__edit-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 6px;
   margin: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
-  color: var(--typography-default, #000000);
+  color: var(--foreground-default, #0a0a0a);
   -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .saved-meaning__edit-btn:active {
@@ -156,20 +159,20 @@
   display: block;
 }
 
-/* X — cancel, no fill */
+/* X — cancel, white fill */
 .saved-meaning__edit-btn--cancel {
-  background: transparent;
-  color: var(--typography-muted, #6d7680);
+  background: var(--surfaces-default-subtle, #ffffff);
+  color: var(--foreground-default, #0a0a0a);
 }
 
 .saved-meaning__edit-btn--cancel:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
 }
 
-/* + — save, blue-subtle fill */
+/* check — save, blue-subtle fill */
 .saved-meaning__edit-btn--save {
   background: var(--surfaces-secondary-subtle, #f1f7fe);
-  color: var(--typography-action-secondary, #2e75cd);
+  color: var(--foreground-secondary, #2e75cd);
 }
 
 .saved-meaning__edit-btn--save:hover {

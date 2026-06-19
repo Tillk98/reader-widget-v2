@@ -27,7 +27,7 @@
   line-height: 16px;
   letter-spacing: 0;
   text-transform: uppercase;
-  color: var(--typography-muted, #6d7680);
+  color: var(--foreground-muted, #49525b);
 }
 
 /* Rounded menu container — rows are flush, radius clips the first/last row. */
@@ -43,7 +43,7 @@
 .meaning-menu__container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-spacing-xs, 4px);
+  gap: 0;
   width: 100%;
 }
 

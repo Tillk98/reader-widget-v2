@@ -5,7 +5,7 @@
   justify-content: center;
   min-height: 48px;
   width: 100%;
-  padding: var(--spacing-spacing-xs, 4px);
+  padding: 0;
   border-radius: var(--radius-sm, 6px);
   box-sizing: border-box;
   background: transparent;
@@ -17,6 +17,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-height: 48px;
   min-width: 0;
   padding: var(--spacing-spacing-md, 12px);
   border-radius: var(--radius-sm, 6px);
@@ -73,42 +74,47 @@
 }
 
 /*
- * Circular reader button (Figma ReaderButton) — small pill icon button used inside menu rows.
- * Shared by More Meanings (+), phrase words (chevron) and saved meanings (drag handle).
+ * Circular icon button inside menu rows (Figma AddButton / ChevronButton 4446:85419).
+ * Flat 24px circle, no shadow. Accent = blue-subtle fill (add / save);
+ * subtle = white fill (chevron / close).
  */
 .reader-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 6px;
   border: none;
   border-radius: var(--radius-pill, 999px);
-  background: #ffffff;
-  box-shadow: 0px 1px 4px -2px rgba(0, 0, 0, 0.2);
-  color: var(--typography-default, #000000);
+  background: var(--surfaces-default-subtle, #ffffff);
+  color: var(--typography-default, #0a0a0a);
   cursor: pointer;
   box-sizing: border-box;
-  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: transform 0.1s ease, background 0.15s ease;
 }
 
 .reader-btn svg {
   display: block;
 }
 
-.reader-btn--plain {
-  color: var(--typography-muted, #6d7680);
+.reader-btn--subtle {
+  background: var(--surfaces-default-subtle, #ffffff);
+  color: var(--foreground-default, #0a0a0a);
 }
 
 .reader-btn--accent {
-  background: var(--surfaces-tertiary-subtle, #f4f7fb);
-  color: var(--typography-action-secondary, #2e75cd);
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  color: var(--foreground-secondary, #2e75cd);
 }
 
 button.reader-btn:hover {
-  box-shadow: 0px 2px 6px -2px rgba(0, 0, 0, 0.25);
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
+}
+
+button.reader-btn--accent:hover {
+  background: #e3eefb;
 }
 
 button.reader-btn:active {
@@ -118,4 +124,17 @@ button.reader-btn:active {
 button.reader-btn:focus-visible {
   outline: var(--ui-focus-ring);
   outline-offset: 2px;
+}
+
+/* Drag-reorder handle — bare grip icon (no circle), Figma "Drag M" 4446:84894. */
+.meaning-item-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--typography-muted, #6d7680);
+}
+
+.meaning-item-handle svg {
+  display: block;
 }

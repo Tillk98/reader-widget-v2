@@ -1,0 +1,179 @@
+/* Past-encounter sentence row (Figma SentenceMenuItem 4446:89869 / 4446:89868). */
+.sentence-menu-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 48px;
+  background: var(--color-grey-50, #f8f9fa);
+  box-sizing: border-box;
+}
+
+/* Collapsed — the whole row is the toggle button. */
+.sentence-menu-item--collapsed {
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+}
+
+.sentence-menu-item--collapsed:hover {
+  background: var(--surfaces-default, #f1f3f4);
+}
+
+.sentence-menu-item--collapsed:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: -2px;
+}
+
+.sentence-menu-item--expanded {
+  padding-bottom: var(--spacing-spacing-lg, 12px);
+}
+
+/* Top row — original sentence + expand/collapse chevron (min-h 48, p-12). */
+.sentence-menu-item__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  width: 100%;
+  padding: var(--spacing-spacing-lg, 12px);
+  box-sizing: border-box;
+}
+
+.sentence-menu-item__original {
+  display: flex;
+  flex: 1 1 0;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sentence-menu-item__quote-bar {
+  flex-shrink: 0;
+  width: 2px;
+  align-self: stretch;
+  min-height: 18px;
+  border-radius: 2px;
+  background: var(--foreground-muted, #49525b);
+}
+
+.sentence-menu-item__original-text {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--foreground-muted, #49525b);
+  text-align: left;
+}
+
+/* Expand / collapse chevron — 24px transparent circle. */
+.sentence-menu-item__expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 6px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foreground-default, #0a0a0a);
+}
+
+button.sentence-menu-item__expand--btn {
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+button.sentence-menu-item__expand--btn:hover {
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
+}
+
+button.sentence-menu-item__expand--btn:active {
+  transform: scale(0.92);
+}
+
+.sentence-menu-item__expand svg {
+  display: block;
+}
+
+/* Expanded content — lesson title, translation, actions (px-12, gap-10). */
+.sentence-menu-item__expanded-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 0 var(--spacing-spacing-lg, 12px);
+  box-sizing: border-box;
+}
+
+.sentence-menu-item__lesson {
+  margin: 0;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--foreground-muted, #49525b);
+}
+
+.sentence-menu-item__translation {
+  margin: 0;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--foreground-default, #0a0a0a);
+}
+
+.sentence-menu-item__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-spacing-lg, 12px);
+  width: 100%;
+}
+
+/* Transparent icon buttons (play / copy / go-to-lesson) — p-8, 16px icon. */
+.sentence-menu-item__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 8px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foreground-default, #0a0a0a);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.sentence-menu-item__btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.sentence-menu-item__btn:active {
+  transform: scale(0.94);
+}
+
+.sentence-menu-item__btn:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
+.sentence-menu-item__btn svg {
+  display: block;
+}

@@ -1,0 +1,41 @@
+/* Past-encounter sentence menu (Figma SentenceMenu 4446:89642). Full-width — the sentence
+   tab container provides the horizontal inset, mirroring the meanings MenuContainer. */
+.sentence-menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.sentence-menu__header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4px 0 8px;
+}
+
+.sentence-menu__label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--foreground-muted, #49525b);
+}
+
+.sentence-menu__container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: var(--radius-lg, 12px);
+  overflow: clip;
+  background: var(--color-grey-50, #f8f9fa);
+  box-sizing: border-box;
+}
+
+.sentence-menu__divider {
+  flex-shrink: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--surfaces-default, #f1f3f4);
+}

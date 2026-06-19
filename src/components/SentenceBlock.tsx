@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
-import { Play, Copy, ArrowUpRight, ChevronUp } from 'lucide-react';
+import React, { useCallback } from 'react';
+import { Play, Copy } from 'lucide-react';
+import './SentenceBlock.css';
 
 export type WordDetailSentenceContextEntry = {
   lessonTitle: string;
@@ -15,7 +16,6 @@ export type WordDetailSentenceContextEntry = {
 export interface SentenceBlockProps {
   entry: WordDetailSentenceContextEntry;
   onAudio?: (entry: WordDetailSentenceContextEntry) => void;
-  onGoToLesson?: (entry: WordDetailSentenceContextEntry) => void;
 }
 
 /** Copies translation line, then original sentence (matches how learners read context). */
@@ -23,84 +23,49 @@ function copySentenceClipboardText(entry: WordDetailSentenceContextEntry): strin
   return `${entry.translation}\n${entry.originalSentence}`;
 }
 
-export const SentenceBlock: React.FC<SentenceBlockProps> = ({ entry, onAudio, onGoToLesson }) => {
-  /** Current lesson sentence opens expanded; stored sentences start collapsed and expand on click. */
-  const [expanded, setExpanded] = useState(entry.variant === 'current');
-
+/**
+ * Sentence context block (Figma SentenceBlock 2354:1326) — blue-subtle card showing the
+ * original sentence (leading quote bar), then the lesson title, translation and play / copy
+ * actions. (Past-encounter / collapsed states are intentionally not handled here yet.)
+ */
+export const SentenceBlock: React.FC<SentenceBlockProps> = ({ entry, onAudio }) => {
   const handleCopy = useCallback(async () => {
-    const text = copySentenceClipboardText(entry);
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(copySentenceClipboardText(entry));
     } catch {
       // Clipboard may be unavailable (e.g. non-secure context); host can still wire copy.
     }
   }, [entry]);
 
-  if (!expanded) {
-    return (
-      <button
-        type="button"
-        className="word-detail-sentence-block word-detail-sentence-block--collapsed"
-        aria-expanded={false}
-        aria-label={`Expand stored sentence: ${entry.originalSentence.trim()}`}
-        onClick={() => setExpanded(true)}
-      >
-        <span className="word-detail-sentence-block__quote-bar" aria-hidden />
-        <span className="word-detail-sentence-block__original-text">{entry.originalSentence}</span>
-      </button>
-    );
-  }
-
-  const variantClass =
-    entry.variant === 'current'
-      ? 'word-detail-sentence-block--current'
-      : 'word-detail-sentence-block--archived';
-
   return (
-    <div className={`word-detail-sentence-block ${variantClass}`}>
-      <div className="word-detail-sentence-block__caption">
-        <p className="word-detail-sentence-block__lesson">{entry.lessonTitle}</p>
-        {entry.generatedMeta != null && entry.generatedMeta.trim() !== '' ? (
-          <p className="word-detail-sentence-block__meta">{entry.generatedMeta}</p>
-        ) : null}
-      </div>
-      <p className="word-detail-sentence-block__translation">{entry.translation}</p>
-      <div className="word-detail-sentence-block__original-row">
-        <div className="word-detail-sentence-block__original-text-wrap">
-          <span className="word-detail-sentence-block__quote-bar" aria-hidden />
-          <p className="word-detail-sentence-block__original-text">{entry.originalSentence}</p>
+    <div className="sentence-block">
+      <div className="sentence-block__content">
+        <div className="sentence-block__original">
+          <span className="sentence-block__quote-bar" aria-hidden />
+          <p className="sentence-block__original-text">{entry.originalSentence}</p>
         </div>
       </div>
-      <div className="word-detail-sentence-block__actions">
-        {entry.variant === 'archived' ? (
+      <div className="sentence-block__expanded">
+        <p className="sentence-block__lesson">{entry.lessonTitle}</p>
+        <p className="sentence-block__translation">{entry.translation}</p>
+        <div className="sentence-block__actions">
           <button
             type="button"
-            className="word-detail-sheet-icon-btn"
-            aria-label="Collapse sentence"
-            onClick={() => setExpanded(false)}
+            className="sentence-block__btn"
+            aria-label="Play sentence audio"
+            onClick={() => onAudio?.(entry)}
           >
-            <ChevronUp size={18} aria-hidden />
+            <Play size={16} aria-hidden />
           </button>
-        ) : null}
-        <button
-          type="button"
-          className="word-detail-sheet-icon-btn"
-          aria-label="Play sentence audio"
-          onClick={() => onAudio?.(entry)}
-        >
-          <Play size={18} aria-hidden />
-        </button>
-        <button type="button" className="word-detail-sheet-icon-btn" aria-label="Copy sentence" onClick={handleCopy}>
-          <Copy size={18} aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="word-detail-sheet-icon-btn"
-          aria-label="Go to lesson"
-          onClick={() => onGoToLesson?.(entry)}
-        >
-          <ArrowUpRight size={18} aria-hidden />
-        </button>
+          <button
+            type="button"
+            className="sentence-block__btn"
+            aria-label="Copy sentence"
+            onClick={handleCopy}
+          >
+            <Copy size={16} aria-hidden />
+          </button>
+        </div>
       </div>
     </div>
   );

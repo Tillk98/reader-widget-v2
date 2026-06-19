@@ -351,7 +351,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                         onClick={() => onMenuPreviousLesson?.()}
                         aria-label="Previous lesson"
                       >
-                        <ChevronLeft size={18} strokeWidth={MENU_ICON_STROKE} />
+                        <ChevronLeft size={16} strokeWidth={2} />
                       </button>
                       <div className="reader-bottom-bar-menu-list__header-text">
                         {menuHeaderTitle ? (
@@ -367,7 +367,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                         onClick={() => onMenuNextLesson?.()}
                         aria-label="Next lesson"
                       >
-                        <ChevronRight size={18} strokeWidth={MENU_ICON_STROKE} />
+                        <ChevronRight size={16} strokeWidth={2} />
                       </button>
                     </div>
                     <div

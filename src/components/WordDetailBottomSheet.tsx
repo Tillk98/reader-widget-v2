@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
-import { Play, Tags, Coins, BookA, PanelRightOpen, PanelRightClose, X } from 'lucide-react';
+import { Play, Tags, BookOpenText, PanelRightOpen, PanelRightClose, X } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -17,6 +17,7 @@ import type { LingQStatusType } from './LingQStatusBar';
 import type { PhraseWordItem } from './PhrasePopUp';
 import { LingQStatusBar } from './LingQStatusBar';
 import { SentenceBlock } from './SentenceBlock';
+import { SentenceMenu } from './SentenceMenu';
 import type { WordDetailSentenceContextEntry } from './SentenceBlock';
 import { LynxMessageActions } from './LynxMessageActions';
 import { NoteField } from './NoteField';
@@ -202,7 +203,6 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   onClose,
   suggestedMeanings = DEFAULT_SUGGESTED_MEANINGS,
   tags = DEFAULT_TAGS,
-  coinCount = 3,
   savedMeanings: savedMeaningsProp,
   sentenceContexts = DEFAULT_SENTENCE_CONTEXTS,
   sentenceTerms = DEFAULT_SENTENCE_TERMS,
@@ -239,6 +239,38 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   }, [floatingMode]);
 
   const [activeTab, setActiveTab] = React.useState<WordDetailTabId>('meanings');
+
+  /**
+   * Meanings tab: the header tags collapse once the content is scrolled down (shrinking the
+   * header on small screens) and reappear when scrolled back to the top.
+   *
+   * Collapsing the tag row grows the scroll area, which on short screens can make the content
+   * fit entirely — the browser then clamps scrollTop back to 0, which would naively re-expand
+   * the tags and oscillate. `collapseGuardRef` ignores scroll events fired during the collapse
+   * relayout (the CSS transition) so a single change settles instead of looping.
+   */
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [headerCondensed, setHeaderCondensed] = React.useState(false);
+  const headerCondensedRef = useRef(false);
+  const collapseGuardRef = useRef<number | null>(null);
+  const handleContentScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || collapseGuardRef.current !== null) return;
+    const shouldCondense = el.scrollTop > 8;
+    if (shouldCondense === headerCondensedRef.current) return;
+    headerCondensedRef.current = shouldCondense;
+    setHeaderCondensed(shouldCondense);
+    // Block re-toggling until the collapse/expand transition (~0.28s) has settled.
+    collapseGuardRef.current = window.setTimeout(() => {
+      collapseGuardRef.current = null;
+    }, 340);
+  }, []);
+  useEffect(
+    () => () => {
+      if (collapseGuardRef.current !== null) clearTimeout(collapseGuardRef.current);
+    },
+    [],
+  );
 
   const lynxIntroDoneRef = useRef(false);
   const [lynxPhase, setLynxPhase] = React.useState<LynxPhase>('idle');
@@ -622,6 +654,20 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           />
         )}
 
+        {!panelMode && !floatingMode && (
+          <button
+            type="button"
+            className="word-detail-sheet-vol-btn word-detail-sheet-close"
+            aria-label="Close word detail"
+            onClick={(e) => {
+              e.stopPropagation();
+              requestClose();
+            }}
+          >
+            <X size={16} aria-hidden />
+          </button>
+        )}
+
         <div className={`word-detail-sheet-header-block${(panelMode || floatingMode) ? ' word-detail-sheet-header-block--panel' : ''}`}>
           {(panelMode || floatingMode) ? (
             <div className="word-detail-sheet-panel-header">
@@ -664,29 +710,30 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           ) : (
             <div className="word-detail-sheet-header-content">
               <div className="word-detail-sheet-original-row">
-                <div className="word-detail-sheet-original-row-left">
-                  <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play audio">
-                    <Play size={16} aria-hidden />
-                  </button>
-                  <p className="word-detail-sheet-original-text">{quoteLine}</p>
-                </div>
-                <div className="word-detail-sheet-header-btn-group">
-                  <button
-                    type="button"
-                    className="word-detail-sheet-vol-btn word-detail-sheet-close-btn"
-                    aria-label="Close word detail"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      requestClose();
-                    }}
-                  >
-                    <X size={16} aria-hidden />
-                  </button>
-                </div>
+                <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play audio">
+                  <Play size={16} aria-hidden />
+                </button>
+                <p className="word-detail-sheet-original-text">{quoteLine}</p>
               </div>
               <div className="word-detail-sheet-meaning-row">
                 <p className="word-detail-sheet-meaning-text">{masterMeaning}</p>
               </div>
+              {meaningsActive && tags.length > 0 && (
+                <div
+                  className={`word-detail-sheet-tag-row${headerCondensed ? ' word-detail-sheet-tag-row--collapsed' : ''}`}
+                >
+                  <button type="button" className="word-detail-sheet-tags-btn" aria-label="Add tags">
+                    <Tags size={16} aria-hidden />
+                  </button>
+                  <div className="word-detail-sheet-tag-list">
+                    {tags.map((tag) => (
+                      <span key={tag} className="word-detail-sheet-tag-pill">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -785,6 +832,8 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           aria-live={explainActive ? 'polite' : undefined}
         >
           <div
+            ref={scrollRef}
+            onScroll={handleContentScroll}
             className={`word-detail-sheet-scroll${dictionariesActive ? ' word-detail-sheet-scroll--dictionary' : ''}${meaningsActive ? ' word-detail-sheet-scroll--meanings' : ''}`}
           >
             {meaningsActive ? (
@@ -832,43 +881,26 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
             {sentenceActive ? (
               <div className="word-detail-sheet-sentence">
-                {(() => {
-                  const current = sentenceContexts.filter((e) => e.variant === 'current');
-                  const past = sentenceContexts.filter((e) => e.variant !== 'current');
-                  return (
-                    <>
-                      {current.length > 0 ? (
-                        <section className="word-detail-sheet-sentence-section">
-                          {current.map((entry, i) => (
-                            <SentenceBlock
-                              key={`current-${i}`}
-                              entry={entry}
-                              onAudio={onSentenceAudio}
-                              onGoToLesson={onGoToLesson}
-                            />
-                          ))}
-                        </section>
-                      ) : null}
-                      {past.length > 0 ? (
-                        <section className="word-detail-sheet-sentence-section">
-                          <div className="word-detail-sheet-sentence-section__header">
-                            <span className="word-detail-sheet-sentence-section__label">
-                              PAST ENCOUNTERS
-                            </span>
-                          </div>
-                          {past.map((entry, i) => (
-                            <SentenceBlock
-                              key={`past-${i}`}
-                              entry={entry}
-                              onAudio={onSentenceAudio}
-                              onGoToLesson={onGoToLesson}
-                            />
-                          ))}
-                        </section>
-                      ) : null}
-                    </>
-                  );
-                })()}
+                <div className="word-detail-sheet-sentence__group">
+                  {sentenceContexts
+                    .filter((e) => e.variant === 'current')
+                    .map((entry, i) => (
+                      <SentenceBlock key={`current-${i}`} entry={entry} onAudio={onSentenceAudio} />
+                    ))}
+                  <HorizontalTermList
+                    items={sentenceTermItems}
+                    wordStatusMap={sentenceTermStatusMap}
+                    selectedWordId={wordText}
+                    onOpenDetail={(id) => onSentenceTermOpen?.(id)}
+                    onStatusChange={handleSentenceTermStatusChange}
+                  />
+                </div>
+                <SentenceMenu
+                  label="PAST ENCOUNTERS"
+                  entries={sentenceContexts.filter((e) => e.variant !== 'current')}
+                  onAudio={onSentenceAudio}
+                  onGoToLesson={onGoToLesson}
+                />
               </div>
             ) : null}
 
@@ -958,35 +990,6 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           </div>
 
           <div className="word-detail-sheet-content-anchor">
-            {meaningsActive ? (
-              <div className="word-detail-sheet-tag-row">
-                <div className="word-detail-sheet-tag-row-inner">
-                  <button type="button" className="word-detail-sheet-tags-btn" aria-label="Add tags">
-                    <Tags size={18} aria-hidden />
-                  </button>
-                  {tags.map((tag) => (
-                    <span key={tag} className="word-detail-sheet-tag-pill">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="word-detail-sheet-coin-badge">
-                  <span className="word-detail-sheet-coin-count">{coinCount}</span>
-                  <Coins size={18} className="word-detail-sheet-coin-icon" aria-hidden />
-                </div>
-              </div>
-            ) : null}
-
-            {sentenceActive ? (
-              <HorizontalTermList
-                items={sentenceTermItems}
-                wordStatusMap={sentenceTermStatusMap}
-                selectedWordId={wordText}
-                onOpenDetail={(id) => onSentenceTermOpen?.(id)}
-                onStatusChange={handleSentenceTermStatusChange}
-              />
-            ) : null}
-
             {dictionariesActive ? (
               <div className="word-detail-sheet-dictionary-bar">
                 <button
@@ -995,7 +998,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                   aria-label="Manage dictionaries"
                   onClick={() => setDictMenuOpen(true)}
                 >
-                  <BookA size={24} aria-hidden />
+                  <BookOpenText size={16} aria-hidden />
                 </button>
                 <div className="word-detail-sheet-dictionary-list" role="list" aria-label="Dictionary sources">
                   {activeDictionaries.map((p) => (

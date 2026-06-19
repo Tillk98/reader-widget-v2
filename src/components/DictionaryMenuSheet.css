@@ -13,164 +13,19 @@
   font-family: 'DM Sans', sans-serif;
 }
 
-/* ── Sections ── */
+/* ── Sections ──
+   "Your / More Dictionaries" reuse MeaningSection (grey MenuContainer + caption); only the
+   Language footer is bespoke. */
 
 .dictionary-menu__section {
   display: flex;
   flex-direction: column;
 }
 
-.dictionary-menu__section-header {
-  margin: 0;
-  padding: 12px;
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 16px;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--foreground-muted, #49525b);
-}
-
 /* Footer section (Language) — white bg with top border separator. */
 .dictionary-menu__section--footer {
-  border-top: 1px solid var(--border-default, #e3e5e7);
+  border-top: 1px solid var(--border-default, #f1f3f4);
   padding: 4px 12px;
-}
-
-/* ── Grey card wrapping list items ── */
-
-.dictionary-menu__card {
-  display: flex;
-  flex-direction: column;
-  margin: 0 12px;
-  background: var(--color-grey-50, #f8f9fa);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-/* Thin divider between rows inside the card. */
-.dictionary-menu__row-divider {
-  height: 1px;
-  background: var(--border-default, #e3e5e7);
-  margin: 0 12px;
-}
-
-/* ── Dictionary list items (inside .dictionary-menu__card) ── */
-
-.dictionary-menu__dict-item {
-  display: flex;
-  align-items: stretch;
-  min-height: 48px;
-  width: 100%;
-  box-sizing: border-box;
-  background: transparent;
-}
-
-.dictionary-menu__dict-item--dragging {
-  background: #eff1f2;
-}
-
-/* Left/main content region: text + action. */
-.dictionary-menu__item-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex: 1 0 0;
-  min-width: 0;
-  padding: 12px;
-  gap: 8px;
-}
-
-/* ── Reorder grip handle ── */
-
-.dictionary-menu__grip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  background: var(--backgrounds-page, #ffffff);
-  border-radius: 50%;
-  color: var(--foreground-muted, #49525b);
-  cursor: grab;
-  touch-action: none;
-  box-shadow: 0px 1px 4px -2px rgba(0, 0, 0, 0.15);
-}
-
-.dictionary-menu__grip:active {
-  cursor: grabbing;
-}
-
-/* ── Inline delete panel (revealed by swipe-left) ── */
-
-/* Clip wrapper: hidden by default, slides open on --revealed. */
-.dictionary-menu__delete-wrap {
-  display: flex;
-  overflow: hidden;
-  max-width: 0;
-  transition: max-width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.dictionary-menu__dict-item--revealed .dictionary-menu__delete-wrap {
-  max-width: 110px;
-}
-
-.dictionary-menu__delete {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: stretch;
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 0 6px 6px 0;
-  background: var(--surfaces-destructive-subtle, #fef2f2);
-  color: var(--foreground-destructive, #dd2525);
-  font-family: inherit;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 18px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.dictionary-menu__delete:hover {
-  background: #fce7e7;
-}
-
-.dictionary-menu__delete:active {
-  background: #fbd5d5;
-}
-
-/* ── Add button (circular blue) ── */
-
-.dictionary-menu__action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.dictionary-menu__action:active {
-  transform: scale(0.92);
-}
-
-.dictionary-menu__action--add {
-  background: var(--color-blue-50, #f1f7fe);
-  color: var(--color-blue-500, #2e75cd);
-}
-
-.dictionary-menu__action--add:hover {
-  background: #ddeefb;
 }
 
 /* ── Language item (inside footer section, no card wrapper) ── */
