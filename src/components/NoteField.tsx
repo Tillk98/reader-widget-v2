@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { X, Check } from 'lucide-react';
 import lynxIcon from '../assets/lynx-default.png';
 
 export interface NoteFieldProps {
@@ -72,12 +73,10 @@ export const NoteField: React.FC<NoteFieldProps> = ({
     setEditing(false);
   };
 
-  const handleClear = () => {
-    setDraft('');
-    setSavedText('');
-    setUpdatedAt('');
+  /** Discard the in-progress edit and revert to the previous saved/empty state. */
+  const handleCancel = () => {
+    setDraft(savedText);
     setEditing(false);
-    onClear?.();
   };
 
   const handleGenerate = () => {
@@ -98,14 +97,24 @@ export const NoteField: React.FC<NoteFieldProps> = ({
             aria-label="Note"
             rows={1}
           />
-        </div>
-        <div className="note-field__buttons">
-          <button type="button" className="note-field__btn note-field__btn--secondary" onClick={handleClear}>
-            Clear
-          </button>
-          <button type="button" className="note-field__btn note-field__btn--primary" onClick={handleSave}>
-            Save
-          </button>
+          <div className="note-field__actions">
+            <button
+              type="button"
+              className="note-field__action note-field__action--cancel"
+              aria-label="Cancel"
+              onClick={handleCancel}
+            >
+              <X size={12} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="note-field__action note-field__action--save"
+              aria-label="Save note"
+              onClick={handleSave}
+            >
+              <Check size={12} aria-hidden />
+            </button>
+          </div>
         </div>
       </div>
     );
