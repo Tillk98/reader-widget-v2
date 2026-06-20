@@ -42,22 +42,33 @@
 
 /* ── Reveal panels ─────────────────────────────────────────────────────────── */
 
+/* Reveal panels overlay the tile (z-index above it) and grow with the drag.
+   Padding lives on the inner wrapper so width:0 collapses to truly nothing
+   (padding on the panel itself would leave a visible sliver at rest). */
 .vocab-list__reveal {
   position: absolute;
   top: 0;
   bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.vocab-list__reveal-inner {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
-  max-width: 120px;
-  pointer-events: none;
+  flex-shrink: 0;
+  padding: 0 24px;
+  white-space: nowrap;
 }
 
 .vocab-list__reveal--known {
   left: 0;
-  width: 100%;
-  max-width: 120px;
+  width: 0;
   justify-content: flex-start;
   background: var(--surfaces-primary-subtle, #f4fcef);
   color: var(--text-primary, #42a564);
@@ -65,8 +76,7 @@
 
 .vocab-list__reveal--ignored {
   right: 0;
-  width: 100%;
-  max-width: 120px;
+  width: 0;
   justify-content: flex-end;
   background: var(--surfaces-destructive-subtle, #fef2f2);
   color: var(--text-destructive, #dd2525);
@@ -182,18 +192,20 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 8px;
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  box-sizing: border-box;
   border: none;
   border-radius: 999px;
-  background: var(--backgrounds-elevated, #fff);
+  background: #fff;
   color: #1c1c1e;
-  box-shadow: 0px 1.333px 5.333px -2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .vocab-list__audio:hover {
-  background: #f4f5f6;
+  background: #f8f9fa;
 }
 
 .vocab-list__audio:active {

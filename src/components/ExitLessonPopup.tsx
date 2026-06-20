@@ -30,19 +30,21 @@ export const ExitLessonPopup: React.FC<ExitLessonPopupProps> = ({ open, onClose,
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="exit-lesson-popup" role="dialog" aria-modal="true" aria-label="Exit lesson">
-        <div className="exit-lesson-popup__header">
-          <p className="exit-lesson-popup__title">Are you sure you want to exit this lesson?</p>
-          <button
-            type="button"
-            className="exit-lesson-popup__close"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            <X size={12} strokeWidth={2} />
-          </button>
-        </div>
+        <div className="exit-lesson-popup__content">
+          <div className="exit-lesson-popup__header">
+            <p className="exit-lesson-popup__title">Are you sure you want to exit this lesson?</p>
+            <button
+              type="button"
+              className="exit-lesson-popup__close"
+              aria-label="Close"
+              onClick={onClose}
+            >
+              <X size={20} strokeWidth={1.5} />
+            </button>
+          </div>
 
-        <p className="exit-lesson-popup__subtitle">You will be taken back to the library.</p>
+          <p className="exit-lesson-popup__subtitle">You will be taken back to the library.</p>
+        </div>
 
         <div className="exit-lesson-popup__actions">
           <button
@@ -62,13 +64,13 @@ export const ExitLessonPopup: React.FC<ExitLessonPopupProps> = ({ open, onClose,
         </div>
 
         <label className="exit-lesson-popup__dont-show">
+          <span className="exit-lesson-popup__dont-show-label">Don't show this again</span>
           <input
             type="checkbox"
             className="exit-lesson-popup__checkbox"
             checked={dontShowAgain}
             onChange={(e) => setDontShowAgain(e.target.checked)}
           />
-          <span className="exit-lesson-popup__dont-show-label">Don't show this again</span>
         </label>
       </div>
     </div>

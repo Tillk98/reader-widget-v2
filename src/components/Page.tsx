@@ -9,7 +9,9 @@ interface PageProps {
   lingqWords: Set<string>;
   onWordClick: (wordId: string) => void;
   onWordLongPress?: (wordId: string) => void;
-  onWordLongPressCancel?: () => void;
+  /** Drag after the long-press menu appears → live phrase drag-select. */
+  onWordLongPressDragMove?: (clientX: number, clientY: number) => void;
+  onWordLongPressDragEnd?: () => void;
   knownWords: Set<string>;
   ignoredWords: Set<string>;
   /** When true, group words into block elements per lesson sentence (video lesson layout). */
@@ -63,7 +65,8 @@ export const Page: React.FC<PageProps> = ({
   lingqWords,
   onWordClick,
   onWordLongPress,
-  onWordLongPressCancel,
+  onWordLongPressDragMove,
+  onWordLongPressDragEnd,
   knownWords,
   ignoredWords,
   videoLessonLayout = false,
@@ -93,7 +96,8 @@ export const Page: React.FC<PageProps> = ({
             isLingQ={lingqWords.has(word.id)}
             onClick={onWordClick}
             onLongPress={onWordLongPress}
-            onLongPressCancel={onWordLongPressCancel}
+            onLongPressDragMove={onWordLongPressDragMove}
+            onLongPressDragEnd={onWordLongPressDragEnd}
             isKnown={knownWords.has(word.id)}
             isIgnored={ignoredWords.has(word.id)}
             isPhraseSelected={selected}

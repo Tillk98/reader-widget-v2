@@ -61,7 +61,7 @@ export const LynxChatMode: React.FC<LynxChatModeProps> = ({ open, onClose, onSta
           aria-label="Close Lynx"
           onClick={onClose}
         >
-          <X size={20} strokeWidth={2} />
+          <X size={24} strokeWidth={2} />
         </button>
         <button
           type="button"
@@ -141,7 +141,7 @@ export const LynxChatMode: React.FC<LynxChatModeProps> = ({ open, onClose, onSta
           {/* Footer: menu (left) | send arrow-up (right, always visible) */}
           <div className="lynx-chat__input-footer">
             <button type="button" className="lynx-chat__input-menu" aria-label="Menu">
-              <Menu size={16} strokeWidth={2} />
+              <Menu size={20} strokeWidth={2} />
             </button>
             <button
               type="button"
@@ -149,7 +149,7 @@ export const LynxChatMode: React.FC<LynxChatModeProps> = ({ open, onClose, onSta
               aria-label="Send message"
               onClick={() => setDraft('')}
             >
-              <ArrowUp size={16} strokeWidth={2.25} />
+              <ArrowUp size={20} strokeWidth={2.25} />
             </button>
           </div>
         </div>

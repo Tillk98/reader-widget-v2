@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
-import { Check, EyeOff, Brackets } from 'lucide-react';
+import { Brackets } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
+import { LingQStatusButton } from './LingQStatusButton';
 import './QuickStatusPopup.css';
 
 type QsAction = 'known' | 'ignored' | 'phrase';
@@ -135,35 +136,30 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
     };
   }, [invoke, onClose]);
 
-  const renderOption = (action: QsAction, label: string) => (
-    <button
-      key={action}
-      type="button"
-      data-qs-action={action}
-      className={`quick-status-popup__option${hovered === action ? ' quick-status-popup__option--hover' : ''}`}
-      aria-label={
-        action === 'phrase' ? 'Select a phrase' : action === 'known' ? 'Mark word as Known' : 'Ignore word'
-      }
-    >
-      <span className="quick-status-popup__mark" aria-hidden>
-        {action === 'known' ? (
-          <Check size={18} strokeWidth={2} />
-        ) : action === 'ignored' ? (
-          <EyeOff size={18} strokeWidth={2} />
-        ) : (
-          <Brackets size={18} strokeWidth={2} />
-        )}
-      </span>
-      <span className="quick-status-popup__label">{label}</span>
-    </button>
-  );
-
   return (
     <div ref={popupRef} className="quick-status-popup" onPointerDown={(e) => e.stopPropagation()}>
       {/* Fixed DOM order; calculatePosition flips flex-direction so Known / Ignore stay nearest the word. */}
-      {STATUS_OPTIONS.map((o) => renderOption(o.action, o.label))}
+      {STATUS_OPTIONS.map((o) => (
+        <LingQStatusButton
+          key={o.action}
+          status={o.action === 'known' ? 'Known' : 'Ignored'}
+          state={hovered === o.action ? 'focus' : 'default'}
+          showLabel
+          data-qs-action={o.action}
+          aria-label={o.action === 'known' ? 'Mark word as Known' : 'Ignore word'}
+        />
+      ))}
       <div className="quick-status-popup__divider" aria-hidden />
-      {renderOption('phrase', 'Select a Phrase')}
+      {/* "Select a Phrase" — styled like the status pills but a separate action (not a status). */}
+      <button
+        type="button"
+        data-qs-action="phrase"
+        className={`quick-status-popup__phrase${hovered === 'phrase' ? ' quick-status-popup__phrase--hover' : ''}`}
+        aria-label="Select a phrase"
+      >
+        <Brackets size={14} strokeWidth={2} aria-hidden />
+        <span className="quick-status-popup__phrase-label">Select a Phrase</span>
+      </button>
     </div>
   );
 };

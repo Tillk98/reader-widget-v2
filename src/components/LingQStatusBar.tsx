@@ -48,11 +48,10 @@ interface LingQStatusBarProps {
   statuses?: LingQStatusType[];
   /**
    * `sheet`     — word detail bottom sheet: LingQStatusButton row (Figma 4011:11766).
-   * `segmented` — reader bottom bar word-selected state: per-segment bordered highlight (Figma 2812:55682).
    * `floating`  — compact floating bar above/below the popup (Figma 4008:56509).
    * `vertical`  — unfurling vertical status popover (Figma 4063:74418): rows of mark + label.
    */
-  variant?: 'default' | 'sheet' | 'segmented' | 'floating' | 'vertical';
+  variant?: 'default' | 'sheet' | 'floating' | 'vertical';
 }
 
 export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
@@ -64,40 +63,6 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
 }) => {
   const isKnown = status === 'Known';
   const isIgnored = status === 'Ignored';
-
-  if (variant === 'segmented') {
-    return (
-      <div
-        className="lingq-status-bar lingq-status-bar--segmented"
-        role="group"
-        aria-label="Word status"
-      >
-        {SEGMENT_ORDER.map((seg) => {
-          const active = status === seg;
-          const tone =
-            seg === 'Ignored' ? 'ignored' : seg === 'Known' ? 'known' : 'learning';
-          return (
-            <button
-              key={seg}
-              type="button"
-              className={`lingq-status-bar__seg lingq-status-bar__seg--${tone} ${active ? 'lingq-status-bar__seg--active' : ''}`}
-              onClick={() => onStatusChange(seg)}
-              aria-pressed={active}
-              aria-label={LEARNING_LABELS[seg]}
-            >
-              {seg === 'Ignored' ? (
-                <EyeOff size={20} aria-hidden />
-              ) : seg === 'Known' ? (
-                <Check size={20} aria-hidden />
-              ) : (
-                <span>{LEARNING_NUMBERS[seg]}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
 
   if (variant === 'floating') {
     return (
@@ -119,32 +84,17 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
   if (variant === 'vertical') {
     return (
       <div className="lingq-status-bar lingq-status-bar--vertical" role="group" aria-label="Word status">
-        {(statuses ?? SEGMENT_ORDER).map((seg) => {
-          const active = status === seg;
-          const tone = seg === 'Ignored' ? 'ignored' : seg === 'Known' ? 'known' : 'learning';
-          return (
-            <button
-              key={seg}
-              type="button"
-              data-status={seg}
-              className={`lingq-status-vrow lingq-status-vrow--${tone}${active ? ' lingq-status-vrow--active' : ''}`}
-              onClick={() => onStatusChange(seg)}
-              aria-pressed={active}
-              aria-label={LEARNING_LABELS[seg]}
-            >
-              <span className="lingq-status-vrow__mark">
-                {seg === 'Ignored' ? (
-                  <EyeOff size={18} strokeWidth={2} aria-hidden />
-                ) : seg === 'Known' ? (
-                  <Check size={18} strokeWidth={2} aria-hidden />
-                ) : (
-                  LEARNING_NUMBERS[seg]
-                )}
-              </span>
-              <span className="lingq-status-vrow__label">{LEARNING_LABELS[seg]}</span>
-            </button>
-          );
-        })}
+        {(statuses ?? SEGMENT_ORDER).map((seg) => (
+          <LingQStatusButton
+            key={seg}
+            status={seg}
+            state={status === seg ? 'focus' : 'default'}
+            showLabel
+            onClick={() => onStatusChange(seg)}
+            aria-pressed={status === seg}
+            aria-label={LEARNING_LABELS[seg]}
+          />
+        ))}
       </div>
     );
   }

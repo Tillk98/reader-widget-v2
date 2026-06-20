@@ -89,7 +89,7 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
           aria-label="Close review"
           onClick={onClose}
         >
-          <X size={20} strokeWidth={2} />
+          <X size={24} strokeWidth={2} />
         </button>
 
         {/* Filter pill — centered absolutely so the side buttons don't affect its position */}
@@ -99,9 +99,9 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
           aria-label="Review filter"
           onClick={onOpenFilter}
         >
-          <Funnel size={16} strokeWidth={2} />
+          <Funnel size={18} strokeWidth={2} />
           <span className="review-sheet__filter-label">{reviewFilterLabel}</span>
-          <ChevronDown size={16} strokeWidth={2} />
+          <ChevronDown size={18} strokeWidth={2} />
         </button>
 
         {/* Stats icon — right */}

@@ -13,7 +13,7 @@ const STATUS_LABELS: Record<LingQStatusType, string> = {
   Familiar: 'Familiar',
   Learned: 'Learned',
   Known: 'Known',
-  Ignored: 'Ignored',
+  Ignored: 'Ignore',
 };
 
 interface LingQStatusButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -52,9 +52,9 @@ export const LingQStatusButton = React.forwardRef<HTMLButtonElement, LingQStatus
         {number !== undefined ? (
           <span className="lingq-status-btn__number">{number}</span>
         ) : status === 'Known' ? (
-          <Check size={18} strokeWidth={1.5} aria-hidden />
+          <Check size={16} strokeWidth={2} aria-hidden />
         ) : (
-          <EyeOff size={18} strokeWidth={1.5} aria-hidden />
+          <EyeOff size={16} strokeWidth={2} aria-hidden />
         )}
         {showLabel && <span className="lingq-status-btn__label">{STATUS_LABELS[status]}</span>}
       </button>

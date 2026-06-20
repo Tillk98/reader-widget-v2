@@ -84,7 +84,7 @@ export const CourseInfoSheet: React.FC<CourseInfoSheetProps> = ({
             <p className="course-info__hero-title">{courseTitle}</p>
             <div className="course-info__hero-actions">
               <button type="button" className="course-info__hero-btn" aria-label="Likes">
-                <Heart size={16} strokeWidth={ICON_STROKE} />
+                <Heart size={16} strokeWidth={1.5} />
                 <span>300</span>
               </button>
               <button
@@ -188,7 +188,7 @@ export const CourseInfoSheet: React.FC<CourseInfoSheetProps> = ({
                               <Plus size={16} strokeWidth={ICON_STROKE} />
                             )}
                           </button>
-                          <button type="button" className="course-info__round-btn" aria-label="More options">
+                          <button type="button" className="course-info__round-btn course-info__round-btn--ghost" aria-label="More options">
                             <EllipsisVertical size={16} strokeWidth={ICON_STROKE} />
                           </button>
                         </div>

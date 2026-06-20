@@ -155,21 +155,11 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
     }
   }, [dragging, dragX]);
 
-  // Reveal opacity: ramps 0 → 1 as drag approaches threshold.
-  const knownOpacity = Math.min(Math.max(dragX / SWIPE_THRESHOLD, 0), 1);
-  const ignoredOpacity = Math.min(Math.max(-dragX / SWIPE_THRESHOLD, 0), 1);
-
-  const tileX = exitDir === 'known'
-    ? '110%'
-    : exitDir === 'ignored'
-    ? '-110%'
-    : `${dragX}px`;
-
-  const tileTrans = dragging
-    ? 'none'
-    : exitDir
-    ? 'transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)'
-    : 'transform 0.36s cubic-bezier(0.33, 1, 0.68, 1)';
+  // Reveal panels slide IN OVER the tile content — their width tracks the drag
+  // distance — rather than the tile content sliding aside.
+  const knownWidth = exitDir === 'known' ? '100%' : dragX > 0 ? `${dragX}px` : '0px';
+  const ignoredWidth = exitDir === 'ignored' ? '100%' : dragX < 0 ? `${-dragX}px` : '0px';
+  const revealTrans = dragging ? 'none' : 'width 0.28s cubic-bezier(0.4, 0, 0.2, 1)';
 
   return (
     <>
@@ -182,27 +172,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
           .filter(Boolean)
           .join(' ')}
       >
-        {/* Left reveal — shown on swipe-right */}
-        <div
-          className="vocab-list__reveal vocab-list__reveal--known"
-          style={{ opacity: exitDir === 'known' ? 1 : knownOpacity }}
-          aria-hidden
-        >
-          <CircleCheck size={20} strokeWidth={2} />
-          <span className="vocab-list__reveal-label">Known</span>
-        </div>
-
-        {/* Right reveal — shown on swipe-left */}
-        <div
-          className="vocab-list__reveal vocab-list__reveal--ignored"
-          style={{ opacity: exitDir === 'ignored' ? 1 : ignoredOpacity }}
-          aria-hidden
-        >
-          <Trash2 size={20} strokeWidth={2} />
-          <span className="vocab-list__reveal-label">Ignore</span>
-        </div>
-
-        {/* Draggable tile */}
+        {/* Tile content stays put — the reveal panels below slide over it */}
         <div
           className={[
             'vocab-list__tile',
@@ -211,7 +181,6 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
             .filter(Boolean)
             .join(' ')}
           data-word-id={word.id}
-          style={{ transform: `translateX(${tileX})`, transition: tileTrans }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -263,6 +232,30 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
           >
             <Play size={20} strokeWidth={1.75} />
           </button>
+        </div>
+
+        {/* Left reveal — slides over from the left on swipe-right (mark Known) */}
+        <div
+          className="vocab-list__reveal vocab-list__reveal--known"
+          style={{ width: knownWidth, transition: revealTrans }}
+          aria-hidden
+        >
+          <span className="vocab-list__reveal-inner">
+            <CircleCheck size={20} strokeWidth={2} />
+            <span className="vocab-list__reveal-label">Known</span>
+          </span>
+        </div>
+
+        {/* Right reveal — slides over from the right on swipe-left (mark Ignored) */}
+        <div
+          className="vocab-list__reveal vocab-list__reveal--ignored"
+          style={{ width: ignoredWidth, transition: revealTrans }}
+          aria-hidden
+        >
+          <span className="vocab-list__reveal-inner">
+            <Trash2 size={20} strokeWidth={2} />
+            <span className="vocab-list__reveal-label">Ignore</span>
+          </span>
         </div>
       </div>
     </>

@@ -23,20 +23,20 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  padding: 10px;
+  width: 48px;
+  height: 48px;
+  padding: 12px;
   box-sizing: border-box;
   border: none;
   border-radius: 999px;
-  background: #f8f9fa;
-  color: var(--text-default, #000);
+  background: #fff;
+  color: #49525b;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .review-sheet__header-btn:hover {
-  background: var(--ui-ctrl-surface-hover, #f1f5f9);
+  background: #f8f9fa;
 }
 
 .review-sheet__header-btn:active {
@@ -44,8 +44,8 @@
 }
 
 .review-sheet__stats-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
@@ -74,9 +74,9 @@
 }
 
 .review-sheet__filter-label {
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 18px;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
   color: var(--foreground-default, #0a0a0a);
 }
 

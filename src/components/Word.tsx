@@ -14,8 +14,10 @@ interface WordProps {
   onClick: (wordId: string) => void;
   /** Called when the user holds the word for LONG_PRESS_MS without releasing. Does NOT trigger onClick. */
   onLongPress?: (wordId: string) => void;
-  /** Called when the user starts dragging after the long-press popup has appeared. */
-  onLongPressCancel?: () => void;
+  /** Drag after the long-press popup appeared → live phrase drag-select (viewport coords). */
+  onLongPressDragMove?: (clientX: number, clientY: number) => void;
+  /** Pointer released after a long-press drag → commit the drag-selected phrase. */
+  onLongPressDragEnd?: () => void;
   isKnown: boolean;
   isIgnored: boolean;
   /** Part of an in-progress / active phrase selection. */
@@ -35,7 +37,8 @@ export const Word: React.FC<WordProps> = ({
   isLingQ,
   onClick,
   onLongPress,
-  onLongPressCancel,
+  onLongPressDragMove,
+  onLongPressDragEnd,
   isKnown,
   isIgnored,
   isPhraseSelected = false,
@@ -53,23 +56,28 @@ export const Word: React.FC<WordProps> = ({
 
     const origin = { x: e.clientX, y: e.clientY };
     let longPressHasFired = false;
+    let draggedAfterLongPress = false;
 
     const onWindowMove = (ev: PointerEvent) => {
       const dx = ev.clientX - origin.x;
       const dy = ev.clientY - origin.y;
-      if (Math.sqrt(dx * dx + dy * dy) > DRAG_CANCEL_PX) {
-        if (longPressHasFired) {
-          // Drag after popup appeared → dismiss the popup
-          onLongPressCancel?.();
-          cleanup();
-        } else {
-          // Drag before popup appeared → cancel the pending timer
-          if (longPressTimerRef.current !== null) {
-            clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = null;
-          }
-          cleanup();
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (longPressHasFired) {
+        // Popup is up → a drag now drives phrase drag-select on the text.
+        // Keep the listeners alive for the rest of the gesture.
+        if (dist > DRAG_CANCEL_PX) {
+          draggedAfterLongPress = true;
+          onLongPressDragMove?.(ev.clientX, ev.clientY);
         }
+        return;
+      }
+      if (dist > DRAG_CANCEL_PX) {
+        // Drag before popup appeared → cancel the pending timer.
+        if (longPressTimerRef.current !== null) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+        cleanup();
       }
     };
 
@@ -78,6 +86,7 @@ export const Word: React.FC<WordProps> = ({
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
+      if (draggedAfterLongPress) onLongPressDragEnd?.();
       cleanup();
     };
     const onWindowCancel = () => {
@@ -85,6 +94,7 @@ export const Word: React.FC<WordProps> = ({
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
+      if (draggedAfterLongPress) onLongPressDragEnd?.();
       cleanup();
     };
 

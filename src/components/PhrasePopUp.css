@@ -9,7 +9,10 @@
   pointer-events: auto;
   user-select: none;
   min-width: 160px;
-  max-width: min(320px, calc(100vw - 16px));
+  /* Hug the content (term + meaning rows) up to the viewport edge — the 9-word
+     cap bounds how wide a phrase can get; don't clamp shorter than that. */
+  max-width: calc(100vw - 16px);
+  width: max-content;
 }
 
 /* Valid variant: two separate floating cards with a gap. */
@@ -168,26 +171,26 @@
   min-width: 0;
 }
 
+/* Term (original word) — prominent, like the term cards. */
 .phrase-popup__row-source {
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--typography-muted, #6d7680);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: #0a0a0a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
 }
 
+/* Meaning — muted, beneath the term. */
 .phrase-popup__row-def {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
   line-height: 18px;
-  color: var(--typography-default, #000000);
+  color: #49525b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
 }
 
 .phrase-popup__row-chevron {

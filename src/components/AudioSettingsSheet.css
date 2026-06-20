@@ -3,7 +3,9 @@
 .audio-settings-sheet {
   position: fixed;
   inset: 0;
-  z-index: 55;
+  /* Above the reader header (z-index 100) so the backdrop dims it too,
+     instead of the header poking through the dim and looking "highlighted". */
+  z-index: 110;
   pointer-events: none;
 }
 

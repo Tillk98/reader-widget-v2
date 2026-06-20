@@ -103,6 +103,10 @@ export const Reader: React.FC = () => {
   const ignoreNextWordClick = useRef(false);
   /** Timestamp (ms) when phrase-pick mode was entered — used to suppress ghost clicks on mobile. */
   const phrasePickStartTimeRef = useRef<number>(0);
+  /** Drag-to-select-phrase (from a long press): anchor word + whether a real drag is underway. */
+  const dragSelectAnchorRef = useRef<{ id: string; index: number } | null>(null);
+  const dragSelectActiveRef = useRef(false);
+  const dragSelectEndIndexRef = useRef<number | null>(null);
   /** Skip ResizeObserver pagination while swiping — avoids remounting pages mid-gesture (white flash). */
   const isPageSwipeDraggingRef = useRef(false);
   /** Block pagination recalculation briefly after a page change (resize often fires during transform; recalc remounts rows → flash). */
@@ -456,6 +460,8 @@ export const Reader: React.FC = () => {
     (e: React.PointerEvent) => {
       if (!contentRef.current || pages.length === 0) return;
       if (e.pointerType === 'mouse' && e.buttons === 0) return;
+      /* A long-press phrase drag-select owns this gesture — never page while selecting. */
+      if (dragSelectActiveRef.current) return;
 
       const dx = e.clientX - dragStartX.current;
       if (!isDragging) {
@@ -535,10 +541,56 @@ export const Reader: React.FC = () => {
     setSnackbar(null);
     setPhrasePick(null);
     setPhraseHighlightIds(new Set());
+    /* Arm drag-to-select: if the user now drags across the text, this word is the anchor. */
+    const index = currentPageWordIndexRef.current.get(wordId);
+    dragSelectAnchorRef.current = index !== undefined ? { id: wordId, index } : null;
+    dragSelectActiveRef.current = false;
+    dragSelectEndIndexRef.current = null;
   }, []);
 
-  /** Dragging after the popup appears now drives the menu (drag-to-select), so keep it open. */
-  const handleWordLongPressCancel = useCallback(() => {}, []);
+  /**
+   * Long-press → drag across the text: live phrase drag-select. Once the finger reaches a
+   * *different* word, the long-press menu closes and the anchor→current range highlights.
+   * (Dragging onto the menu's own options stays on the menu — handled by QuickStatusPopup.)
+   */
+  const handleLongPressDragMove = useCallback(
+    (clientX: number, clientY: number) => {
+      const anchor = dragSelectAnchorRef.current;
+      if (!anchor) return;
+      const el = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+      const wordEl = el?.closest('.sentence-item') as HTMLElement | null;
+      const wordId = wordEl?.id;
+      const idx = wordId ? currentPageWordIndexRef.current.get(wordId) : undefined;
+      if (idx === undefined) return;
+      if (!dragSelectActiveRef.current) {
+        if (idx === anchor.index) return; // still on the anchor word — don't hijack the menu yet
+        dragSelectActiveRef.current = true;
+        setLongPressWordId(null); // a real drag began → close the long-press menu
+        setSelectedWordId(null);
+        setPhraseSelection(null);
+        setPhraseDetailOpen(false);
+        setPhrasePick(null);
+      }
+      dragSelectEndIndexRef.current = idx;
+      setPhraseHighlightIds(new Set(phraseIdsFromRange(anchor.index, idx)));
+    },
+    [phraseIdsFromRange]
+  );
+
+  /** Release after a drag-select: commit the anchor→end range as a phrase. */
+  const handleLongPressDragEnd = useCallback(() => {
+    const anchor = dragSelectAnchorRef.current;
+    const end = dragSelectEndIndexRef.current;
+    const wasActive = dragSelectActiveRef.current;
+    dragSelectActiveRef.current = false;
+    dragSelectAnchorRef.current = null;
+    dragSelectEndIndexRef.current = null;
+    if (!wasActive || anchor == null || end == null) return;
+    /* The anchor word's trailing click is already suppressed by Word's own long-press guard,
+     * so no global ignore flag is needed here (setting one risks swallowing a later real tap). */
+    const committed = commitPhraseRange(anchor.index, end);
+    if (!committed) setPhraseHighlightIds(new Set());
+  }, [commitPhraseRange]);
 
   /**
    * "Select a Phrase" tapped: close the popup and enter phrase-pick mode anchored on the
@@ -1108,7 +1160,7 @@ export const Reader: React.FC = () => {
                 aria-label="Close lesson"
                 onClick={handleCloseLesson}
               >
-                <Library size={20} strokeWidth={2} />
+                <Library size={24} strokeWidth={2} />
               </button>
               <div className="reader-progress-bar-wrap">
                 <div
@@ -1173,7 +1225,8 @@ export const Reader: React.FC = () => {
                       lingqWords={lingqWords}
                       onWordClick={handleWordClick}
                       onWordLongPress={handleWordLongPress}
-                      onWordLongPressCancel={handleWordLongPressCancel}
+                      onWordLongPressDragMove={handleLongPressDragMove}
+                      onWordLongPressDragEnd={handleLongPressDragEnd}
                       knownWords={knownWords}
                       ignoredWords={ignoredWords}
                       videoLessonLayout
@@ -1199,7 +1252,8 @@ export const Reader: React.FC = () => {
                           lingqWords={lingqWords}
                           onWordClick={handleWordClick}
                           onWordLongPress={handleWordLongPress}
-                          onWordLongPressCancel={handleWordLongPressCancel}
+                          onWordLongPressDragMove={handleLongPressDragMove}
+                          onWordLongPressDragEnd={handleLongPressDragEnd}
                           knownWords={knownWords}
                           ignoredWords={ignoredWords}
                           videoLessonLayout={false}
@@ -1412,7 +1466,9 @@ export const Reader: React.FC = () => {
               }
               reviewModeActive={reviewMode}
               onReview={() => {
-                setSentenceMode(false);
+                // Review is a full-overlay sheet — leave the current mode
+                // (sentence or page) active underneath so closing review
+                // returns to it rather than always dropping to page mode.
                 setReviewMode(true);
               }}
               onPlay={handleDefaultPlay}

@@ -51,13 +51,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 10px;
+  width: 48px;
+  height: 48px;
+  padding: 12px;
   box-sizing: border-box;
   border: none;
   border-radius: 999px;
-  background-color: #f8f9fa;
+  background-color: #fff;
   color: #1c1c1e;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -65,7 +65,7 @@
 }
 
 .reader-header-button:hover {
-  background-color: #f1f5f9;
+  background-color: #f8f9fa;
 }
 
 .reader-header-button:active {
@@ -73,8 +73,8 @@
 }
 
 .reader-header-stats-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: block;
   object-fit: contain;
 }
@@ -104,7 +104,7 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: linear-gradient(90deg, #42a564 0%, #66b37a 100%);
+  background: linear-gradient(90deg, #42a564 0%, #66b37a 68%);
   border-radius: 999px;
   transition: width 0.2s ease;
 }

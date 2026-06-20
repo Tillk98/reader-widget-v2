@@ -101,7 +101,17 @@ const StatusPopover: React.FC<StatusPopoverProps> = ({
   }, [anchorRef, onClose, closeOnOutside]);
 
   return createPortal(
-    <div ref={popRef} className="h-term-status-popover" style={style}>
+    // Portaled to <body>, but React still bubbles events through the component tree to the
+    // TermCard that renders this menu — so a row tap would hit the card's onClick and
+    // re-mark the word "New". Stop pointer/click here so the chosen status wins.
+    <div
+      ref={popRef}
+      className="h-term-status-popover"
+      style={style}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       <LingQStatusBar
         variant="vertical"
         status={status}

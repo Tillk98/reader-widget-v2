@@ -1,30 +1,29 @@
-/* LingQStatusButton — 32×32 pill status indicator (Figma 4008:56485) */
+/* LingQStatusButton — canonical status indicator (Figma 4008:56485).
+   status (Ignored | New | Recognized | Familiar | Learned | Known)
+   × state (default | focus) × label (showLabel boolean). */
 
 .lingq-status-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   box-sizing: border-box;
   padding: 0;
+  gap: 6px;
   border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
-  box-shadow: none;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 20px;
-  /* Default state: black numbers, muted icons */
-  color: var(--typography-default, #000000);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  /* Default state: dark numbers / icons, no fill, no border. */
+  color: #0a0a0a;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .lingq-status-btn:active {
-  transform: scale(0.88);
+  transform: scale(0.9);
 }
 
 .lingq-status-btn:focus-visible {
@@ -32,25 +31,10 @@
   outline-offset: 2px;
 }
 
-.lingq-status-btn__number {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 20px;
-  letter-spacing: 0;
-}
-
-/* showLabel variant: pill grows to fit the status name beside the number/icon. */
-.lingq-status-btn--with-label {
-  width: auto;
-  min-width: 32px;
-  padding: 0 10px;
-  gap: 6px;
-}
-
+.lingq-status-btn__number,
 .lingq-status-btn__label {
-  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 18px;
   letter-spacing: 0;
   color: inherit;
@@ -62,31 +46,30 @@
   flex-shrink: 0;
 }
 
-/* Default state: numbers + Known/Ignored icons are solid black */
-.lingq-status-btn--known:not(.lingq-status-btn--focus),
-.lingq-status-btn--ignored:not(.lingq-status-btn--focus) {
-  color: var(--typography-default, #000000);
+/* showLabel variant: pill grows to fit the status name beside the number/icon. */
+.lingq-status-btn--with-label {
+  width: auto;
+  height: auto;
+  padding: 6px 12px;
 }
 
-/* ── Focus state (Figma 4008:56485 — LingQStatusButton State=Focus) ───────── */
-/* New / Recognized / Familiar / Learned: green ring on a transparent fill. */
+/* ── Focus state (Figma 4008:56485 — State=Focus) ───────────────────────────── */
+/* New / Recognized / Familiar / Learned: green ring + green number, transparent fill. */
 .lingq-status-btn--focus {
-  border-color: var(--border-primary, #42a564);
-  background: transparent;
-  box-shadow: none;
-  color: var(--foreground-primary, #42a564);
+  border-color: #42a564;
+  color: #42a564;
 }
 
-/* Known: light-green fill + green ring + green check. */
+/* Known: light-green fill + green ring + green check/label. */
 .lingq-status-btn--known.lingq-status-btn--focus {
-  background: var(--surfaces-primary-subtle, #f4fcef);
-  border-color: var(--border-primary, #42a564);
-  color: var(--foreground-primary, #42a564);
+  background: #f4fcef;
+  border-color: #42a564;
+  color: #42a564;
 }
 
-/* Ignored: grey fill + grey ring + dark icon (NOT green). */
+/* Ignored: grey fill + subtle ring + dark icon/label (NOT green). */
 .lingq-status-btn--ignored.lingq-status-btn--focus {
-  background: var(--surfaces-default, #f1f3f4);
-  border-color: var(--border-default, #d1d6d9);
-  color: var(--typography-default, #0a0a0a);
+  background: #f8f9fa;
+  border-color: #f1f3f4;
+  color: #0a0a0a;
 }

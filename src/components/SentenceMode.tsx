@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Languages, RotateCw } from 'lucide-react';
 import type { Sentence, Word } from '../data/lesson';
 import type { LingQStatusType } from './LingQStatusBar';
 import { HorizontalTermList } from './HorizontalTermList';
@@ -67,6 +67,7 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
   onDeselect,
 }) => {
   const [showTranslation, setShowTranslation] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [sentenceSticky, setSentenceSticky] = useState(false);
   const sentenceRef = useRef<HTMLParagraphElement>(null);
 
@@ -157,6 +158,12 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     onListWordOpenDetail(wordId);
   };
 
+  /** Refresh the translation — re-renders the gloss with a brief spin for feedback. */
+  const handleRefreshTranslation = () => {
+    setRefreshing(true);
+    window.setTimeout(() => setRefreshing(false), 500);
+  };
+
   /** Tapping empty page background (not a word, tile, or control) clears selection. */
   const handleBackgroundClick = (e: React.MouseEvent) => {
     if (suppressClick.current) return;
@@ -206,13 +213,35 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
           <div className="sentence-mode__controls">
             <button
               type="button"
-              className="sentence-mode__translation-toggle"
+              className={[
+                'sentence-mode__icon-btn',
+                showTranslation && 'sentence-mode__icon-btn--active',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               onClick={() => setShowTranslation(v => !v)}
               aria-pressed={showTranslation}
+              aria-label={showTranslation ? 'Hide translation' : 'Show translation'}
+              title={showTranslation ? 'Hide translation' : 'Show translation'}
             >
-              {showTranslation ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
-              <span>{showTranslation ? 'Hide Translation' : 'Show Translation'}</span>
+              <Languages size={16} strokeWidth={2} />
             </button>
+            {showTranslation && (
+              <button
+                type="button"
+                className={[
+                  'sentence-mode__icon-btn',
+                  refreshing && 'sentence-mode__icon-btn--spinning',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={handleRefreshTranslation}
+                aria-label="Refresh translation"
+                title="Refresh translation"
+              >
+                <RotateCw size={16} strokeWidth={2} />
+              </button>
+            )}
           </div>
 
           {showTranslation && <p className="sentence-mode__sentence-translation">{sentenceTranslation}</p>}

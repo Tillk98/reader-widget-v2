@@ -5,13 +5,13 @@
   z-index: 130;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  padding: 8px 12px;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 0;
   background: var(--backgrounds-page, #ffffff);
   border-radius: 6px;
   box-shadow: 0px 4px 12px -4px rgba(0, 0, 0, 0.15);
-  border: 0.5px solid var(--border-default, #d1d6d9);
+  border: 0.5px solid #f1f3f4;
   font-family: 'DM Sans', sans-serif;
   user-select: none;
   -webkit-user-select: none;
@@ -32,62 +32,55 @@
   }
 }
 
-.quick-status-popup__option {
+/* "Select a Phrase" — styled like a default LingQStatusButton pill, but a separate action. */
+.quick-status-popup__phrase {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  padding: 4px 8px;
-  border: none;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
   white-space: nowrap;
   text-align: left;
-  color: var(--typography-default, #0a0a0a);
+  color: #0a0a0a;
   transition: background 0.12s ease, transform 0.1s ease;
 }
 
-.quick-status-popup__option:hover,
-.quick-status-popup__option--hover {
-  background: rgba(0, 0, 0, 0.04);
+.quick-status-popup__phrase:hover,
+.quick-status-popup__phrase--hover {
+  background: #f8f9fa;
 }
 
-.quick-status-popup__option:active {
+.quick-status-popup__phrase:active {
   transform: scale(0.97);
 }
 
-.quick-status-popup__option:focus-visible {
+.quick-status-popup__phrase:focus-visible {
   outline: var(--ui-focus-ring);
   outline-offset: -2px;
 }
 
-.quick-status-popup__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  min-width: 18px;
-  color: var(--typography-default, #0a0a0a);
-}
-
-.quick-status-popup__mark svg {
+.quick-status-popup__phrase svg {
   display: block;
+  flex-shrink: 0;
 }
 
-.quick-status-popup__label {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 18px;
+.quick-status-popup__phrase-label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
   letter-spacing: 0;
-  color: var(--typography-default, #0a0a0a);
+  color: #0a0a0a;
 }
 
-/* Full-width divider — bleeds past the popup's horizontal padding. */
+/* Full-width divider (container has no horizontal padding). */
 .quick-status-popup__divider {
   height: 1px;
+  width: 100%;
   flex-shrink: 0;
-  margin: 4px -12px;
-  background: var(--border-default, #d1d6d9);
+  align-self: stretch;
+  background: #f1f3f4;
 }
