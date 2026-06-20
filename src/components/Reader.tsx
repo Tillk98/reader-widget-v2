@@ -1281,6 +1281,7 @@ export const Reader: React.FC = () => {
                     wordStatus={wordStatusMap[wordId] ?? 'New'}
                     onWordStatusChange={status => handleStatusChange(wordId, status)}
                     onClose={handleClosePopup}
+                    onLynx={() => setLynxChatOpen(true)}
                     isTablet={isTablet}
                     panelMode={true}
                     onTogglePanelMode={() => setWordDetailPanelMode(false)}
@@ -1371,6 +1372,7 @@ export const Reader: React.FC = () => {
               onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
               onClose={handleClosePopup}
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
+              onLynx={() => setLynxChatOpen(true)}
               isTablet={isTablet}
               panelMode={false}
               onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(true) : undefined}
@@ -1409,6 +1411,7 @@ export const Reader: React.FC = () => {
                 phraseWords={phraseSelection.words}
                 onPhraseWordOpen={handlePhraseWordOpen}
                 onClose={clearPhraseSelection}
+                onLynx={() => setLynxChatOpen(true)}
               />
             );
           })()}
@@ -1424,6 +1427,7 @@ export const Reader: React.FC = () => {
                 wordStatus={wordStatusMap[wordId] ?? 'New'}
                 onWordStatusChange={status => handleStatusChange(wordId, status)}
                 onClose={handleClosePopup}
+                onLynx={() => setLynxChatOpen(true)}
                 isTablet={isTablet}
                 panelMode={isTablet && wordDetailPanelMode}
                 onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(prev => !prev) : undefined}

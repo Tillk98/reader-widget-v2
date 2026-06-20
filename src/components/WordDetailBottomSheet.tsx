@@ -1038,10 +1038,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
                 type="button"
                 className="word-detail-sheet-lynx-btn"
                 aria-label="Ask Lynx"
-                onClick={() => {
-                  onLynx?.();
-                  setActiveTab('explain');
-                }}
+                onClick={() => onLynx?.()}
               >
                 <img src={lynxFooterIcon} alt="" className="word-detail-sheet-lynx-btn__icon" aria-hidden />
               </button>

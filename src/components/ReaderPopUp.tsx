@@ -17,6 +17,8 @@ interface ReaderPopUpProps {
   onClose: () => void;
   /** Fired when the user opens the meanings / word-detail bottom sheet (popup bubble is unmounted). */
   onWordDetailSheetOpen?: () => void;
+  /** Footer Lynx button (in the expanded detail sheet) — opens the Lynx chat. */
+  onLynx?: () => void;
   /** True when the viewport is ≥768px (tablet/desktop surface). */
   isTablet?: boolean;
   /** True when the word detail is shown as a floating side panel instead of a bottom sheet. */
@@ -35,6 +37,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   onWordStatusChange,
   onClose,
   onWordDetailSheetOpen,
+  onLynx,
   isTablet,
   panelMode,
   onTogglePanelMode,
@@ -176,6 +179,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
         onWordStatusChange={onWordStatusChange}
         onWordTranslationChange={setMeaningOverride}
         onClose={onClose}
+        onLynx={onLynx}
         isTablet={isTablet}
         panelMode={panelMode}
         floatingMode={useFloating}

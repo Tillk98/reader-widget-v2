@@ -1,4 +1,10 @@
 /* ── Sheet panel overrides ────────────────────────────────────────── */
+/* Sit above the word-detail sheet (z-index 1001) so opening Lynx from its footer
+   overlays it — the word detail stays mounted underneath. */
+.bottom-sheet.lynx-sheet {
+  z-index: 1100;
+}
+
 .lynx-sheet .bottom-sheet__panel {
   max-width: 100%;
   font-family: 'DM Sans', sans-serif;

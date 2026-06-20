@@ -6,7 +6,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 48px;
+  min-height: 56px;
   width: 100%;
   padding: 0;
   border-radius: var(--radius-sm, 6px);
@@ -23,9 +23,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  /* Multi-line meanings wrap, but keep 12px clearance from the grip handle. */
+  gap: 12px;
   flex: 1 1 auto;
-  min-height: 48px;
+  min-height: 56px;
   min-width: 0;
   padding: var(--spacing-spacing-md, 12px);
   border-radius: var(--radius-sm, 6px);
@@ -102,9 +103,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
-  min-height: 48px;
+  min-height: 56px;
   padding: 4px var(--spacing-spacing-lg, 12px);
   box-sizing: border-box;
   overflow: visible;
@@ -133,15 +134,15 @@
   outline: none;
 }
 
-/* 24px circular icon buttons inside the edit row (Figma CloseButton / SaveButton 4446:85357) */
+/* 32px circular icon buttons inside the edit row (Figma CloseButton / SaveButton 4446:85357) */
 .saved-meaning__edit-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 6px;
+  width: 32px;
+  height: 32px;
+  padding: 8px;
   margin: 0;
   border: none;
   border-radius: 999px;
@@ -185,7 +186,7 @@
   align-items: center;
   gap: var(--spacing-spacing-md, 12px);
   width: 100%;
-  min-height: 48px;
+  min-height: 56px;
   padding: var(--spacing-spacing-md, 12px);
   margin: 0;
   border: none;

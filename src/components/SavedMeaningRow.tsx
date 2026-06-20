@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Plus, Check, Trash2, X, GripVertical } from 'lucide-react';
+import { Plus, Check, Trash2, Undo2, GripVertical } from 'lucide-react';
 import './SavedMeaningRow.css';
 
 /** Movement under this many px counts as a tap (→ edit), not a swipe. */
@@ -39,6 +39,10 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
   const [armed, setArmed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+  /** Edit-row container — used to detect taps outside the field. */
+  const editContainerRef = useRef<HTMLDivElement>(null);
+  /** Live mirror of `draft` so the outside-tap handler reads the latest text. */
+  const draftRef = useRef(draft);
 
   const startX = useRef(0);
   const startY = useRef(0);
@@ -66,6 +70,31 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
       }
     }
   }, [editing]);
+
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
+  /* Tapping outside commits the edit; if the text was erased, the meaning is removed. */
+  useEffect(() => {
+    if (!editing) return;
+    const onDown = (e: PointerEvent) => {
+      if (editContainerRef.current && !editContainerRef.current.contains(e.target as Node)) {
+        const v = draftRef.current.trim();
+        if (v) {
+          onSave(v);
+          setEditing(false);
+        } else {
+          onDelete(); // erased to empty → drop the menu item
+        }
+      }
+    };
+    const id = window.setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
+  }, [editing, onSave, onDelete]);
 
   const setOffsetValue = useCallback((next: number) => {
     offsetRef.current = next;
@@ -160,7 +189,7 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
   /* ── Edit state ──────────────────────────────────────────────── */
   if (editing) {
     return (
-      <div className="saved-meaning saved-meaning--edit">
+      <div className="saved-meaning saved-meaning--edit" ref={editContainerRef}>
         <input
           ref={inputRef}
           type="text"
@@ -175,21 +204,23 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
           autoComplete="off"
           spellCheck
         />
-        <button
-          type="button"
-          className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
-          aria-label="Cancel edit"
-          onClick={handleCancel}
-        >
-          <X size={12} aria-hidden />
-        </button>
+        {draft.trim() !== '' && (
+          <button
+            type="button"
+            className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
+            aria-label="Erase text"
+            onClick={() => setDraft('')}
+          >
+            <Undo2 size={16} aria-hidden />
+          </button>
+        )}
         <button
           type="button"
           className="saved-meaning__edit-btn saved-meaning__edit-btn--save"
           aria-label="Save meaning"
           onClick={handleSave}
         >
-          <Check size={12} aria-hidden />
+          <Check size={16} aria-hidden />
         </button>
       </div>
     );
@@ -244,12 +275,36 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const editContainerRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef(draft);
 
   useEffect(() => {
     if (editing) {
       inputRef.current?.focus();
     }
   }, [editing]);
+
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
+  /* Tapping outside commits the new meaning (if any) and closes the row. */
+  useEffect(() => {
+    if (!editing) return;
+    const onDown = (e: PointerEvent) => {
+      if (editContainerRef.current && !editContainerRef.current.contains(e.target as Node)) {
+        const v = draftRef.current.trim();
+        if (v) onAdd(v);
+        setDraft('');
+        setEditing(false);
+      }
+    };
+    const id = window.setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
+  }, [editing, onAdd]);
 
   const handleSave = () => {
     const v = draft.trim();
@@ -267,7 +322,7 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
 
   if (editing) {
     return (
-      <div className="saved-meaning saved-meaning--edit">
+      <div className="saved-meaning saved-meaning--edit" ref={editContainerRef}>
         <input
           ref={inputRef}
           type="text"
@@ -283,21 +338,23 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
           autoComplete="off"
           spellCheck
         />
-        <button
-          type="button"
-          className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
-          aria-label="Cancel"
-          onClick={handleCancel}
-        >
-          <X size={12} aria-hidden />
-        </button>
+        {draft.trim() !== '' && (
+          <button
+            type="button"
+            className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
+            aria-label="Erase text"
+            onClick={() => setDraft('')}
+          >
+            <Undo2 size={16} aria-hidden />
+          </button>
+        )}
         <button
           type="button"
           className="saved-meaning__edit-btn saved-meaning__edit-btn--save"
           aria-label="Save new meaning"
           onClick={handleSave}
         >
-          <Check size={12} aria-hidden />
+          <Check size={16} aria-hidden />
         </button>
       </div>
     );
@@ -306,7 +363,7 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
   return (
     <button type="button" className="saved-meaning__add-new" onClick={() => setEditing(true)}>
       <span className="reader-btn reader-btn--accent" aria-hidden>
-        <Plus size={12} />
+        <Plus size={16} />
       </span>
       <span className="saved-meaning__add-new-label">Add a new meaning</span>
     </button>

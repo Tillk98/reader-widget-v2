@@ -157,7 +157,7 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
         className={`quick-status-popup__phrase${hovered === 'phrase' ? ' quick-status-popup__phrase--hover' : ''}`}
         aria-label="Select a phrase"
       >
-        <Brackets size={14} strokeWidth={2} aria-hidden />
+        <Brackets size={16} strokeWidth={2} aria-hidden />
         <span className="quick-status-popup__phrase-label">Select a Phrase</span>
       </button>
     </div>

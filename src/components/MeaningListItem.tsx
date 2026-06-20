@@ -62,7 +62,7 @@ export const MeaningListItem: React.FC<MeaningListItemProps> = ({
               onClick={onCta}
               aria-label={`Add "${meaning}" to saved meanings`}
             >
-              <Plus size={12} />
+              <Plus size={16} />
             </button>
           </span>
         )}
