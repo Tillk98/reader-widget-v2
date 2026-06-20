@@ -928,7 +928,7 @@ button.note-field__box {
 }
 
 .note-field__action--cancel {
-  background: var(--surfaces-default-subtle, #ffffff);
+  background: transparent;
   color: #49525b;
 }
 

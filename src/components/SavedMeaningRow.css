@@ -160,9 +160,9 @@
   display: block;
 }
 
-/* X — cancel, white fill */
+/* Undo — erase text, no fill */
 .saved-meaning__edit-btn--cancel {
-  background: var(--surfaces-default-subtle, #ffffff);
+  background: transparent;
   color: var(--foreground-default, #0a0a0a);
 }
 
