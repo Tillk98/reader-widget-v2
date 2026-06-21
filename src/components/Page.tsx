@@ -22,6 +22,10 @@ interface PageProps {
   phraseSelectedWords?: ReadonlySet<string>;
   /** The anchor word while picking a phrase — gets a distinct focus highlight. */
   phraseAnchorWordId?: string | null;
+  /** Word ids belonging to an AI "new phrase" — rendered as one continuous blue band. */
+  newPhraseWords?: ReadonlySet<string>;
+  /** Word ids of committed phrase LingQs — rendered as a persistent green band. */
+  committedPhraseWords?: ReadonlySet<string>;
 }
 
 /** Split a page’s word list into contiguous runs that belong to the same sentence. */
@@ -73,13 +77,18 @@ export const Page: React.FC<PageProps> = ({
   wordToSentenceIndex,
   phraseSelectedWords,
   phraseAnchorWordId,
+  newPhraseWords,
+  committedPhraseWords,
 }) => {
   const useSentenceLayout = Boolean(videoLessonLayout && wordToSentenceIndex && wordToSentenceIndex.size > 0);
   const sentenceRuns = useSentenceLayout
     ? groupWordsBySentenceRun(words, wordToSentenceIndex!)
     : null;
 
-  const isPhrase = (word: WordType) => phraseSelectedWords?.has(word.id) ?? false;
+  /* Green band covers both the active selection and any committed phrase LingQ. */
+  const isPhrase = (word: WordType) =>
+    (phraseSelectedWords?.has(word.id) ?? false) || (committedPhraseWords?.has(word.id) ?? false);
+  const isNewPhrase = (word: WordType) => newPhraseWords?.has(word.id) ?? false;
 
   /** Render an ordered run of words with their connecting spaces, applying the
    * continuous phrase highlight (rounded outer edges, filled inter-word spaces). */
@@ -88,6 +97,17 @@ export const Page: React.FC<PageProps> = ({
       const selected = isPhrase(word);
       const prevSelected = index > 0 && isPhrase(run[index - 1]);
       const nextSelected = index < run.length - 1 && isPhrase(run[index + 1]);
+      const newPhrase = isNewPhrase(word);
+      const prevNewPhrase = index > 0 && isNewPhrase(run[index - 1]);
+      const nextNewPhrase = index < run.length - 1 && isNewPhrase(run[index + 1]);
+      /* Inter-word space: green when inside an active selection, else blue when inside a new
+         phrase, else a plain space. */
+      const spaceClass =
+        selected && nextSelected
+          ? 'reader-space reader-space--phrase'
+          : newPhrase && nextNewPhrase
+          ? 'reader-space reader-space--new-phrase'
+          : 'reader-space';
       return (
         <React.Fragment key={word.id}>
           <Word
@@ -104,9 +124,12 @@ export const Page: React.FC<PageProps> = ({
             isPhraseStart={selected && !prevSelected}
             isPhraseEnd={selected && !nextSelected}
             isPhraseAnchor={phraseAnchorWordId === word.id}
+            isNewPhrase={newPhrase}
+            isNewPhraseStart={newPhrase && !prevNewPhrase}
+            isNewPhraseEnd={newPhrase && !nextNewPhrase}
           />
           {index < run.length - 1 && (
-            <span className={selected && nextSelected ? 'reader-space reader-space--phrase' : 'reader-space'}>
+            <span className={spaceClass}>
               {' '}
             </span>
           )}

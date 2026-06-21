@@ -87,6 +87,18 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     [sentence]
   );
 
+  /** Highlight class mirroring page mode: blue = untracked/new candidate, green = LingQ/saved,
+   *  none = Known/Ignored. */
+  const wordHighlightClass = useCallback(
+    (wordId: string): string => {
+      const status = wordStatusMap[wordId];
+      if (status === 'Known' || status === 'Ignored') return '';
+      if (status) return 'sentence-mode__word--lingq';
+      return 'sentence-mode__word--new';
+    },
+    [wordStatusMap]
+  );
+
   const goTo = useCallback(
     (next: number) => {
       const clamped = Math.min(Math.max(0, next), sentences.length - 1);
@@ -196,6 +208,7 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
                       id={w.id}
                       className={[
                         'sentence-mode__word',
+                        wordHighlightClass(w.id),
                         selectedWordId === w.id && 'sentence-mode__word--active',
                       ]
                         .filter(Boolean)
@@ -268,8 +281,10 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
                     <span className="sentence-mode__punct">{w.text}</span>
                   ) : (
                     <span
+                      data-sticky-word-id={w.id}
                       className={[
                         'sentence-mode__word',
+                        wordHighlightClass(w.id),
                         selectedWordId === w.id && 'sentence-mode__word--active',
                       ]
                         .filter(Boolean)

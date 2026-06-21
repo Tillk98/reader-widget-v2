@@ -28,6 +28,12 @@ interface WordProps {
   isPhraseEnd?: boolean;
   /** The anchor (start) word while picking a phrase — gets a distinct focus ring. */
   isPhraseAnchor?: boolean;
+  /** Part of an AI "new phrase" — rendered as a continuous blue band. */
+  isNewPhrase?: boolean;
+  /** First word of the new-phrase run (rounds the left edge). */
+  isNewPhraseStart?: boolean;
+  /** Last word of the new-phrase run (rounds the right edge). */
+  isNewPhraseEnd?: boolean;
 }
 
 export const Word: React.FC<WordProps> = ({
@@ -45,6 +51,9 @@ export const Word: React.FC<WordProps> = ({
   isPhraseStart = false,
   isPhraseEnd = false,
   isPhraseAnchor = false,
+  isNewPhrase = false,
+  isNewPhraseStart = false,
+  isNewPhraseEnd = false,
 }) => {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPressRef = useRef(false);
@@ -133,9 +142,13 @@ export const Word: React.FC<WordProps> = ({
 
   const getClassName = () => {
     const base = isKnown || isIgnored ? 'sentence-item' : `sentence-item ${isClicked || isLingQ ? 'yellow-word' : 'blue-word'}`;
-    if (!isPhraseSelected && !isPhraseAnchor) return base;
+    if (!isPhraseSelected && !isPhraseAnchor && !isNewPhrase) return base;
     return [
       base,
+      /* New-phrase band (blue) — superseded by the green selection band when active. */
+      isNewPhrase && !isPhraseSelected && 'new-phrase-word',
+      isNewPhrase && !isPhraseSelected && isNewPhraseStart && 'new-phrase-word--start',
+      isNewPhrase && !isPhraseSelected && isNewPhraseEnd && 'new-phrase-word--end',
       isPhraseSelected && 'phrase-word',
       isPhraseSelected && isPhraseStart && 'phrase-word--start',
       isPhraseSelected && isPhraseEnd && 'phrase-word--end',

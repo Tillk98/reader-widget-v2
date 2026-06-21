@@ -8,6 +8,17 @@ export interface Sentence {
   words: Word[];
 }
 
+/**
+ * An AI-designated "new phrase": a contiguous run of words highlighted together as a single
+ * blue unit (like a "new word", but spanning several words). Resolved from the lesson text.
+ */
+export interface NewPhrase {
+  /** Ordered word ids that make up the phrase. */
+  wordIds: string[];
+  /** Curated phrase meaning shown in the popup. */
+  translation: string;
+}
+
 export interface Lesson {
   title: string;
   source?: string;
@@ -20,6 +31,8 @@ export interface Lesson {
   lessonMenuTitle?: string;
   /** e.g. "Lesson 1/30" under the menu header title. */
   lessonMenuSubtitle?: string;
+  /** AI-designated multi-word "new phrases" rendered as a single blue unit. */
+  newPhrases?: NewPhrase[];
 }
 
 // Translation map for French words to English
@@ -485,12 +498,65 @@ function parseLesson(text: string): Lesson {
   };
 }
 
+/**
+ * AI-designated "new phrases" for this lesson, given as the sequence of (cleaned) word tokens
+ * to match plus the curated meaning. Resolved to concrete word-id spans after parsing.
+ */
+const NEW_PHRASE_DEFS: Array<{ tokens: string[]; translation: string }> = [
+  { tokens: ['en', 'tant', 'que'], translation: 'as / in the capacity of' },
+  { tokens: ['de', 'son', 'côté'], translation: 'for their part / on their end' },
+  { tokens: ['il', 'y', 'a', 'de', 'cela', 'un', 'an'], translation: 'a year ago / it was a year ago' },
+  { tokens: ['en', 'dépit', 'de'], translation: 'in spite of / despite' },
+  { tokens: ['du', 'coup'], translation: 'so / as a result' },
+  { tokens: ['tant', 'pis'], translation: 'too bad / oh well' },
+  { tokens: ['cela', 'a', 'fait'], translation: 'that made / that gave' },
+  { tokens: ['il', 'est', 'beaucoup', 'trop', 'tôt'], translation: 'it is much too early / far too soon' },
+];
+
+/** Normalize a token for phrase matching: strip surrounding punctuation, lowercase. */
+function cleanToken(text: string): string {
+  return text.replace(/[.,!?;:«»"'()€]/g, '').trim().toLowerCase();
+}
+
+/** Find each phrase definition's first contiguous match in reading order and return its spans. */
+function resolveNewPhrases(
+  sentences: Sentence[],
+  defs: Array<{ tokens: string[]; translation: string }>
+): NewPhrase[] {
+  const flat = sentences.flatMap(s => s.words);
+  const cleaned = flat.map(w => cleanToken(w.text));
+  const phrases: NewPhrase[] = [];
+  for (const def of defs) {
+    const n = def.tokens.length;
+    for (let i = 0; i + n <= flat.length; i++) {
+      let match = true;
+      for (let j = 0; j < n; j++) {
+        if (cleaned[i + j] !== def.tokens[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        phrases.push({
+          wordIds: flat.slice(i, i + n).map(w => w.id),
+          translation: def.translation,
+        });
+        break;
+      }
+    }
+  }
+  return phrases;
+}
+
+const parsedLesson = parseLesson(lessonText);
+
 export const lesson: Lesson = {
-  ...parseLesson(lessonText),
+  ...parsedLesson,
   source: 'La statistique expliquée à mon chat',
   hasVideo: false,
   lessonMenuTitle: 'Emil und Die Detektive',
   lessonMenuSubtitle: 'Lesson 1/30',
+  newPhrases: resolveNewPhrases(parsedLesson.sentences, NEW_PHRASE_DEFS),
 };
 
 const REVIEW_PUNCTUATION = /[.,!?;:«»"'()€]/g;

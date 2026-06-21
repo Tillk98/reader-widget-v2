@@ -82,10 +82,19 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     if (left < 8) left = 8;
     if (left + popupWidth > viewportWidth - 8) left = viewportWidth - 8 - popupWidth;
 
-    const bottom = viewportHeight - anchorRect.top + gap;
-
     popupRef.current.style.left = `${left}px`;
-    popupRef.current.style.bottom = `${bottom}px`;
+
+    /* Prefer placing the bubble above the word; flip below when there isn't enough
+       headroom (e.g. the first line of a sentence sits right under the reader header). */
+    const popupHeight = popupRect.height || 56;
+    const safeTop = 80; // reader header height
+    if (anchorRect.top - gap - popupHeight >= safeTop) {
+      popupRef.current.style.top = '';
+      popupRef.current.style.bottom = `${viewportHeight - anchorRect.top + gap}px`;
+    } else {
+      popupRef.current.style.bottom = '';
+      popupRef.current.style.top = `${anchorRect.bottom + gap}px`;
+    }
 
   }, [resolveAnchorElement]);
 

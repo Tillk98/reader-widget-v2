@@ -153,10 +153,24 @@
 .phrase-popup__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
   padding: 4px 0;
+}
+
+/* Status badge + (term/meaning ↔ chevron) opener. */
+.phrase-popup__row-badge {
+  flex-shrink: 0;
+}
+
+.phrase-popup__row-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0;
   border: none;
   background: none;
   cursor: pointer;

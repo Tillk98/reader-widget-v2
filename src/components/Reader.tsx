@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Library } from 'lucide-react';
 import { lesson, reviewTerms, buildReviewTerms } from '../data/lesson';
-import type { Word } from '../data/lesson';
+import type { Word, NewPhrase } from '../data/lesson';
 import { Page as PageComponent } from './Page';
 import type { LingQStatusType } from './LingQStatusBar';
 import { ReaderPopUp } from './ReaderPopUp';
@@ -76,9 +76,9 @@ export const Reader: React.FC = () => {
 
   const [snackbar, setSnackbar] = useState<{
     key: number;
-    wordId: string;
     status: LingQStatusType;
-    previousStatus: LingQStatusType;
+    /** Reverts the change this snackbar reported (word or whole phrase). */
+    undo: () => void;
   } | null>(null);
   const snackbarKeyRef = useRef(0);
 
@@ -166,6 +166,57 @@ export const Reader: React.FC = () => {
     }
     return s;
   }, [wordStatusMap]);
+
+  const newPhrases = React.useMemo(() => lesson.newPhrases ?? [], []);
+
+  /** Word id → the new phrase it belongs to (for tap handling). */
+  const newPhraseByWordId = React.useMemo(() => {
+    const m = new Map<string, NewPhrase>();
+    for (const np of newPhrases) np.wordIds.forEach(id => m.set(id, np));
+    return m;
+  }, [newPhrases]);
+
+  /** Words that should render the blue "new phrase" band — only while the phrase is still
+   *  untracked (no per-word status, no committed phrase status). */
+  const newPhraseBandWords = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const np of newPhrases) {
+      const phraseKey = np.wordIds.join('-');
+      if (phraseStatusMap[phraseKey]) continue; // engaged as a phrase LingQ
+      if (np.wordIds.some(id => wordStatusMap[id])) continue; // a member became tracked
+      np.wordIds.forEach(id => s.add(id));
+    }
+    return s;
+  }, [newPhrases, phraseStatusMap, wordStatusMap]);
+
+  /** Committed phrase LingQs, recovered from phraseStatusMap (key = word ids joined by '-'). */
+  const committedPhrases = React.useMemo(
+    () =>
+      Object.entries(phraseStatusMap).map(([key, status]) => ({
+        ids: key.split('-'),
+        status,
+      })),
+    [phraseStatusMap]
+  );
+
+  /** Words covered by a committed phrase LingQ with a learning status — get the green band.
+   *  (Known/Ignored phrases, like single words, show no highlight.) */
+  const committedPhraseBandWords = React.useMemo(() => {
+    const learning: LingQStatusType[] = ['New', 'Recognized', 'Familiar', 'Learned'];
+    const s = new Set<string>();
+    for (const p of committedPhrases) {
+      if (!learning.includes(p.status)) continue;
+      p.ids.forEach(id => s.add(id));
+    }
+    return s;
+  }, [committedPhrases]);
+
+  /** Word id → its committed phrase's word ids (for re-tapping a phrase as one unit). */
+  const committedPhraseByWordId = React.useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const p of committedPhrases) p.ids.forEach(id => m.set(id, p.ids));
+    return m;
+  }, [committedPhrases]);
 
   const allWords = React.useMemo(() => {
     const words: Word[] = [];
@@ -403,6 +454,79 @@ export const Reader: React.FC = () => {
     setPhrasePick(null);
   }, []);
 
+  /** Dismissing the phrase popup commits it as a LingQ: if no status was chosen, default to
+   *  level-1 (New). The committed phrase then keeps its green band. */
+  const handlePhrasePopupClose = useCallback(() => {
+    if (phraseSelection?.valid) {
+      const key = phraseSelection.ids.join('-');
+      setPhraseStatusMap(prev => (prev[key] ? prev : { ...prev, [key]: 'New' }));
+    }
+    clearPhraseSelection();
+  }, [phraseSelection, clearPhraseSelection]);
+
+  /** Set the status of the whole phrase. Learning statuses (1–4) keep the green phrase band.
+   *  Known / Ignored behave exactly like marking each word individually: every word in the
+   *  phrase takes that status (so the highlight clears) and the popup closes. */
+  const handlePhraseStatusChange = useCallback(
+    (status: LingQStatusType) => {
+      if (!phraseSelection) return;
+      const key = phraseSelection.ids.join('-');
+      const wordIds = phraseSelection.words.map(w => w.id);
+      const hadPhraseStatus = key in phraseStatusMap;
+      const prevPhraseStatus = phraseStatusMap[key];
+      snackbarKeyRef.current += 1;
+      const snackbarKey = snackbarKeyRef.current;
+
+      if (status === 'Known' || status === 'Ignored') {
+        // Dissolve into individual Known/Ignored words (highlight clears) and close.
+        setWordStatusMap(prev => {
+          const restore = wordIds.map(id => [id, id in prev ? prev[id] : undefined] as const);
+          setSnackbar({
+            key: snackbarKey,
+            status,
+            undo: () => {
+              setWordStatusMap(p => {
+                const next = { ...p };
+                for (const [id, prevStatus] of restore) {
+                  if (prevStatus === undefined) delete next[id];
+                  else next[id] = prevStatus;
+                }
+                return next;
+              });
+              if (hadPhraseStatus) setPhraseStatusMap(p => ({ ...p, [key]: prevPhraseStatus }));
+            },
+          });
+          const next = { ...prev };
+          for (const id of wordIds) next[id] = status;
+          return next;
+        });
+        setPhraseStatusMap(prev => {
+          if (!(key in prev)) return prev;
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        clearPhraseSelection();
+        return;
+      }
+
+      // Learning status (1–4): keep the green phrase band; popup stays open.
+      setSnackbar({
+        key: snackbarKey,
+        status,
+        undo: () =>
+          setPhraseStatusMap(p => {
+            const next = { ...p };
+            if (hadPhraseStatus) next[key] = prevPhraseStatus;
+            else delete next[key];
+            return next;
+          }),
+      });
+      setPhraseStatusMap(prev => ({ ...prev, [key]: status }));
+    },
+    [phraseSelection, phraseStatusMap, clearPhraseSelection]
+  );
+
   /** Bounding rect spanning all words in the selection (viewport coords). */
   const phraseAnchorRectFromIds = useCallback((ids: string[]): DOMRect | null => {
     let left = Infinity;
@@ -422,9 +546,11 @@ export const Reader: React.FC = () => {
     return new DOMRect(left, top, right - left, bottom - top);
   }, []);
 
-  /** Build + show a phrase popup from an inclusive index range. Returns false for a single word. */
+  /** Build + show a phrase popup from an inclusive index range. Returns false for a single word.
+   *  `meaning` overrides the auto-joined gloss (used for AI-curated new phrases); `promote: false`
+   *  leaves the words untracked (a new phrase stays blue until the user engages with it). */
   const commitPhraseRange = useCallback(
-    (start: number, end: number): boolean => {
+    (start: number, end: number, opts?: { meaning?: string; promote?: boolean }): boolean => {
       const ids = phraseIdsFromRange(start, end);
       if (ids.length <= 1) {
         setPhraseHighlightIds(new Set());
@@ -437,10 +563,25 @@ export const Reader: React.FC = () => {
       const wordItems: PhraseWordItem[] = words
         .filter(w => !isPunctuation(w.text))
         .map(w => ({ id: w.id, text: w.text, translation: w.translation ?? w.text }));
+      /* Selecting a phrase promotes any untracked (blue) words to a level-1 LingQ —
+         they're being actively selected, so they're no longer "new/unseen". */
+      if (opts?.promote ?? true) {
+        setWordStatusMap(prev => {
+          let changed = false;
+          const next = { ...prev };
+          for (const w of wordItems) {
+            if (next[w.id] == null) {
+              next[w.id] = 'New';
+              changed = true;
+            }
+          }
+          return changed ? next : prev;
+        });
+      }
       setPhraseSelection({
         ids,
         phraseText: joinWordsText(words),
-        meaning: joinWordsTranslation(words),
+        meaning: opts?.meaning ?? joinWordsTranslation(words),
         words: wordItems,
         valid,
       });
@@ -636,6 +777,31 @@ export const Reader: React.FC = () => {
       if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
         return;
       }
+      /* Tapping any word of an AI "new phrase" selects the whole phrase as one unit and shows
+         the phrase popup with its curated meaning. Works whether or not it's been engaged yet. */
+      const np = newPhraseByWordId.get(wordId);
+      if (np) {
+        const startIdx = currentPageWordIndex.get(np.wordIds[0]);
+        const endIdx = currentPageWordIndex.get(np.wordIds[np.wordIds.length - 1]);
+        if (startIdx !== undefined && endIdx !== undefined) {
+          setSelectedWordId(null);
+          setSnackbar(null);
+          commitPhraseRange(startIdx, endIdx, { meaning: np.translation, promote: false });
+          return;
+        }
+      }
+      /* Tapping inside an already-committed phrase LingQ re-selects the whole phrase. */
+      const committedIds = committedPhraseByWordId.get(wordId);
+      if (committedIds) {
+        const startIdx = currentPageWordIndex.get(committedIds[0]);
+        const endIdx = currentPageWordIndex.get(committedIds[committedIds.length - 1]);
+        if (startIdx !== undefined && endIdx !== undefined) {
+          setSelectedWordId(null);
+          setSnackbar(null);
+          commitPhraseRange(startIdx, endIdx, { promote: false });
+          return;
+        }
+      }
       /* Selecting a single word dismisses any open phrase selection and snackbar. */
       setPhraseSelection(null);
       setPhraseDetailOpen(false);
@@ -658,7 +824,7 @@ export const Reader: React.FC = () => {
         });
       }
     },
-    [selectedWordId, knownWords, ignoredWords, mediaMode, lesson.hasVideo, phrasePick, currentPageWordIndex, commitPhraseRange]
+    [selectedWordId, knownWords, ignoredWords, mediaMode, lesson.hasVideo, phrasePick, currentPageWordIndex, commitPhraseRange, newPhraseByWordId, committedPhraseByWordId]
   );
 
   const handleSentenceWordSelect = useCallback(
@@ -699,13 +865,19 @@ export const Reader: React.FC = () => {
   const handleStatusChange = useCallback(
     (wordId: string, newStatus: LingQStatusType) => {
       setWordStatusMap(prev => {
-        const previousStatus = prev[wordId] ?? 'New';
+        const had = wordId in prev;
+        const previousStatus = prev[wordId];
         snackbarKeyRef.current += 1;
         setSnackbar({
           key: snackbarKeyRef.current,
-          wordId,
           status: newStatus,
-          previousStatus,
+          undo: () =>
+            setWordStatusMap(p => {
+              const next = { ...p };
+              if (had) next[wordId] = previousStatus;
+              else delete next[wordId];
+              return next;
+            }),
         });
         return { ...prev, [wordId]: newStatus };
       });
@@ -791,6 +963,10 @@ export const Reader: React.FC = () => {
 
   const resolveSelectedWordAnchorElement = useCallback((): HTMLElement | null => {
     if (!selectedWordId) return null;
+    /* In sentence mode, when the original sentence has scrolled behind the header the
+       sticky copy is what's visible — anchor the popup to it instead. */
+    const sticky = document.querySelector(`[data-sticky-word-id="${selectedWordId}"]`);
+    if (sticky instanceof HTMLElement) return sticky;
     return getWordElement(selectedWordId);
   }, [selectedWordId, getWordElement]);
 
@@ -1233,6 +1409,8 @@ export const Reader: React.FC = () => {
                       wordToSentenceIndex={wordToSentenceIndex}
                       phraseSelectedWords={phraseHighlightIds}
                       phraseAnchorWordId={phrasePick?.anchorId ?? null}
+                      newPhraseWords={newPhraseBandWords}
+                      committedPhraseWords={committedPhraseBandWords}
                     />
                   </div>
                 ) : (
@@ -1260,6 +1438,8 @@ export const Reader: React.FC = () => {
                           wordToSentenceIndex={wordToSentenceIndex}
                           phraseSelectedWords={phraseHighlightIds}
                           phraseAnchorWordId={phrasePick?.anchorId ?? null}
+                          newPhraseWords={newPhraseBandWords}
+                          committedPhraseWords={committedPhraseBandWords}
                         />
                       </div>
                     ))}
@@ -1359,9 +1539,9 @@ export const Reader: React.FC = () => {
             }}
           />
           {/* Compact popup → floating card (tablet) or bottom sheet (mobile).
-              Not shown in sentence mode — the horizontal word list handles word interaction there. */}
+              Shown in page reading and sentence mode (anchored to the tapped word). */}
           {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen &&
-           !isSentenceView && !(isTablet && wordDetailPanelMode) && (
+           !(isTablet && wordDetailPanelMode) && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
@@ -1386,15 +1566,14 @@ export const Reader: React.FC = () => {
               words={phraseSelection.words}
               valid={phraseSelection.valid}
               status={phraseStatusMap[phraseSelection.ids.join('-')] ?? 'New'}
+              wordStatuses={wordStatusMap}
+              onWordStatusChange={(wordId, status) => handleStatusChange(wordId, status)}
               getAnchorRect={() => phraseAnchorRectFromIds(phraseSelection.ids)}
-              onClose={clearPhraseSelection}
+              onClose={handlePhrasePopupClose}
               onExpand={phraseSelection.valid ? () => setPhraseDetailOpen(true) : undefined}
               onWordOpen={handlePhraseWordOpen}
               onGoogleTranslate={() => {}}
-              onStatusChange={(status) => {
-                const key = phraseSelection.ids.join('-');
-                setPhraseStatusMap(prev => ({ ...prev, [key]: status }));
-              }}
+              onStatusChange={handlePhraseStatusChange}
             />
           )}
           {phraseDetailOpen && phraseSelection && (() => {
@@ -1405,12 +1584,10 @@ export const Reader: React.FC = () => {
                 wordText={phraseSelection.phraseText}
                 wordTranslation={phraseSelection.meaning}
                 wordStatus={phraseStatusMap[phraseKey] ?? 'New'}
-                onWordStatusChange={status =>
-                  setPhraseStatusMap(prev => ({ ...prev, [phraseKey]: status }))
-                }
+                onWordStatusChange={handlePhraseStatusChange}
                 phraseWords={phraseSelection.words}
                 onPhraseWordOpen={handlePhraseWordOpen}
-                onClose={clearPhraseSelection}
+                onClose={handlePhrasePopupClose}
                 onLynx={() => setLynxChatOpen(true)}
               />
             );
@@ -1541,7 +1718,7 @@ export const Reader: React.FC = () => {
               : undefined
           }
           onUndo={() => {
-            setWordStatusMap(prev => ({ ...prev, [snackbar.wordId]: snackbar.previousStatus }));
+            snackbar.undo();
             setSnackbar(null);
           }}
           onDismiss={() => setSnackbar(null)}

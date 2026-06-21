@@ -3,6 +3,7 @@ import { ChevronRight, Languages } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { LingQStatusBar } from './LingQStatusBar';
 import { LingQStatusButton } from './LingQStatusButton';
+import { StatusPopover } from './StatusPopover';
 import './PhrasePopUp.css';
 
 export interface PhraseWordItem {
@@ -26,6 +27,10 @@ interface PhrasePopUpProps {
   status?: LingQStatusType;
   /** Called when the user picks a new status from the inline status picker. */
   onStatusChange?: (status: LingQStatusType) => void;
+  /** Per-word LingQ status (keyed by word id) for the breakdown row badges. */
+  wordStatuses?: Record<string, LingQStatusType>;
+  /** Set the status of one word in the breakdown from its inline vertical picker. */
+  onWordStatusChange?: (wordId: string, status: LingQStatusType) => void;
   /** Re-query on each layout/scroll so the popup stays aligned with the selection. */
   getAnchorRect: () => DOMRect | null;
   onClose: () => void;
@@ -39,6 +44,67 @@ interface PhrasePopUpProps {
 
 const PHRASE_LIMIT_NOTE = 'Please select up to 9 words from the same sentence to LingQ a phrase.';
 
+interface PhraseWordRowProps {
+  word: PhraseWordItem;
+  status: LingQStatusType;
+  menuOpen: boolean;
+  /** Toggle this row's vertical status menu. */
+  onToggleMenu: () => void;
+  onCloseMenu: () => void;
+  onStatusChange: (status: LingQStatusType) => void;
+  onOpen: () => void;
+}
+
+/** One word in the phrase breakdown: status badge + term/meaning opener.
+ *  Tapping the badge opens a floating vertical status menu anchored to it. */
+const PhraseWordRow: React.FC<PhraseWordRowProps> = ({
+  word,
+  status,
+  menuOpen,
+  onToggleMenu,
+  onCloseMenu,
+  onStatusChange,
+  onOpen,
+}) => {
+  const badgeRef = useRef<HTMLButtonElement>(null);
+  return (
+    <div className="phrase-popup__row">
+      <LingQStatusButton
+        ref={badgeRef}
+        status={status}
+        state="focus"
+        className="phrase-popup__row-badge"
+        onClick={(e) => { e.stopPropagation(); onToggleMenu(); }}
+        onPointerDown={(e) => e.stopPropagation()}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-label={`Status ${status}, tap to change`}
+      />
+      {menuOpen && (
+        <StatusPopover
+          anchorRef={badgeRef}
+          status={status}
+          onStatusChange={onStatusChange}
+          onClose={onCloseMenu}
+        />
+      )}
+      <button
+        type="button"
+        className="phrase-popup__row-open"
+        onClick={(e) => { e.stopPropagation(); onOpen(); }}
+      >
+        <span className="phrase-popup__row-text">
+          <span className="phrase-popup__row-source">{word.text}</span>
+          <span className="phrase-popup__row-def">{word.translation}</span>
+        </span>
+        <span className="phrase-popup__row-chevron" aria-hidden>
+          <ChevronRight size={12} />
+        </span>
+      </button>
+    </div>
+  );
+};
+
 export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
   phraseText,
   meaning,
@@ -51,11 +117,15 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
   onWordOpen,
   onGoogleTranslate,
   onStatusChange,
+  wordStatuses,
+  onWordStatusChange,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   /** 'above' → popup sits above the selection (list rendered above the meaning header). */
   const [placement, setPlacement] = useState<'above' | 'below'>('above');
   const [showStatusBar, setShowStatusBar] = useState(false);
+  /** Word id whose inline vertical status picker is open (null = none). */
+  const [statusMenuWordId, setStatusMenuWordId] = useState<string | null>(null);
 
   const calculatePosition = useCallback(() => {
     const el = popupRef.current;
@@ -89,7 +159,7 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
 
   useLayoutEffect(() => {
     calculatePosition();
-  }, [calculatePosition, meaning, valid, placement, words]);
+  }, [calculatePosition, meaning, valid, placement, words, showStatusBar]);
 
   useEffect(() => {
     const handleUpdate = () => calculatePosition();
@@ -114,7 +184,11 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
   useEffect(() => {
     const isOutside = (target: EventTarget | null) => {
       if (!popupRef.current || !(target instanceof Node)) return false;
-      return !popupRef.current.contains(target);
+      if (popupRef.current.contains(target)) return false;
+      /* The per-word vertical status menu is portaled to <body> (outside the popup) —
+         interacting with it must not dismiss the phrase popup. */
+      if (target instanceof Element && target.closest('.status-popover')) return false;
+      return true;
     };
     const handleMouseOutside = (e: MouseEvent) => {
       if (isOutside(e.target)) onClose();
@@ -171,7 +245,7 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
         <LingQStatusButton
           status={status}
           state="focus"
-          onClick={(e) => { e.stopPropagation(); setShowStatusBar(prev => !prev); }}
+          onClick={(e) => { e.stopPropagation(); setStatusMenuWordId(null); setShowStatusBar(prev => !prev); }}
           onPointerDown={(e) => e.stopPropagation()}
           aria-label={`Status ${status}, tap to change`}
           aria-expanded={showStatusBar}
@@ -191,28 +265,27 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
     </div>
   );
 
+  // Ignored words drop out of the breakdown; Known words stay (shown with the Known status).
+  const visibleWords = words.filter(w => (wordStatuses?.[w.id] ?? 'New') !== 'Ignored');
+
   const list = (
     <div className="phrase-popup__list-card">
       <div className="phrase-popup__list">
-        {words.map((w, i) => (
+        {visibleWords.map((w, i) => (
           <React.Fragment key={w.id}>
             {i > 0 && <div className="phrase-popup__row-divider" aria-hidden />}
-            <button
-              type="button"
-              className="phrase-popup__row"
-              onClick={(e) => {
-                e.stopPropagation();
-                onWordOpen?.(w.id);
+            <PhraseWordRow
+              word={w}
+              status={wordStatuses?.[w.id] ?? 'New'}
+              menuOpen={statusMenuWordId === w.id}
+              onToggleMenu={() => {
+                setShowStatusBar(false);
+                setStatusMenuWordId(prev => (prev === w.id ? null : w.id));
               }}
-            >
-              <span className="phrase-popup__row-text">
-                <span className="phrase-popup__row-source">{w.text}</span>
-                <span className="phrase-popup__row-def">{w.translation}</span>
-              </span>
-              <span className="phrase-popup__row-chevron" aria-hidden>
-                <ChevronRight size={12} />
-              </span>
-            </button>
+              onCloseMenu={() => setStatusMenuWordId(null)}
+              onStatusChange={(newStatus) => onWordStatusChange?.(w.id, newStatus)}
+              onOpen={() => onWordOpen?.(w.id)}
+            />
           </React.Fragment>
         ))}
       </div>

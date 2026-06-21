@@ -119,10 +119,50 @@
   }
 }
 
-/* Inter-word space inside a phrase run: same green band, vertically padded to match
-   the word boxes so the highlight is continuous. Stays inline so line wrapping is kept. */
+/* Inter-word space inside a phrase / new-phrase run: fills the gap so the highlight reads as
+   one continuous band. Matches the word box exactly (same inline-block height, padding,
+   line-height and baseline) so the fill doesn't stick out above/below the words. */
+.reader-space--phrase,
+.reader-space--new-phrase {
+  display: inline-block;
+  height: 22px;
+  line-height: 18px;
+  padding: 2px 0;
+  box-sizing: border-box;
+  vertical-align: baseline;
+  /* Preserve the single space's width — a lone whitespace inside an inline-block would
+     otherwise collapse to zero and jam the words together. */
+  white-space: pre;
+}
+
 .reader-space--phrase {
   background-color: rgba(66, 165, 100, 0.25);
-  padding-top: 2px;
-  padding-bottom: 2px;
+}
+
+/* ── AI "new phrase": a continuous BLUE band over several words (a multi-word "new word"). ──
+   Words keep their blue-word fill; squaring the interior corners and filling the connecting
+   spaces makes the run read as one unit. Only the run's outer ends are rounded. */
+.new-phrase-word,
+.new-phrase-word.blue-word {
+  background-color: rgb(198, 223, 255);
+  border-radius: 0;
+}
+
+.new-phrase-word.new-phrase-word--start {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.new-phrase-word.new-phrase-word--end {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+/* Hover the band as a whole (matches the blue-word hover ring). */
+.new-phrase-word:hover {
+  box-shadow: 0 0 0 1px #56a1ff;
+}
+
+.reader-space--new-phrase {
+  background-color: rgb(198, 223, 255);
 }

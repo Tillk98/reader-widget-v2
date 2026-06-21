@@ -47,6 +47,26 @@
   background: #f1f3f4;
 }
 
+/* Status highlighting — mirrors page mode (blue = new candidate, green = LingQ/saved). */
+.sentence-mode__word--new {
+  background: rgb(198, 223, 255);
+}
+
+.sentence-mode__word--lingq {
+  background: rgba(66, 165, 100, 0.25);
+}
+
+/* Keep the highlight colour on hover; add an outline like page mode. */
+.sentence-mode__word--new:hover {
+  background: rgb(198, 223, 255);
+  box-shadow: 0 0 0 1px #56a1ff;
+}
+
+.sentence-mode__word--lingq:hover {
+  background: rgba(66, 165, 100, 0.25);
+  box-shadow: 0 0 0 1px #42a564;
+}
+
 .sentence-mode__word--active {
   background: #e7f1ff;
   box-shadow: 0 0 0 2px #e7f1ff;
