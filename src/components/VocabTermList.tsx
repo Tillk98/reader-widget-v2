@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { CircleCheck, Trash2, Play, Plus } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { LingQStatusButton } from './LingQStatusButton';
@@ -86,7 +86,6 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   const statusBtnRef = useRef<HTMLButtonElement>(null);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [exitDir, setExitDir] = useState<'known' | 'ignored' | null>(null);
 
   const startX = useRef(0);
   const startY = useRef(0);
@@ -94,19 +93,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   const dirDecided = useRef(false);
   const isHoriz = useRef(false);
 
-  // Fire the parent callback after the exit animation plays (~280 ms).
-  // The parent then removes this tile from the visible list.
-  useEffect(() => {
-    if (!exitDir) return;
-    const t = setTimeout(() => {
-      if (exitDir === 'known') onMarkKnown();
-      else onMarkIgnored();
-    }, 310);
-    return () => clearTimeout(t);
-  }, [exitDir, onMarkKnown, onMarkIgnored]);
-
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (exitDir) return;
     // Prevent the SentenceMode container from treating this as a sentence-navigation swipe.
     e.stopPropagation();
     isPointerDown.current = true;
@@ -114,10 +101,10 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
     startY.current = e.clientY;
     dirDecided.current = false;
     isHoriz.current = false;
-  }, [exitDir]);
+  }, []);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isPointerDown.current || exitDir) return;
+    if (!isPointerDown.current) return;
     const dx = e.clientX - startX.current;
     const dy = e.clientY - startY.current;
 
@@ -135,7 +122,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
 
     if (!isHoriz.current) return;
     setDragX(dx);
-  }, [exitDir]);
+  }, []);
 
   const handlePointerUp = useCallback(() => {
     isPointerDown.current = false;
@@ -144,34 +131,24 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
     isHoriz.current = false;
     setDragging(false);
 
-    if (dragX >= SWIPE_THRESHOLD) {
-      setDragX(0);
-      setExitDir('known');
-    } else if (dragX <= -SWIPE_THRESHOLD) {
-      setDragX(0);
-      setExitDir('ignored');
-    } else {
-      setDragX(0);
-    }
-  }, [dragging, dragX]);
+    // Commit the status and snap back. Whether the tile stays visible is governed by the
+    // Review status filter (the parent re-filters): if the new status is filtered out the
+    // tile unmounts; if it's still shown, it stays with the updated badge.
+    if (dragX >= SWIPE_THRESHOLD) onMarkKnown();
+    else if (dragX <= -SWIPE_THRESHOLD) onMarkIgnored();
+    setDragX(0);
+  }, [dragging, dragX, onMarkKnown, onMarkIgnored]);
 
   // Reveal panels slide IN OVER the tile content — their width tracks the drag
   // distance — rather than the tile content sliding aside.
-  const knownWidth = exitDir === 'known' ? '100%' : dragX > 0 ? `${dragX}px` : '0px';
-  const ignoredWidth = exitDir === 'ignored' ? '100%' : dragX < 0 ? `${-dragX}px` : '0px';
+  const knownWidth = dragX > 0 ? `${dragX}px` : '0px';
+  const ignoredWidth = dragX < 0 ? `${-dragX}px` : '0px';
   const revealTrans = dragging ? 'none' : 'width 0.28s cubic-bezier(0.4, 0, 0.2, 1)';
 
   return (
     <>
       {showDivider && <div className="vocab-list__divider" aria-hidden />}
-      <div
-        className={[
-          'vocab-list__swipe-wrapper',
-          exitDir && `vocab-list__swipe-wrapper--exit-${exitDir}`,
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
+      <div className="vocab-list__swipe-wrapper">
         {/* Tile content stays put — the reveal panels below slide over it */}
         <div
           className={[
@@ -268,8 +245,8 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
  * Shared list of vocabulary terms (status badge + term/gloss + audio), used by
  * both Sentence mode and Review mode. Figma 2812:56925 / 2830:64728 / 3926:8702.
  *
- * Supports swipe-right (mark Known) and swipe-left (mark Ignored): the tile
- * animates off screen and is removed from the list automatically.
+ * Supports swipe-right (mark Known) and swipe-left (mark Ignored): the swipe commits the
+ * status and snaps back; whether the tile then stays is governed by the Review status filter.
  */
 export const VocabTermList: React.FC<VocabTermListProps> = ({
   items,
@@ -287,40 +264,14 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
 }) => {
   const openDetail = onOpenDetail ?? onSelect;
 
-  // Local set of word IDs that have been swiped away — filtered out of the list.
-  const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(new Set());
   // Word whose vertical status menu is currently open (tapped its status badge).
   const [statusMenuId, setStatusMenuId] = useState<string | null>(null);
 
-  const visibleItems = useMemo(
-    () => items.filter((w) => {
-      if (dismissedIds.has(w.id)) return false;
-      const s = wordStatusMap[w.id];
-      if (s === 'Known' || s === 'Ignored') return false;
-      return true;
-    }),
-    [items, dismissedIds, wordStatusMap],
-  );
-
-  const handleMarkKnown = useCallback(
-    (wordId: string) => {
-      setDismissedIds((prev) => new Set([...prev, wordId]));
-      onMarkKnown?.(wordId);
-    },
-    [onMarkKnown],
-  );
-
-  const handleMarkIgnored = useCallback(
-    (wordId: string) => {
-      setDismissedIds((prev) => new Set([...prev, wordId]));
-      onMarkIgnored?.(wordId);
-    },
-    [onMarkIgnored],
-  );
-
+  // The visible set is governed entirely by the Review status filter (the parent passes
+  // already-filtered `items`); this list does no status filtering of its own.
   return (
     <div className={['vocab-list', className].filter(Boolean).join(' ')}>
-      {visibleItems.map((w, i) => {
+      {items.map((w, i) => {
         const untracked = untrackedIds?.has(w.id) ?? false;
         const status = wordStatusMap[w.id] ?? 'New';
         return (
@@ -338,8 +289,8 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
             onOpenDetail={() => openDetail(w.id)}
             onAdd={() => onAdd?.(w.id)}
             onAudio={() => onAudio?.(w.id)}
-            onMarkKnown={() => handleMarkKnown(w.id)}
-            onMarkIgnored={() => handleMarkIgnored(w.id)}
+            onMarkKnown={() => onMarkKnown?.(w.id)}
+            onMarkIgnored={() => onMarkIgnored?.(w.id)}
           />
         );
       })}

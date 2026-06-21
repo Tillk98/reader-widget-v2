@@ -1069,10 +1069,14 @@ export const Reader: React.FC = () => {
     }
   }, [reviewFilter.scope, pages, currentPageIndex, sentenceIndex]);
 
-  /** Scoped terms narrowed to the selected status categories. */
+  /** Scoped terms narrowed to the selected status categories. Untracked words (the "+" add
+   *  candidates) aren't a filter segment, so they always show; the rest follow the status filter. */
   const reviewVisibleTerms = React.useMemo(() => {
     const allowed = new Set(reviewFilter.status);
-    return reviewScopedTerms.filter(t => allowed.has(reviewStatusKeyForId(t.id)));
+    return reviewScopedTerms.filter(t => {
+      const key = reviewStatusKeyForId(t.id);
+      return key === 'untracked' || allowed.has(key);
+    });
   }, [reviewScopedTerms, reviewFilter.status, reviewStatusKeyForId]);
 
   /** Visible review terms not yet saved as LingQs → blue "+". */
