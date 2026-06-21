@@ -39,6 +39,9 @@ export interface ReviewModeProps {
   onMarkKnown?: (wordId: string) => void;
   /** Swipe-left on a vocab tile — mark the word as Ignored. */
   onMarkIgnored?: (wordId: string) => void;
+  /** Whether Known / Ignored are shown by the current filter (controls swipe collapse vs stay). */
+  knownVisible?: boolean;
+  ignoredVisible?: boolean;
 }
 
 /**
@@ -64,6 +67,8 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
   onDeselect,
   onMarkKnown,
   onMarkIgnored,
+  knownVisible,
+  ignoredVisible,
 }) => {
   const handleBackgroundClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement | null;
@@ -128,6 +133,8 @@ export const ReviewMode: React.FC<ReviewModeProps> = ({
           onAdd={onAdd}
           onMarkKnown={onMarkKnown}
           onMarkIgnored={onMarkIgnored}
+          knownVisible={knownVisible}
+          ignoredVisible={ignoredVisible}
         />
       </div>
 

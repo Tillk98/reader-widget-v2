@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleCheck, Trash2, Play, Plus } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { LingQStatusButton } from './LingQStatusButton';
@@ -37,10 +37,15 @@ export interface VocabTermListProps {
   onAdd?: (wordId: string) => void;
   /** Tap the audio button. */
   onAudio?: (wordId: string) => void;
-  /** Swipe-right confirmed — word is marked Known and removed from the list. */
+  /** Swipe-right confirmed — word is marked Known. */
   onMarkKnown?: (wordId: string) => void;
-  /** Swipe-left confirmed — word is marked Ignored and removed from the list. */
+  /** Swipe-left confirmed — word is marked Ignored. */
   onMarkIgnored?: (wordId: string) => void;
+  /** Whether Known / Ignored statuses are shown by the current Review filter — controls whether
+   *  a confirmed swipe collapses the tile (filtered out) or keeps it (stays with the new badge).
+   *  Default true. */
+  knownVisible?: boolean;
+  ignoredVisible?: boolean;
   className?: string;
 }
 
@@ -62,7 +67,11 @@ interface SwipeableTileProps {
   onOpenDetail: () => void;
   onAdd: () => void;
   onAudio: () => void;
-  /** Called once the exit animation completes. */
+  /** Whether the Known / Ignored statuses are currently shown by the Review filter — decides
+   *  whether a confirmed swipe collapses the tile (filtered out) or it stays with the new badge. */
+  knownVisible: boolean;
+  ignoredVisible: boolean;
+  /** Called once the swipe is confirmed (marks the word Known / Ignored). */
   onMarkKnown: () => void;
   onMarkIgnored: () => void;
 }
@@ -80,12 +89,15 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   onOpenDetail,
   onAdd,
   onAudio,
+  knownVisible,
+  ignoredVisible,
   onMarkKnown,
   onMarkIgnored,
 }) => {
   const statusBtnRef = useRef<HTMLButtonElement>(null);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [exitDir, setExitDir] = useState<'known' | 'ignored' | null>(null);
 
   const startX = useRef(0);
   const startY = useRef(0);
@@ -93,7 +105,28 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   const dirDecided = useRef(false);
   const isHoriz = useRef(false);
 
+  // Will a confirmed swipe in this direction keep the word visible (its new status is in the
+  // filter) or remove it (collapse the tile)?
+  const staysAfter = (dir: 'known' | 'ignored') => (dir === 'known' ? knownVisible : ignoredVisible);
+  const willRemove = exitDir != null && !staysAfter(exitDir);
+
+  // After the reveal sweeps fully across, commit the status. If the word stays in the filter,
+  // retract the panel (exitDir → null) to reveal the tile with its new badge; if it's filtered
+  // out, leave the wrapper collapsing and let the parent's re-filter unmount it.
+  useEffect(() => {
+    if (!exitDir) return;
+    const collapse = !staysAfter(exitDir);
+    const t = setTimeout(() => {
+      if (exitDir === 'known') onMarkKnown();
+      else onMarkIgnored();
+      if (!collapse) setExitDir(null);
+    }, collapse ? 600 : 320);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exitDir, knownVisible, ignoredVisible, onMarkKnown, onMarkIgnored]);
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (exitDir) return;
     // Prevent the SentenceMode container from treating this as a sentence-navigation swipe.
     e.stopPropagation();
     isPointerDown.current = true;
@@ -101,10 +134,10 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
     startY.current = e.clientY;
     dirDecided.current = false;
     isHoriz.current = false;
-  }, []);
+  }, [exitDir]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isPointerDown.current) return;
+    if (!isPointerDown.current || exitDir) return;
     const dx = e.clientX - startX.current;
     const dy = e.clientY - startY.current;
 
@@ -122,7 +155,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
 
     if (!isHoriz.current) return;
     setDragX(dx);
-  }, []);
+  }, [exitDir]);
 
   const handlePointerUp = useCallback(() => {
     isPointerDown.current = false;
@@ -131,24 +164,36 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
     isHoriz.current = false;
     setDragging(false);
 
-    // Commit the status and snap back. Whether the tile stays visible is governed by the
-    // Review status filter (the parent re-filters): if the new status is filtered out the
-    // tile unmounts; if it's still shown, it stays with the updated badge.
-    if (dragX >= SWIPE_THRESHOLD) onMarkKnown();
-    else if (dragX <= -SWIPE_THRESHOLD) onMarkIgnored();
-    setDragX(0);
-  }, [dragging, dragX, onMarkKnown, onMarkIgnored]);
+    // Past threshold → reveal sweeps fully across (exitDir); the effect above commits the
+    // status, then either retracts (stays) or collapses (removed) based on the filter.
+    if (dragX >= SWIPE_THRESHOLD) {
+      setDragX(0);
+      setExitDir('known');
+    } else if (dragX <= -SWIPE_THRESHOLD) {
+      setDragX(0);
+      setExitDir('ignored');
+    } else {
+      setDragX(0);
+    }
+  }, [dragging, dragX]);
 
-  // Reveal panels slide IN OVER the tile content — their width tracks the drag
-  // distance — rather than the tile content sliding aside.
-  const knownWidth = dragX > 0 ? `${dragX}px` : '0px';
-  const ignoredWidth = dragX < 0 ? `${-dragX}px` : '0px';
+  // Reveal panels slide IN OVER the tile content — their width tracks the drag distance, and
+  // sweeps to full width once a swipe is confirmed (exitDir).
+  const knownWidth = exitDir === 'known' ? '100%' : dragX > 0 ? `${dragX}px` : '0px';
+  const ignoredWidth = exitDir === 'ignored' ? '100%' : dragX < 0 ? `${-dragX}px` : '0px';
   const revealTrans = dragging ? 'none' : 'width 0.28s cubic-bezier(0.4, 0, 0.2, 1)';
 
   return (
     <>
       {showDivider && <div className="vocab-list__divider" aria-hidden />}
-      <div className="vocab-list__swipe-wrapper">
+      <div
+        className={[
+          'vocab-list__swipe-wrapper',
+          willRemove && `vocab-list__swipe-wrapper--exit-${exitDir}`,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {/* Tile content stays put — the reveal panels below slide over it */}
         <div
           className={[
@@ -260,6 +305,8 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
   onAudio,
   onMarkKnown,
   onMarkIgnored,
+  knownVisible = true,
+  ignoredVisible = true,
   className,
 }) => {
   const openDetail = onOpenDetail ?? onSelect;
@@ -289,6 +336,8 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
             onOpenDetail={() => openDetail(w.id)}
             onAdd={() => onAdd?.(w.id)}
             onAudio={() => onAudio?.(w.id)}
+            knownVisible={knownVisible}
+            ignoredVisible={ignoredVisible}
             onMarkKnown={() => onMarkKnown?.(w.id)}
             onMarkIgnored={() => onMarkIgnored?.(w.id)}
           />

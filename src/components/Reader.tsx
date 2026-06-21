@@ -1528,6 +1528,8 @@ export const Reader: React.FC = () => {
             onDeselect={handleClosePopup}
             onMarkKnown={(wordId) => handleStatusChange(wordId, 'Known')}
             onMarkIgnored={(wordId) => handleStatusChange(wordId, 'Ignored')}
+            knownVisible={reviewFilter.status.includes('known')}
+            ignoredVisible={reviewFilter.status.includes('ignored')}
           />
           <ReviewFilterSheet
             open={reviewFilterOpen}
