@@ -138,9 +138,9 @@
   min-width: 0;
   margin: 0;
   font-family: 'DM Sans', sans-serif;
-  font-size: var(--typography-footnote-font-size, 14px);
+  font-size: var(--typography-body-font-size, 16px);
   font-weight: 500;
-  line-height: var(--typography-footnote-line-height, 18px);
+  line-height: var(--typography-body-line-height, 20px);
   color: var(--foreground-muted, #6d7680);
   white-space: nowrap;
   overflow: hidden;

@@ -6,6 +6,8 @@ import { HorizontalTermList } from './HorizontalTermList';
 import './SentenceMode.css';
 
 const SWIPE_PX = 60;
+const LONG_PRESS_MS = 450;
+const LONG_PRESS_MOVE_CANCEL_PX = 6;
 
 const PUNCTUATION_ONLY = /^[^\p{L}\p{N}]+$/u;
 
@@ -36,6 +38,8 @@ export interface SentenceModeProps {
   selectedWordId: string | null;
   /** Tap a word in the sentence: surfaces the meaning popup + LingQ status bar. */
   onWordSelect: (wordId: string) => void;
+  /** Long-press a word in the sentence: opens the quick status popup (Known / Ignore / phrase). */
+  onWordLongPress?: (wordId: string) => void;
   /** Tap the status badge of a vocabulary list item: surfaces the LingQ status bar only. */
   onListWordSelect: (wordId: string) => void;
   /** Tap a vocabulary list item (word + gloss): opens the full word detail sheet. */
@@ -62,6 +66,7 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
   wordStatusMap,
   selectedWordId,
   onWordSelect,
+  onWordLongPress,
   onListWordOpenDetail,
   onListWordStatusChange,
   onDeselect,
@@ -73,6 +78,9 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
 
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
+  /** Long-press tracking for the per-word quick status popup. */
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
 
   const safeIndex = Math.min(Math.max(0, index), Math.max(0, sentences.length - 1));
   const sentence = sentences[safeIndex];
@@ -116,6 +124,11 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [goTo, safeIndex]);
 
+  // Cancel any pending long-press timer on unmount.
+  useEffect(() => () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
   // Show sticky sentence popup when the original scrolls behind the header.
   useEffect(() => {
     const el = sentenceRef.current;
@@ -150,9 +163,48 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
     }
   };
 
+  /** Press-and-hold a word → quick status popup (Known / Ignore / Select a Phrase). A move past
+   *  the slop or an early release cancels it; a fired long-press suppresses the trailing tap. */
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleWordPointerDown = (wordId: string, e: React.PointerEvent) => {
+    if (e.button != null && e.button !== 0) return;
+    longPressFired.current = false;
+    const origin = { x: e.clientX, y: e.clientY };
+    clearLongPress();
+    longPressTimer.current = setTimeout(() => {
+      longPressTimer.current = null;
+      longPressFired.current = true;
+      onWordLongPress?.(wordId);
+    }, LONG_PRESS_MS);
+
+    const onMove = (ev: PointerEvent) => {
+      if (Math.hypot(ev.clientX - origin.x, ev.clientY - origin.y) > LONG_PRESS_MOVE_CANCEL_PX) {
+        clearLongPress();
+        window.removeEventListener('pointermove', onMove);
+      }
+    };
+    const onUp = () => {
+      clearLongPress();
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
   /** Tap a word in the sentence: meaning popup + LingQ status bar. */
   const handleWordTap = (wordId: string) => {
     if (suppressClick.current) return;
+    if (longPressFired.current) {
+      longPressFired.current = false;
+      return;
+    }
     onWordSelect(wordId);
   };
 
@@ -213,6 +265,8 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
                       ]
                         .filter(Boolean)
                         .join(' ')}
+                      onPointerDown={e => handleWordPointerDown(w.id, e)}
+                      onContextMenu={e => e.preventDefault()}
                       onClick={() => handleWordTap(w.id)}
                     >
                       {w.text}

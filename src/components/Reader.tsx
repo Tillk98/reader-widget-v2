@@ -242,10 +242,14 @@ export const Reader: React.FC = () => {
     return m;
   }, [allWords]);
 
-  /** Words rendered on the currently visible page (in document order). */
+  /** Words currently on screen, in document order — the current sentence in sentence mode,
+   *  otherwise the visible page. Drives the word-index maps used for phrase selection. */
   const currentPageWords = React.useMemo(
-    () => pages[currentPageIndex]?.words ?? [],
-    [pages, currentPageIndex]
+    () =>
+      mediaMode === 'none' && sentenceMode
+        ? lesson.sentences[sentenceIndex]?.words ?? []
+        : pages[currentPageIndex]?.words ?? [],
+    [pages, currentPageIndex, mediaMode, sentenceMode, sentenceIndex]
   );
   const currentPageWordIndex = React.useMemo(() => {
     const m = new Map<string, number>();
@@ -649,17 +653,19 @@ export const Reader: React.FC = () => {
     dragOffsetPx.current = 0;
   }, []);
 
-  /* A phrase is anchored to on-screen words: drop it when the page or mode changes. */
+  /* A phrase / long-press menu is anchored to on-screen words: drop it when the page, sentence
+   * or mode changes (the anchor word may no longer be rendered). */
   useEffect(() => {
     clearPhraseSelection();
-  }, [currentPageIndex, mediaMode, sentenceMode, reviewMode, clearPhraseSelection]);
+    setLongPressWordId(null);
+  }, [currentPageIndex, sentenceIndex, mediaMode, sentenceMode, reviewMode, clearPhraseSelection]);
 
   /* Phrase-pick mode: tapping a word completes the phrase; tapping anywhere else cancels it. */
   useEffect(() => {
     if (!phrasePick) return;
     const onDown = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target?.closest('.sentence-item')) return;
+      if (target?.closest('.sentence-item, .sentence-mode__word')) return;
       setPhrasePick(null);
       setPhraseHighlightIds(new Set());
     };
@@ -1392,6 +1398,7 @@ export const Reader: React.FC = () => {
                     wordStatusMap={wordStatusMap}
                     selectedWordId={selectedWordId}
                     onWordSelect={handleSentenceWordSelect}
+                    onWordLongPress={handleWordLongPress}
                     onListWordSelect={handleSentenceListSelect}
                     onListWordOpenDetail={handleListOpenDetail}
                     onListWordStatusChange={(wordId, status) => handleStatusChange(wordId, status)}

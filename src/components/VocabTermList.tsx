@@ -98,6 +98,9 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [exitDir, setExitDir] = useState<'known' | 'ignored' | null>(null);
+  /** Disables the reveal-width transition for one frame so the panel clears instantly (no
+   *  move-back animation) when the row stays and just updates to the new status. */
+  const [instantReset, setInstantReset] = useState(false);
 
   const startX = useRef(0);
   const startY = useRef(0);
@@ -111,19 +114,29 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   const willRemove = exitDir != null && !staysAfter(exitDir);
 
   // After the reveal sweeps fully across, commit the status. If the word stays in the filter,
-  // retract the panel (exitDir → null) to reveal the tile with its new badge; if it's filtered
-  // out, leave the wrapper collapsing and let the parent's re-filter unmount it.
+  // clear the panel instantly (no move-back) so the row just snaps to its new status; if it's
+  // filtered out, leave the wrapper collapsing and let the parent's re-filter unmount it.
   useEffect(() => {
     if (!exitDir) return;
     const collapse = !staysAfter(exitDir);
     const t = setTimeout(() => {
       if (exitDir === 'known') onMarkKnown();
       else onMarkIgnored();
-      if (!collapse) setExitDir(null);
+      if (!collapse) {
+        setInstantReset(true);
+        setExitDir(null);
+      }
     }, collapse ? 600 : 320);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exitDir, knownVisible, ignoredVisible, onMarkKnown, onMarkIgnored]);
+
+  // Re-enable the reveal transition once the instant (no-animation) clear has painted.
+  useEffect(() => {
+    if (!instantReset) return;
+    const t = setTimeout(() => setInstantReset(false), 50);
+    return () => clearTimeout(t);
+  }, [instantReset]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (exitDir) return;
@@ -181,7 +194,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
   // sweeps to full width once a swipe is confirmed (exitDir).
   const knownWidth = exitDir === 'known' ? '100%' : dragX > 0 ? `${dragX}px` : '0px';
   const ignoredWidth = exitDir === 'ignored' ? '100%' : dragX < 0 ? `${-dragX}px` : '0px';
-  const revealTrans = dragging ? 'none' : 'width 0.28s cubic-bezier(0.4, 0, 0.2, 1)';
+  const revealTrans = dragging || instantReset ? 'none' : 'width 0.28s cubic-bezier(0.4, 0, 0.2, 1)';
 
   return (
     <>
