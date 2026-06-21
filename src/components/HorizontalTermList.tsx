@@ -458,11 +458,8 @@ export const HorizontalTermList: React.FC<HorizontalTermListProps> = ({
     list.scrollTo({ left: Math.max(0, list.scrollLeft + delta), behavior: 'smooth' });
   }, [selectedWordId]);
 
-  // Known / Ignored words drop out of the sentence vocabulary list.
-  const visible = items.filter((item) => {
-    const s = wordStatusMap[item.id];
-    return s !== 'Known' && s !== 'Ignored';
-  });
+  // Ignored words drop out of the sentence vocabulary list; Known words stay (shown as Known).
+  const visible = items.filter((item) => wordStatusMap[item.id] !== 'Ignored');
 
   if (visible.length === 0) return null;
 

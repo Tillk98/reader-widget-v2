@@ -10,8 +10,9 @@ export type ReviewStatusKey = 'ignored' | 'untracked' | '1' | '2' | '3' | '4' | 
 /** Status range-bar segments, left → right (Figma 4089:63471). */
 export const REVIEW_STATUS_SEGMENTS: ReviewStatusKey[] = ['ignored', '1', '2', '3', '4', 'known'];
 
-/** Default filter: the learning levels 1–4. */
-export const DEFAULT_REVIEW_STATUS: ReviewStatusKey[] = ['1', '2', '3', '4'];
+/** Default filter: learning levels 1–4 plus Known — Known words stay in the list rather than
+ *  dropping out when marked. (Ignored is still excluded by default.) */
+export const DEFAULT_REVIEW_STATUS: ReviewStatusKey[] = ['1', '2', '3', '4', 'known'];
 
 export interface ReviewFilterValue {
   method: ReviewMethod;
