@@ -73,3 +73,11 @@
   border-color: #f1f3f4;
   color: #0a0a0a;
 }
+
+/* Create: blue-subtle fill + blue ring + blue "+" — the add-a-LingQ affordance on new words
+   (Figma 4542:13207). */
+.lingq-status-btn--create {
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  border-color: var(--border-secondary, #2e75cd);
+  color: #2e75cd;
+}

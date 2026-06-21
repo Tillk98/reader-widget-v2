@@ -307,30 +307,52 @@ const TermCard: React.FC<TermCardProps> = ({
     />
   ) : null;
 
-  // New word (untracked): blue card, no badge. Tap → status-1 LingQ; long-press → Known / Ignore.
+  // New word (untracked): plain card with the blue "Create" (+) button. Tap → status-1 LingQ;
+  // long-press → Known / Ignore.
   if (!isTracked) {
     return (
-      <button
-        type="button"
+      <div
         ref={setRootRef}
-        className="h-term-card h-term-card--new"
+        className={['h-term-card', 'h-term-card--new', pressOpen && 'h-term-card--open']
+          .filter(Boolean)
+          .join(' ')}
         {...pressHandlers}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (longPressFired.current) {
-            longPressFired.current = false;
-            return;
-          }
-          onStatusChange(item.id, 'New');
-        }}
-        aria-label={`Add ${item.text} as a LingQ`}
       >
-        <span className="h-term-card__text">
-          <span className="h-term-card__term">{item.text}</span>
-          {item.translation && <span className="h-term-card__meaning">{item.translation}</span>}
-        </span>
+        <LingQStatusButton
+          status="New"
+          create
+          onClick={(e) => {
+            e.stopPropagation();
+            if (longPressFired.current) {
+              longPressFired.current = false;
+              return;
+            }
+            onStatusChange(item.id, 'New');
+          }}
+          aria-label={`Add ${item.text} as a LingQ`}
+        />
+
+        <button
+          type="button"
+          className="h-term-card__meta"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (longPressFired.current) {
+              longPressFired.current = false;
+              return;
+            }
+            onStatusChange(item.id, 'New');
+          }}
+          aria-label={`Add ${item.text} as a LingQ`}
+        >
+          <span className="h-term-card__text">
+            <span className="h-term-card__term">{item.text}</span>
+            {item.translation && <span className="h-term-card__meaning">{item.translation}</span>}
+          </span>
+        </button>
+
         {pressMenu}
-      </button>
+      </div>
     );
   }
 

@@ -66,26 +66,11 @@
   border-color: var(--border-primary, #42a564);
 }
 
-/* New word (Figma 2195:6555) — blue-subtle card, no badge; tap promotes to a LingQ. */
+/* New word (Figma 2195:6555) — plain card with the blue "Create" (+) button; tap promotes to a
+   LingQ. (Visuals match the LingQ card; the Create button carries the blue affordance.) */
 .h-term-card--new {
-  gap: 0;
-  margin: 0;
-  background: var(--surfaces-secondary-subtle, #f1f7fe);
-  border-color: var(--border-default, #f1f3f4);
   cursor: pointer;
-  font: inherit;
-  text-align: left;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.h-term-card--new:active {
-  transform: scale(0.97);
-}
-
-.h-term-card--new:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: 2px;
 }
 
 /* Status badge — the LingQStatusButton (Figma 4008:56485) is the popover trigger.
