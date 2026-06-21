@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, EyeOff } from 'lucide-react';
+import { Check, EyeOff, Plus } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import './LingQStatusButton.css';
 
@@ -25,6 +25,8 @@ interface LingQStatusButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   state?: 'focus' | 'default';
   /** Render the status name beside the number/icon (Figma `showLabel` variant). */
   showLabel?: boolean;
+  /** Render the blue "Create" affordance (a + to add a new LingQ) instead of a status. */
+  create?: boolean;
 }
 
 /**
@@ -33,7 +35,7 @@ interface LingQStatusButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
  * bar, term cards, term lists, snackbars.
  */
 export const LingQStatusButton = React.forwardRef<HTMLButtonElement, LingQStatusButtonProps>(
-  ({ status, state = 'default', showLabel = false, className, ...rest }, ref) => {
+  ({ status, state = 'default', showLabel = false, create = false, className, ...rest }, ref) => {
     const number = STATUS_NUMBERS[status];
 
     return (
@@ -42,21 +44,23 @@ export const LingQStatusButton = React.forwardRef<HTMLButtonElement, LingQStatus
         type="button"
         className={[
           'lingq-status-btn',
-          `lingq-status-btn--${status.toLowerCase()}`,
-          state === 'focus' && 'lingq-status-btn--focus',
+          create ? 'lingq-status-btn--create' : `lingq-status-btn--${status.toLowerCase()}`,
+          !create && state === 'focus' && 'lingq-status-btn--focus',
           showLabel && 'lingq-status-btn--with-label',
           className,
         ].filter(Boolean).join(' ')}
         {...rest}
       >
-        {number !== undefined ? (
+        {create ? (
+          <Plus size={16} strokeWidth={2} aria-hidden />
+        ) : number !== undefined ? (
           <span className="lingq-status-btn__number">{number}</span>
         ) : status === 'Known' ? (
           <Check size={16} strokeWidth={2} aria-hidden />
         ) : (
           <EyeOff size={16} strokeWidth={2} aria-hidden />
         )}
-        {showLabel && <span className="lingq-status-btn__label">{STATUS_LABELS[status]}</span>}
+        {showLabel && !create && <span className="lingq-status-btn__label">{STATUS_LABELS[status]}</span>}
       </button>
     );
   },

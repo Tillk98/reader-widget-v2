@@ -2,6 +2,10 @@
 
 .sentence-mode {
   width: 100%;
+  /* Fill the available height so the empty area below the term list also catches horizontal
+     swipes for paging (the term list stops propagation, so dragging it still scrolls it). */
+  flex: 1;
+  min-height: 100%;
   display: flex;
   font-family: 'DM Sans', sans-serif;
   user-select: none;
@@ -31,7 +35,7 @@
 
 .sentence-mode__sentence {
   margin: 0;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 20px;
   line-height: 32px;
   color: #000;
