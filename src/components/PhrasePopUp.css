@@ -228,10 +228,10 @@
   text-overflow: ellipsis;
 }
 
-/* Meaning — regular weight, black, beneath the term. */
+/* Meaning — regular weight, black; 14px since it sits paired beneath the visible term. */
 .phrase-popup__row-def {
   font-weight: 400;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 20px;
   color: #0a0a0a;
   white-space: nowrap;
