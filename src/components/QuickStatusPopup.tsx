@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useLayoutEffect, useState } from 'react';
 import { Brackets } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
-import { LingQStatusButton } from './LingQStatusButton';
+import { LingQStatusButton, STATUS_ICON_STROKE } from './LingQStatusButton';
 import './QuickStatusPopup.css';
 
 type QsAction = 'known' | 'ignored' | 'phrase';
@@ -157,7 +157,7 @@ export const QuickStatusPopup: React.FC<QuickStatusPopupProps> = ({
         className={`quick-status-popup__phrase${hovered === 'phrase' ? ' quick-status-popup__phrase--hover' : ''}`}
         aria-label="Select a phrase"
       >
-        <Brackets size={16} strokeWidth={2} aria-hidden />
+        <Brackets size={18} strokeWidth={STATUS_ICON_STROKE} absoluteStrokeWidth aria-hidden />
         <span className="quick-status-popup__phrase-label">Select a Phrase</span>
       </button>
     </div>
