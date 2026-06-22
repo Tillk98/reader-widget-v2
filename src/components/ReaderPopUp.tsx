@@ -215,13 +215,9 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
           aria-label={`Status ${wordStatus}, tap to change`}
           aria-expanded={showStatusBar}
         />
+        {/* Meaning popup shows the meaning only — the original term is intentionally hidden here
+            (it still appears in the phrase popup, term cards, and word-detail header). */}
         <div className="reader-popup-widget-term">
-          <span className="reader-popup-widget-original">
-            {wordText}
-            {wordTransliteration != null && wordTransliteration !== '' && (
-              <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
-            )}
-          </span>
           <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
         </div>
       </div>

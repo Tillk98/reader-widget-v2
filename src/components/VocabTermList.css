@@ -179,10 +179,10 @@
 
 .vocab-list__term-gloss {
   margin: 0;
-  font-weight: 500;
+  font-weight: 400;
   font-size: 16px;
   line-height: 20px;
-  color: var(--text-muted, #6d7680);
+  color: var(--text-default, #000);
 }
 
 /* ── Audio button ──────────────────────────────────────────────────────────── */

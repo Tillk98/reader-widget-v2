@@ -38,7 +38,7 @@
 /* Original term — primary line: semibold, dark (Figma MeaningPopUp 4566:11925) */
 .reader-popup-widget-original {
   max-width: 100%;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 16px;
   line-height: 20px;
   color: var(--foreground-default, #0a0a0a);
@@ -47,12 +47,12 @@
   text-overflow: ellipsis;
 }
 
-/* Meaning — secondary line: medium weight, muted (Figma MeaningPopUp 4566:11926) */
+/* Meaning — regular weight, black (same colour as the term, lighter weight) */
 .reader-popup-widget-meaning {
-  font-weight: 500;
+  font-weight: 400;
   font-size: 16px;
   line-height: 20px;
-  color: var(--foreground-muted, #49525b);
+  color: var(--foreground-default, #0a0a0a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

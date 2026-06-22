@@ -170,7 +170,7 @@
   margin: 0;
   font-family: 'DM Sans', sans-serif;
   font-size: var(--typography-body-font-size, 16px);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 18px;
   color: var(--foreground-default, #0a0a0a);
   white-space: nowrap;
@@ -186,15 +186,15 @@
   box-sizing: border-box;
 }
 
-/* Header meaning — secondary emphasis: medium weight, muted (Figma Meaning 4446:87055) */
+/* Header meaning — regular weight, black (matches the term colour, just lighter weight) */
 .word-detail-sheet-meaning-text {
   margin: 0;
   width: 100%;
   font-family: 'DM Sans', sans-serif;
   font-size: var(--typography-body-font-size, 16px);
-  font-weight: 500;
+  font-weight: 400;
   line-height: var(--typography-body-line-height, 20px);
-  color: var(--foreground-muted, #49525b);
+  color: var(--foreground-default, #0a0a0a);
   text-align: left;
   word-break: break-word;
 }

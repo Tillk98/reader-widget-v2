@@ -250,8 +250,9 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
           aria-label={`Status ${status}, tap to change`}
           aria-expanded={showStatusBar}
         />
+        {/* Like the meaning popup, the header shows the meaning only — the original phrase term is
+            hidden here. The per-word breakdown rows below still show each word's term + meaning. */}
         <span className="phrase-popup__meaning-col">
-          <span className="phrase-popup__meaning-term">{phraseText}</span>
           <span className="phrase-popup__meaning">{meaning || 'Meaning'}</span>
         </span>
       </div>

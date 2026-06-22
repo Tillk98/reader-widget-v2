@@ -108,10 +108,10 @@
 
 .h-term-card__meaning {
   font-family: 'DM Sans', sans-serif;
-  font-weight: 500;
+  font-weight: 400;
   font-size: 16px;
   line-height: 20px;
-  color: var(--typography-muted, #6d7680);
+  color: var(--typography-default, #000000);
   white-space: nowrap;
 }
 

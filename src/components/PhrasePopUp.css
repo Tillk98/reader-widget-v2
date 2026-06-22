@@ -121,7 +121,7 @@
 /* Original phrase — primary line: semibold, dark (Figma 4566:11925) */
 .phrase-popup__meaning-term {
   max-width: 100%;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 16px;
   line-height: 20px;
   color: var(--foreground-default, #0a0a0a);
@@ -130,13 +130,13 @@
   text-overflow: ellipsis;
 }
 
-/* Meaning — secondary line: medium weight, muted (Figma 4566:11926) */
+/* Meaning — regular weight, black (same colour as the term, lighter weight) */
 .phrase-popup__meaning {
   max-width: 100%;
-  font-weight: 500;
+  font-weight: 400;
   font-size: 16px;
   line-height: 20px;
-  color: var(--foreground-muted, #49525b);
+  color: var(--foreground-default, #0a0a0a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -219,7 +219,7 @@
 
 /* Term (original word) — prominent, like the term cards. */
 .phrase-popup__row-source {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 16px;
   line-height: 20px;
   color: #0a0a0a;
@@ -228,12 +228,12 @@
   text-overflow: ellipsis;
 }
 
-/* Meaning — muted, beneath the term. */
+/* Meaning — regular weight, black, beneath the term. */
 .phrase-popup__row-def {
-  font-weight: 500;
+  font-weight: 400;
   font-size: 16px;
   line-height: 20px;
-  color: #49525b;
+  color: #0a0a0a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
