@@ -94,13 +94,43 @@
   box-sizing: border-box;
 }
 
-/* OriginalTerm row — play button + muted term text (Figma 4446:87048, px-12 py-6) */
+/* OriginalTerm row — 18px volume icon + bold term, top-aligned (Figma 4446:87048, h-30, px-12 py-6) */
 .word-detail-sheet-original-row {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-spacing-lg, 12px);
   padding: 6px 12px;
+}
+
+/* Bare audio icon inside the term row — no button chrome (Figma volume-2 4566:12284, 18px) */
+.word-detail-sheet-audio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--foreground-default, #0a0a0a);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--ui-ctrl-transition);
+}
+
+.word-detail-sheet-audio-btn:hover {
+  color: var(--foreground-muted, #49525b);
+}
+
+.word-detail-sheet-audio-btn:active {
+  transform: var(--ui-ctrl-press);
+}
+
+.word-detail-sheet-audio-btn:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Close button — absolute top-right of the drag chrome (Figma ReaderButton 4446:87313) */
@@ -133,38 +163,38 @@
   color: var(--typography-default, #000000);
 }
 
+/* Original term — primary emphasis: semibold, dark (Figma OriginalTerm 4446:87049) */
 .word-detail-sheet-original-text {
   flex: 1;
   min-width: 0;
   margin: 0;
   font-family: 'DM Sans', sans-serif;
   font-size: var(--typography-body-font-size, 16px);
-  font-weight: 500;
-  line-height: var(--typography-body-line-height, 20px);
-  color: var(--foreground-muted, #6d7680);
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--foreground-default, #0a0a0a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Meaning row — bold amalgamated meaning (Figma 4446:87122, p-12 h-44) */
+/* Meaning row — secondary, sits directly under the term (Figma Meaning 4446:87122, px-12 py-6) */
 .word-detail-sheet-meaning-row {
   display: flex;
   align-items: center;
-  min-height: 44px;
-  padding: 12px;
+  padding: 6px 12px;
   box-sizing: border-box;
 }
 
-/* Header meaning — plain read-only text (Figma 3989:42455) */
+/* Header meaning — secondary emphasis: medium weight, muted (Figma Meaning 4446:87055) */
 .word-detail-sheet-meaning-text {
   margin: 0;
   width: 100%;
   font-family: 'DM Sans', sans-serif;
   font-size: var(--typography-body-font-size, 16px);
-  font-weight: 600;
+  font-weight: 500;
   line-height: var(--typography-body-line-height, 20px);
-  color: var(--typography-default, #000000);
+  color: var(--foreground-muted, #49525b);
   text-align: left;
   word-break: break-word;
 }

@@ -780,7 +780,9 @@ export const Reader: React.FC = () => {
         setPhrasePick(null);
         return;
       }
-      if (knownWords.has(wordId) || ignoredWords.has(wordId)) {
+      /* Known words stay tappable: selecting one shows the popup with its Known status, where it
+         can be left as-is (tap away) or changed via the status button. Ignored words stay inert. */
+      if (ignoredWords.has(wordId)) {
         return;
       }
       /* Tapping any word of an AI "new phrase" selects the whole phrase as one unit and shows
@@ -830,7 +832,7 @@ export const Reader: React.FC = () => {
         });
       }
     },
-    [selectedWordId, knownWords, ignoredWords, mediaMode, lesson.hasVideo, phrasePick, currentPageWordIndex, commitPhraseRange, newPhraseByWordId, committedPhraseByWordId]
+    [selectedWordId, ignoredWords, mediaMode, lesson.hasVideo, phrasePick, currentPageWordIndex, commitPhraseRange, newPhraseByWordId, committedPhraseByWordId]
   );
 
   const handleSentenceWordSelect = useCallback(

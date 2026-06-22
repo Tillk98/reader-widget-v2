@@ -7,6 +7,14 @@ const STATUS_NUMBERS: Partial<Record<LingQStatusType, string>> = {
   New: '1', Recognized: '2', Familiar: '3', Learned: '4',
 };
 
+/**
+ * Stroke width (in real pixels) for status icons. Used with `absoluteStrokeWidth` so the
+ * weight stays constant regardless of icon size — lucide otherwise scales the stroke down
+ * with the icon (a 14px icon at strokeWidth 2 renders ~1.17px), which made the smaller
+ * status-bar chips look lighter than the larger button icons. Shared by LingQStatusBar.
+ */
+export const STATUS_ICON_STROKE = 1.5;
+
 const STATUS_LABELS: Record<LingQStatusType, string> = {
   New: 'New',
   Recognized: 'Recognized',
@@ -52,13 +60,13 @@ export const LingQStatusButton = React.forwardRef<HTMLButtonElement, LingQStatus
         {...rest}
       >
         {create ? (
-          <Plus size={16} strokeWidth={2} aria-hidden />
+          <Plus size={18} strokeWidth={STATUS_ICON_STROKE} absoluteStrokeWidth aria-hidden />
         ) : number !== undefined ? (
           <span className="lingq-status-btn__number">{number}</span>
         ) : status === 'Known' ? (
-          <Check size={16} strokeWidth={2} aria-hidden />
+          <Check size={18} strokeWidth={STATUS_ICON_STROKE} absoluteStrokeWidth aria-hidden />
         ) : (
-          <EyeOff size={16} strokeWidth={2} aria-hidden />
+          <EyeOff size={18} strokeWidth={STATUS_ICON_STROKE} absoluteStrokeWidth aria-hidden />
         )}
         {showLabel && !create && <span className="lingq-status-btn__label">{STATUS_LABELS[status]}</span>}
       </button>

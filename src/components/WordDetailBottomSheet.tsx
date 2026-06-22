@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
-import { Play, Tags, BookOpenText, PanelRightOpen, PanelRightClose, X } from 'lucide-react';
+import { Volume2, Tags, BookOpenText, PanelRightOpen, PanelRightClose, X } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -673,8 +673,8 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
             <div className="word-detail-sheet-panel-header">
               <div className="word-detail-sheet-panel-header-left">
                 <div className="word-detail-sheet-original-row">
-                  <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play audio">
-                    <Play size={16} aria-hidden />
+                  <button type="button" className="word-detail-sheet-audio-btn" aria-label="Play audio">
+                    <Volume2 size={18} aria-hidden />
                   </button>
                   <p className="word-detail-sheet-original-text">{quoteLine}</p>
                 </div>
@@ -710,8 +710,8 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           ) : (
             <div className="word-detail-sheet-header-content">
               <div className="word-detail-sheet-original-row">
-                <button type="button" className="word-detail-sheet-vol-btn" aria-label="Play audio">
-                  <Play size={16} aria-hidden />
+                <button type="button" className="word-detail-sheet-audio-btn" aria-label="Play audio">
+                  <Volume2 size={18} aria-hidden />
                 </button>
                 <p className="word-detail-sheet-original-text">{quoteLine}</p>
               </div>

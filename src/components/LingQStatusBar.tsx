@@ -1,6 +1,6 @@
 import React from 'react';
 import { Check, EyeOff } from 'lucide-react';
-import { LingQStatusButton } from './LingQStatusButton';
+import { LingQStatusButton, STATUS_ICON_STROKE } from './LingQStatusButton';
 import './LingQStatusBar.css';
 
 export type LingQStatusType =
@@ -148,7 +148,7 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
             aria-pressed={isIgnored}
             aria-label="Ignore"
           >
-            <EyeOff size={14} aria-hidden />
+            <EyeOff size={14} strokeWidth={STATUS_ICON_STROKE} absoluteStrokeWidth aria-hidden />
             {isIgnored && (
               <span className="lingq-status-chip__label">Ignore</span>
             )}
@@ -160,7 +160,7 @@ export const LingQStatusBar: React.FC<LingQStatusBarProps> = ({
             aria-pressed={isKnown}
             aria-label="Known"
           >
-            <Check size={14} aria-hidden />
+            <Check size={14} strokeWidth={STATUS_ICON_STROKE} absoluteStrokeWidth aria-hidden />
             {isKnown && (
               <span className="lingq-status-chip__label">Known</span>
             )}

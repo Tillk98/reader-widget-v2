@@ -132,7 +132,8 @@ export const Word: React.FC<WordProps> = ({
   const handlePointerCancel = () => { /* handled at window level */ };
 
   const handleClick = () => {
-    if (isKnown || isIgnored) return;
+    // Known words are tappable (→ popup showing Known status); Ignored stay inert.
+    if (isIgnored) return;
     if (didLongPressRef.current) {
       didLongPressRef.current = false;
       return;
@@ -162,7 +163,7 @@ export const Word: React.FC<WordProps> = ({
     <span
       id={domId ?? word.id}
       className={getClassName()}
-      style={{ cursor: isKnown || isIgnored ? 'default' : 'pointer' }}
+      style={{ cursor: isIgnored ? 'default' : 'pointer' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

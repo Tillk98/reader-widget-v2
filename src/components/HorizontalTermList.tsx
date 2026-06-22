@@ -480,8 +480,13 @@ export const HorizontalTermList: React.FC<HorizontalTermListProps> = ({
     list.scrollTo({ left: Math.max(0, list.scrollLeft + delta), behavior: 'smooth' });
   }, [selectedWordId]);
 
-  // Ignored words drop out of the sentence vocabulary list; Known words stay (shown as Known).
-  const visible = items.filter((item) => wordStatusMap[item.id] !== 'Ignored');
+  // Only words in the active-learning range (untracked "+" cards + LingQ statuses 1–3) stay in
+  // the scroll. Ignored, Learned (4), and Known drop out — so a word updated into any of those
+  // hides itself on the next render (wordStatusMap is reactive).
+  const visible = items.filter((item) => {
+    const status = wordStatusMap[item.id];
+    return status !== 'Ignored' && status !== 'Learned' && status !== 'Known';
+  });
 
   if (visible.length === 0) return null;
 

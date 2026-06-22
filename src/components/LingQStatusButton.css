@@ -6,8 +6,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   box-sizing: border-box;
   padding: 0;
@@ -33,9 +33,9 @@
 
 .lingq-status-btn__number,
 .lingq-status-btn__label {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 18px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
   letter-spacing: 0;
   color: inherit;
   white-space: nowrap;
@@ -50,7 +50,7 @@
 .lingq-status-btn--with-label {
   width: auto;
   height: auto;
-  padding: 6px 12px;
+  padding: 8px 12px;
 }
 
 /* ── Focus state (Figma 4008:56485 — State=Focus) ───────────────────────────── */

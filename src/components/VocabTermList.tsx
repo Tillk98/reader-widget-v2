@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleCheck, Trash2, Play, Plus } from 'lucide-react';
+import { CircleCheck, Trash2, Volume2, Plus } from 'lucide-react';
 import type { LingQStatusType } from './LingQStatusBar';
 import { LingQStatusButton } from './LingQStatusButton';
 import { StatusPopover } from './StatusPopover';
@@ -265,7 +265,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
             onClick={onAudio}
             aria-label={`Play ${word.text}`}
           >
-            <Play size={20} strokeWidth={1.75} />
+            <Volume2 size={20} strokeWidth={1.75} />
           </button>
         </div>
 

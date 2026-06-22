@@ -47,17 +47,21 @@
 .phrase-popup__meaning-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   padding: 8px 12px;
   overflow: hidden;
   flex-shrink: 0;
   cursor: pointer;
   max-width: 600px;
+  max-height: 64px; /* > two-line content; collapses to 0 in status mode */
   transition:
-    max-width    0.26s ease-out,
-    padding-left 0.26s ease-out,
+    max-width     0.26s ease-out,
+    max-height    0.26s ease-out,
+    padding-left  0.26s ease-out,
     padding-right 0.26s ease-out,
-    opacity      0.18s ease;
+    padding-top   0.26s ease-out,
+    padding-bottom 0.26s ease-out,
+    opacity       0.18s ease;
 }
 
 .phrase-popup__meaning-header:focus-visible {
@@ -65,10 +69,15 @@
   outline-offset: -2px;
 }
 
+/* Collapse both width and height so the status bar keeps its own hug height
+   instead of stretching to the now-taller two-line header. */
 .phrase-popup__meaning-card--status-mode .phrase-popup__meaning-header {
   max-width: 0;
+  max-height: 0;
   padding-left: 0;
   padding-right: 0;
+  padding-top: 0;
+  padding-bottom: 0;
   opacity: 0;
   pointer-events: none;
 }
@@ -100,11 +109,34 @@
 }
 
 
-.phrase-popup__meaning {
+/* Term + meaning stacked beside the badge (Figma MeaningPopUp 4566:11924) */
+.phrase-popup__meaning-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Original phrase — primary line: semibold, dark (Figma 4566:11925) */
+.phrase-popup__meaning-term {
+  max-width: 100%;
   font-weight: 600;
   font-size: 16px;
   line-height: 20px;
-  color: var(--typography-default, #000000);
+  color: var(--foreground-default, #0a0a0a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Meaning — secondary line: medium weight, muted (Figma 4566:11926) */
+.phrase-popup__meaning {
+  max-width: 100%;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--foreground-muted, #49525b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -199,8 +231,8 @@
 /* Meaning — muted, beneath the term. */
 .phrase-popup__row-def {
   font-weight: 500;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 16px;
+  line-height: 20px;
   color: #49525b;
   white-space: nowrap;
   overflow: hidden;

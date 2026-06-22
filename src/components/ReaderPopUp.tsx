@@ -216,10 +216,13 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
           aria-expanded={showStatusBar}
         />
         <div className="reader-popup-widget-term">
+          <span className="reader-popup-widget-original">
+            {wordText}
+            {wordTransliteration != null && wordTransliteration !== '' && (
+              <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
+            )}
+          </span>
           <span className="reader-popup-widget-meaning">{meaning || 'Meaning'}</span>
-          {wordTransliteration != null && wordTransliteration !== '' && (
-            <span className="reader-popup-widget-transliteration">{wordTransliteration}</span>
-          )}
         </div>
       </div>
       <div className="reader-popup-widget-statusbar" aria-hidden={!showStatusBar}>

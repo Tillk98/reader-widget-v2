@@ -250,7 +250,10 @@ export const PhrasePopUp: React.FC<PhrasePopUpProps> = ({
           aria-label={`Status ${status}, tap to change`}
           aria-expanded={showStatusBar}
         />
-        <span className="phrase-popup__meaning">{meaning || 'Meaning'}</span>
+        <span className="phrase-popup__meaning-col">
+          <span className="phrase-popup__meaning-term">{phraseText}</span>
+          <span className="phrase-popup__meaning">{meaning || 'Meaning'}</span>
+        </span>
       </div>
       <div className="phrase-popup__meaning-statusbar" aria-hidden={!showStatusBar}>
         <LingQStatusBar
