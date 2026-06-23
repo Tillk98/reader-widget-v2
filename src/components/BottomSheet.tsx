@@ -20,8 +20,12 @@ export interface BottomSheetProps {
   ariaLabel?: string;
   /** Show the grab handle at the top of the card (default true). */
   showDragBar?: boolean;
-  /** `floating` (side margins, rounded) or `full` (full width, near-full height, rounded top). */
-  variant?: 'floating' | 'full';
+  /**
+   * `floating` (full width, flush to the bottom, rounded top), `full` (full width,
+   * near-full height, rounded top), or `menu` (a floating card with side + bottom
+   * margins, capped width, rounded on all corners — like the audio settings menu).
+   */
+  variant?: 'floating' | 'full' | 'menu';
   /** Dragging up past a threshold fires this (e.g. expand into a full-page sheet). */
   onSwipeUp?: () => void;
   /**
@@ -153,6 +157,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       className={[
         'bottom-sheet',
         variant === 'full' && 'bottom-sheet--full',
+        variant === 'menu' && 'bottom-sheet--menu',
         visible && 'bottom-sheet--visible',
         className,
       ]

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 import { Menu, ChevronDown, Pause, Play } from 'lucide-react';
 import playerBack from '../assets/player-back.png';
 import playerForward from '../assets/player-forward.png';
-import './VideoModeBottomBar.css';
+import './MediaModeBottomBar.css';
 
 const DRAG_THRESHOLD_PX = 40;
 
@@ -11,7 +11,7 @@ function targetIsInteractiveControl(target: EventTarget | null): boolean {
   return Boolean(target.closest('button, a, [role="button"], input, textarea, select'));
 }
 
-export interface VideoModeBottomBarProps {
+export interface MediaModeBottomBarProps {
   /** Reports total fixed chrome height so the word-selection strip can sit above this bar. */
   onChromeHeightChange?: (heightPx: number) => void;
   expanded: boolean;
@@ -28,12 +28,10 @@ export interface VideoModeBottomBarProps {
   durationLabel?: string;
   onSkipBack?: () => void;
   onSkipForward?: () => void;
-  /** Collapsed only: drag down past threshold to leave video mode and return to default reader. */
-  onExitVideoMode?: () => void;
-  /** Expanded: X (or equivalent) — minimize / exit to page (audio returns to mini player). */
+  /** Collapsed only: drag down past threshold to leave media mode and return to default reader. */
+  onExitMediaMode?: () => void;
+  /** Expanded: X (or equivalent) — minimize / exit to page (returns to mini player). */
   onDismiss?: () => void;
-  /** Lesson type — expanded chrome matches Figma audio vs video. */
-  lessonMedia?: 'video' | 'audio';
   /** Optional: waveform / audio details (stub). */
   onAudioDetails?: () => void;
   /** When true, plays slide-down exit (no View Transitions). Parent should unmount after onExitSlideComplete. */
@@ -42,7 +40,7 @@ export interface VideoModeBottomBarProps {
   onExitSlideComplete?: () => void;
 }
 
-export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
+export const MediaModeBottomBar: React.FC<MediaModeBottomBarProps> = ({
   onChromeHeightChange,
   expanded,
   onExpandedChange,
@@ -56,9 +54,8 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
   durationLabel = '11:00',
   onSkipBack,
   onSkipForward,
-  onExitVideoMode,
+  onExitMediaMode,
   onDismiss,
-  lessonMedia = 'audio',
   onAudioDetails,
   exiting = false,
   onExitSlideComplete,
@@ -112,7 +109,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
 
     const onAnimationEnd = (e: AnimationEvent) => {
       if (e.target !== el) return;
-      if (e.animationName !== 'video-mode-bar-slide-out') return;
+      if (e.animationName !== 'media-mode-bar-slide-out') return;
       window.clearTimeout(t);
       finish();
     };
@@ -165,7 +162,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
             onExpandedChange(false);
           }
         } else if (deltaY >= DRAG_THRESHOLD_PX) {
-          onExitVideoMode?.();
+          onExitMediaMode?.();
         } else if (deltaY <= -DRAG_THRESHOLD_PX) {
           onExpandedChange(true);
         }
@@ -180,7 +177,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
         onExpandedChange(true);
       }
     },
-    [expanded, onExpandedChange, onExitVideoMode]
+    [expanded, onExpandedChange, onExitMediaMode]
   );
 
   const handlePanelPointerCancel = useCallback((e: React.PointerEvent) => {
@@ -196,65 +193,65 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
     <div
       ref={rootRef}
       className={[
-        'video-mode-bottom-bar',
-        expanded ? 'video-mode-bottom-bar--expanded' : 'video-mode-bottom-bar--collapsed',
-        exiting && 'video-mode-bottom-bar--exit',
+        'media-mode-bottom-bar',
+        expanded ? 'media-mode-bottom-bar--expanded' : 'media-mode-bottom-bar--collapsed',
+        exiting && 'media-mode-bottom-bar--exit',
       ]
         .filter(Boolean)
         .join(' ')}
-      data-video-mode-bar
+      data-media-mode-bar
     >
       <div
         ref={innerRef}
-        className="video-mode-bottom-bar__inner"
+        className="media-mode-bottom-bar__inner"
         role="region"
         aria-label={
           expanded
-            ? `${lessonMedia === 'video' ? 'Video' : 'Audio'} player — swipe down to collapse, or use controls`
-            : `${lessonMedia === 'video' ? 'Video' : 'Audio'} player — swipe up on the bar to expand, swipe down to leave lesson mode, or use controls`
+            ? 'Audio player — swipe down to collapse, or use controls'
+            : 'Audio player — swipe up on the bar to expand, swipe down to leave lesson mode, or use controls'
         }
         onPointerDown={handlePanelPointerDown}
         onPointerUp={handlePanelPointerUp}
         onPointerCancel={handlePanelPointerCancel}
       >
         {!expanded && (
-          <div className="video-mode-bottom-bar__drag" aria-hidden>
-            <span className="video-mode-bottom-bar__drag-bar" />
+          <div className="media-mode-bottom-bar__drag" aria-hidden>
+            <span className="media-mode-bottom-bar__drag-bar" />
           </div>
         )}
 
         {expanded ? (
           <>
-            <div className="video-mode-bottom-bar__scrubber">
-              <div className="video-mode-bottom-bar__scrubber-track">
+            <div className="media-mode-bottom-bar__scrubber">
+              <div className="media-mode-bottom-bar__scrubber-track">
                 <div
-                  className="video-mode-bottom-bar__scrubber-fill"
+                  className="media-mode-bottom-bar__scrubber-fill"
                   style={{ width: `${progressPct}%` }}
                 />
                 <div
-                  className="video-mode-bottom-bar__scrubber-thumb"
+                  className="media-mode-bottom-bar__scrubber-thumb"
                   style={{ left: `${progressPct}%` }}
                 />
               </div>
-              <div className="video-mode-bottom-bar__playback-time">
+              <div className="media-mode-bottom-bar__playback-time">
                 <span>{currentTimeLabel}</span>
                 <span>{durationLabel}</span>
               </div>
             </div>
 
-            <div className="video-mode-bottom-bar__media-actions" role="group" aria-label="Playback">
+            <div className="media-mode-bottom-bar__media-actions" role="group" aria-label="Playback">
               <button
                 type="button"
-                className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                className="media-mode-bottom-bar__round-btn media-mode-bottom-bar__round-btn--sm"
                 aria-label="Audio controls menu"
                 onClick={() => onAudioDetails?.()}
               >
                 <Menu size={20} strokeWidth={2} />
               </button>
-              <div className="video-mode-bottom-bar__media-actions-center">
+              <div className="media-mode-bottom-bar__media-actions-center">
                 <button
                   type="button"
-                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                  className="media-mode-bottom-bar__round-btn media-mode-bottom-bar__round-btn--sm"
                   aria-label="Skip back 5 seconds"
                   onClick={() => onSkipBack?.()}
                 >
@@ -262,7 +259,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--xl"
+                  className="media-mode-bottom-bar__round-btn media-mode-bottom-bar__round-btn--xl"
                   aria-label={isPaused ? 'Play' : 'Pause'}
                   onClick={onTogglePause}
                 >
@@ -270,7 +267,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                  className="media-mode-bottom-bar__round-btn media-mode-bottom-bar__round-btn--sm"
                   aria-label="Skip forward 5 seconds"
                   onClick={() => onSkipForward?.()}
                 >
@@ -279,7 +276,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
               </div>
               <button
                 type="button"
-                className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                className="media-mode-bottom-bar__round-btn media-mode-bottom-bar__round-btn--sm"
                 aria-label="Return to lesson"
                 onClick={() => onDismiss?.()}
               >
@@ -289,21 +286,21 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
           </>
         ) : (
           <>
-            <div className="video-mode-bottom-bar__footer">
-              <div className="video-mode-bottom-bar__meta">
-                <div className="video-mode-bottom-bar__thumb-wrap">
-                  <img src={lessonImageSrc} alt="" className="video-mode-bottom-bar__thumb" />
+            <div className="media-mode-bottom-bar__footer">
+              <div className="media-mode-bottom-bar__meta">
+                <div className="media-mode-bottom-bar__thumb-wrap">
+                  <img src={lessonImageSrc} alt="" className="media-mode-bottom-bar__thumb" />
                 </div>
-                <div className="video-mode-bottom-bar__titles">
-                  <p className="video-mode-bottom-bar__title">{lessonTitle}</p>
-                  {lessonSource ? <p className="video-mode-bottom-bar__source">{lessonSource}</p> : null}
+                <div className="media-mode-bottom-bar__titles">
+                  <p className="media-mode-bottom-bar__title">{lessonTitle}</p>
+                  {lessonSource ? <p className="media-mode-bottom-bar__source">{lessonSource}</p> : null}
                 </div>
               </div>
 
-              <div className="video-mode-bottom-bar__collapsed-controls" role="group" aria-label="Playback">
+              <div className="media-mode-bottom-bar__collapsed-controls" role="group" aria-label="Playback">
                 <button
                   type="button"
-                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--sm"
+                  className="media-mode-bottom-bar__round-btn media-mode-bottom-bar__round-btn--sm"
                   aria-label="Skip back 5 seconds"
                   onClick={() => onSkipBack?.()}
                 >
@@ -311,7 +308,7 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="video-mode-bottom-bar__round-btn video-mode-bottom-bar__round-btn--lg"
+                  className="media-mode-bottom-bar__round-btn media-mode-bottom-bar__round-btn--lg"
                   aria-label={isPaused ? 'Play' : 'Pause'}
                   onClick={onTogglePause}
                 >
@@ -320,10 +317,10 @@ export const VideoModeBottomBar: React.FC<VideoModeBottomBarProps> = ({
               </div>
             </div>
 
-            <div className="video-mode-bottom-bar__progress-edge" aria-hidden="true">
-              <div className="video-mode-bottom-bar__progress-track-edge">
+            <div className="media-mode-bottom-bar__progress-edge" aria-hidden="true">
+              <div className="media-mode-bottom-bar__progress-track-edge">
                 <div
-                  className="video-mode-bottom-bar__progress-fill-edge"
+                  className="media-mode-bottom-bar__progress-fill-edge"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>

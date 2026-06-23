@@ -14,9 +14,9 @@ interface PageProps {
   onWordLongPressDragEnd?: () => void;
   knownWords: Set<string>;
   ignoredWords: Set<string>;
-  /** When true, group words into block elements per lesson sentence (video lesson layout). */
-  videoLessonLayout?: boolean;
-  /** Map word id → sentence index in `lesson.sentences` (required when videoLessonLayout). */
+  /** When true, group words into block elements per lesson sentence (media lesson layout). */
+  mediaLessonLayout?: boolean;
+  /** Map word id → sentence index in `lesson.sentences` (required when mediaLessonLayout). */
   wordToSentenceIndex?: ReadonlyMap<string, number>;
   /** Word ids currently part of an active phrase selection. */
   phraseSelectedWords?: ReadonlySet<string>;
@@ -73,14 +73,14 @@ export const Page: React.FC<PageProps> = ({
   onWordLongPressDragEnd,
   knownWords,
   ignoredWords,
-  videoLessonLayout = false,
+  mediaLessonLayout = false,
   wordToSentenceIndex,
   phraseSelectedWords,
   phraseAnchorWordId,
   newPhraseWords,
   committedPhraseWords,
 }) => {
-  const useSentenceLayout = Boolean(videoLessonLayout && wordToSentenceIndex && wordToSentenceIndex.size > 0);
+  const useSentenceLayout = Boolean(mediaLessonLayout && wordToSentenceIndex && wordToSentenceIndex.size > 0);
   const sentenceRuns = useSentenceLayout
     ? groupWordsBySentenceRun(words, wordToSentenceIndex!)
     : null;
@@ -138,8 +138,8 @@ export const Page: React.FC<PageProps> = ({
     });
 
   return (
-    <div className={['page', videoLessonLayout && 'page--video-lesson-scroll'].filter(Boolean).join(' ')}>
-      <div className={['page-content', videoLessonLayout && 'page-content--video-lesson'].filter(Boolean).join(' ')}>
+    <div className={['page', mediaLessonLayout && 'page--media-lesson-scroll'].filter(Boolean).join(' ')}>
+      <div className={['page-content', mediaLessonLayout && 'page-content--media-lesson'].filter(Boolean).join(' ')}>
         {useSentenceLayout && sentenceRuns
           ? sentenceRuns.map((run, runIndex) => (
               <p key={`${run[0]?.id ?? runIndex}-${runIndex}`} className="page-content__sentence">

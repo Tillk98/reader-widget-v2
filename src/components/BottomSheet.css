@@ -86,6 +86,22 @@
   overflow: hidden;
 }
 
+/* Menu variant: a floating card with side + bottom margins, capped width, rounded on
+   all corners and a soft shadow (Figma ReviewFilterMenu 4281:42840 — wrapper px-16/py-24,
+   card max-w-520, shadow 0 0 4px #d1d6d9). Matches the audio settings floating menu. */
+.bottom-sheet--menu .bottom-sheet__panel {
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-sheet--menu .bottom-sheet__card {
+  max-width: 520px;
+  border-radius: 12px;
+  box-shadow: 0px 0px 4px 0px #d1d6d9;
+  /* Panel padding already provides the bottom inset for this floating card. */
+  padding-bottom: 0;
+  max-height: calc(100dvh - 48px);
+}
+
 .bottom-sheet__drag-area {
   display: flex;
   align-items: center;

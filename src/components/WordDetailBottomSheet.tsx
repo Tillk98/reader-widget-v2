@@ -38,7 +38,7 @@ import './WordDetailBottomSheet.css';
 
 export type { WordDetailSentenceContextEntry } from './SentenceBlock';
 
-/** Aligned with audio/video drawers; lower = easier to dismiss by dragging */
+/** Aligned with media drawers; lower = easier to dismiss by dragging */
 const DRAG_CLOSE_THRESHOLD_PX = 24;
 
 /** Must match `--word-detail-sheet-duration` in WordDetailBottomSheet.css */

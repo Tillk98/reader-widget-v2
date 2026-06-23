@@ -1,11 +1,22 @@
 /* Reader menu — content inside the floating BottomSheet (Figma 3443:5651 / ReaderMenu). */
 
+/* Floating menu (Figma 3428:46622). The panel is the full-width wrapper holding the
+   card off the screen edges: 16px left/right, 24px top/bottom. Scoped to .reader-menu-sheet
+   so the shared BottomSheet (and every other menu) keeps its flush-to-edge default. */
 .reader-menu-sheet .bottom-sheet__panel {
   max-width: 100%;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
 }
 
+/* The card is the floating menu itself: capped at 520, rounded on all corners, soft shadow
+   (Figma ReaderMenu 3428:45980). */
 .reader-menu-sheet .bottom-sheet__card {
+  max-width: 520px;
+  max-height: calc(100dvh - 48px);
   background: var(--backgrounds-page, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0px 0px 4px 0px #d1d6d9;
+  padding-bottom: 0;
 }
 
 

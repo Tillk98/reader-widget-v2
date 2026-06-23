@@ -30,7 +30,7 @@
   --ui-ctrl-press: scale(0.97);
   --ui-focus-ring: 2px solid #2e75cd;
 
-  /* Frosted bars (reader chrome, video lesson transport) */
+  /* Frosted bars (reader chrome, media lesson transport) */
   --ui-glass-bg: rgba(255, 255, 255, 0.76);
   --ui-glass-bg-hover: rgba(255, 255, 255, 0.9);
   --ui-glass-border: rgba(255, 255, 255, 0.52);
@@ -38,7 +38,7 @@
   --ui-glass-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 22px rgba(15, 23, 42, 0.08);
   --ui-glass-blur: blur(18px) saturate(1.12);
 
-  /* Controls on dark video / imagery */
+  /* Controls on dark media / imagery */
   --ui-on-media-bg: rgba(255, 255, 255, 0.15);
   --ui-on-media-bg-hover: rgba(255, 255, 255, 0.26);
   --ui-on-media-border: rgba(255, 255, 255, 0.3);

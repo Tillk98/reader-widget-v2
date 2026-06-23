@@ -23,8 +23,6 @@ export interface Lesson {
   title: string;
   source?: string;
   sentences: Sentence[];
-  hasVideo?: boolean;
-  videoUrl?: string;
   /** Reader bottom bar expanded chevron menu layout (e.g. from backend). */
   expandedMenuLayout?: 'grid' | 'list';
   /** Course or collection title shown in the expanded menu header (falls back to `title`). */
@@ -553,7 +551,6 @@ const parsedLesson = parseLesson(lessonText);
 export const lesson: Lesson = {
   ...parsedLesson,
   source: 'La statistique expliquée à mon chat',
-  hasVideo: false,
   lessonMenuTitle: 'Emil und Die Detektive',
   lessonMenuSubtitle: 'Lesson 1/30',
   newPhrases: resolveNewPhrases(parsedLesson.sentences, NEW_PHRASE_DEFS),

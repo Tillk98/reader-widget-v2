@@ -15,6 +15,9 @@
 .sentence-mode__inner {
   display: flex;
   flex-direction: column;
+  /* Center the content column so on larger tablet screens it stays a readable
+     520px-wide block rather than stretching edge-to-edge (Figma 3931:57584). */
+  align-items: center;
   gap: 16px;
   width: 100%;
   padding: 16px;
@@ -26,11 +29,24 @@
   padding-bottom: 90px;
 }
 
-/* Wrapper for sentence + controls + translation */
+/* Wrapper for sentence + controls + translation.
+   Constrained to 520px and centered (via the inner's align-items) so the
+   reading column matches the Figma max width on larger screens. */
 .sentence-mode__content {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 520px;
+}
+
+/* Term-list column — same 520px cap so the vocab cards' left edge lines up with
+   the sentence above. The list's own negative margins (.h-term-list) bleed the
+   scroll track 16px past this box on each side while keeping the first card's
+   left edge flush with the 520px column. */
+.sentence-mode__term-list {
+  width: 100%;
+  max-width: 520px;
 }
 
 .sentence-mode__sentence {
@@ -156,6 +172,11 @@
   left: 16px;
   right: 16px;
   z-index: 50;
+  /* Match the 520px reading column: cap the box width (520 + 16px padding each
+     side) and center it so the sticky sentence stays aligned on tablet. */
+  max-width: 552px;
+  margin-left: auto;
+  margin-right: auto;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0px 4px 16px -4px rgba(0, 0, 0, 0.14);

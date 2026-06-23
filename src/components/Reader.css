@@ -14,14 +14,14 @@
 /*
  * Fixed lesson fades + scroll insets (descendants inherit). Top band is 25% height of bottom (75% smaller).
  */
-.reader--video-mode {
-  --reader-video-fade-band-bottom: 96px;
-  --reader-video-fade-band-top: 24px;
+.reader--media-mode {
+  --reader-media-fade-band-bottom: 96px;
+  --reader-media-fade-band-top: 24px;
 }
 
-.reader--video-mode.reader--video-mode-expanded {
-  --reader-video-fade-band-bottom: 104px;
-  --reader-video-fade-band-top: 26px;
+.reader--media-mode.reader--media-mode-expanded {
+  --reader-media-fade-band-bottom: 104px;
+  --reader-media-fade-band-top: 26px;
 }
 
 /*
@@ -41,6 +41,7 @@
   z-index: 100;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   view-transition-name: reader-progress;
 }
@@ -79,15 +80,18 @@
   object-fit: contain;
 }
 
-/* Centered progress fills the space between the two pill buttons. */
+/* Centered progress fills the space between the two pill buttons, but is
+   capped at 520px so it stays bounded on tablet/wide screens (Figma
+   ReaderHeader 2824:61977 — LessonProgress max-w 520). */
 .reader-progress-bar-wrap {
   flex: 1 1 0;
   min-width: 0;
+  max-width: 520px;
   display: flex;
   align-items: center;
 }
 
-/* Mirrors .video-mode-bottom-bar__scrubber-track */
+/* Mirrors .media-mode-bottom-bar__scrubber-track */
 .reader-progress-bar {
   position: relative;
   width: 100%;
@@ -169,7 +173,7 @@
 }
 
 /* Page mode: audio mini sits in the bottom bar slot (single chrome, not stacked). */
-.reader-content.reader-content--audio-mini:not(.reader-content--video-mode) {
+.reader-content.reader-content--media-mini:not(.reader-content--media-mode) {
   padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
 }
 
@@ -234,7 +238,7 @@
   box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.25);
 }
 
-/* Inner shell for lesson layout (page vs video). Intentionally no view-transition-name here:
+/* Inner shell for lesson layout (page vs media). Intentionally no view-transition-name here:
  * naming this subtree `reader-body` caused WebKit to composite an empty layer during horizontal
  * paging (white flash) while the child .pages-container carried the translate3d transform. */
 .reader-body-vt {
@@ -249,13 +253,13 @@
 }
 
 /* Vertical scroll lives on .reader-content; do not clip the full lesson */
-.reader-content--video-mode .reader-body-vt {
+.reader-content--media-mode .reader-body-vt {
   overflow-x: hidden;
   overflow-y: visible;
 }
 
-/* Video mode: vertical scroll through full lesson; no top progress bar; no horizontal paging */
-.reader-content--video-mode {
+/* Media mode: vertical scroll through full lesson; no top progress bar; no horizontal paging */
+.reader-content--media-mode {
   margin-top: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -266,43 +270,22 @@
   overscroll-behavior: auto;
 }
 
-.reader-video-scroll {
+.reader-media-scroll {
   width: 100%;
   box-sizing: border-box;
 }
 
 /*
- * Inset past fixed gradients: full band at bottom; short band at top (vars on .reader--video-mode).
+ * Inset past fixed gradients: full band at bottom; short band at top (vars on .reader--media-mode).
  */
-.reader--video-mode .reader-content--video-mode .reader-video-scroll {
-  padding-top: var(--reader-video-fade-band-top);
-  padding-bottom: var(--reader-video-fade-band-bottom);
-}
-
-/*
- * Top fade (below fixed video chrome): solid white at the top of the band (under the player)
- * grading to transparent so lesson text reads normally below. No bottom fade above the audio bar.
- */
-.reader-video-text-fade--top {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: var(--reader-video-top-stack, 240px);
-  height: var(--reader-video-fade-band-top, 24px);
-  z-index: 45;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    #ffffff 0%,
-    rgba(255, 255, 255, 0.88) 45%,
-    rgba(255, 255, 255, 0.4) 78%,
-    rgba(255, 255, 255, 0) 100%
-  );
+.reader--media-mode .reader-content--media-mode .reader-media-scroll {
+  padding-top: var(--reader-media-fade-band-top);
+  padding-bottom: var(--reader-media-fade-band-bottom);
 }
 
 /*
  * Fixed above the media bar (z-index 48 < bar 50): fades scrolling lesson text into white.
- * Must overlay the reader column, not live inside VideoModeBottomBar — otherwise padding + stacking
+ * Must overlay the reader column, not live inside MediaModeBottomBar — otherwise padding + stacking
  * only show a hard edge above the bar.
  */
 .reader-lesson-fade-bottom {
@@ -336,23 +319,7 @@
   }
 }
 
-/* Soft fade when entering video mode (View Transitions handles the player chrome) */
-@supports (view-transition-name: none) {
-  @keyframes reader-vt-fade-stripes-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  .reader--video-mode .reader-video-text-fade--top {
-    animation: reader-vt-fade-stripes-in 1.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-}
-
-.reader-content--video-mode.reader-content--video-expanded {
+.reader-content--media-mode.reader-content--media-expanded {
   padding-bottom: 260px;
 }
 
@@ -416,7 +383,7 @@
 }
 
 /*
- * View Transitions API: page chrome, lesson video stack, bottom bar.
+ * View Transitions API: page chrome + bottom bar.
  * Easing: smooth deceleration in (0.16,1,0.3,1), slightly quicker ease-in on exit.
  */
 @supports (view-transition-name: none) {
@@ -424,9 +391,6 @@
   --reader-vt-smooth-out: cubic-bezier(0.4, 0, 0.2, 1);
   --reader-vt-enter-ms: 680ms;
   --reader-vt-leave-ms: 580ms;
-  /* Lesson video stack (top slot): slower fade/slide — matches stripe fade-in duration */
-  --reader-vt-video-top-enter-ms: 1.35s;
-  --reader-vt-video-top-leave-ms: 1.05s;
 
   @keyframes reader-vt-progress-leave {
     to {
@@ -446,29 +410,7 @@
     }
   }
 
-  @keyframes reader-vt-video-mode-top-enter {
-    from {
-      opacity: 0;
-      transform: translateY(-22px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes reader-vt-video-mode-top-leave {
-    from {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(-16px);
-    }
-  }
-
-  @keyframes reader-vt-video-mode-bar-leave {
+  @keyframes reader-vt-media-mode-bar-leave {
     from {
       opacity: 1;
       transform: translateY(0);
@@ -509,19 +451,9 @@
     animation: reader-vt-progress-enter var(--reader-vt-enter-ms) var(--reader-vt-smooth-in) both;
   }
 
-  ::view-transition-new(video-mode-top) {
-    animation: reader-vt-video-mode-top-enter var(--reader-vt-video-top-enter-ms) var(--reader-vt-smooth-in)
-      both;
-  }
-
-  ::view-transition-old(video-mode-top) {
-    animation: reader-vt-video-mode-top-leave var(--reader-vt-video-top-leave-ms) var(--reader-vt-smooth-out)
-      both;
-  }
-
-  /* Enter slide is handled by VideoModeBottomBar.css (live DOM) so motion is obvious in all engines. */
-  ::view-transition-old(video-mode-bar) {
-    animation: reader-vt-video-mode-bar-leave var(--reader-vt-leave-ms) var(--reader-vt-smooth-out) both;
+  /* Enter slide is handled by MediaModeBottomBar.css (live DOM) so motion is obvious in all engines. */
+  ::view-transition-old(media-mode-bar) {
+    animation: reader-vt-media-mode-bar-leave var(--reader-vt-leave-ms) var(--reader-vt-smooth-out) both;
   }
 
   ::view-transition-new(reader-bottom-chrome) {
@@ -540,10 +472,6 @@
     ::view-transition-new(*) {
       animation-duration: 0.01ms !important;
     }
-  }
-
-  .reader--video-mode .reader-video-text-fade--top {
-    animation: none !important;
   }
 
   .reader-content {

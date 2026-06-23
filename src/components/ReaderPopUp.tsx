@@ -136,9 +136,9 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       if (bar && bar.contains(target)) return false;
       const hitEl = hitElement(target);
       /* Inline lesson media bar (sibling of bottom bar): interacting must not clear word selection */
-      if (hitEl?.closest('[data-video-mode-bar]')) return false;
-      if (hitEl?.closest('[data-audio-settings-sheet]')) return false;
-      if (hitEl?.closest('[data-audio-mini-player]')) return false;
+      if (hitEl?.closest('[data-media-mode-bar]')) return false;
+      if (hitEl?.closest('[data-media-settings-sheet]')) return false;
+      if (hitEl?.closest('[data-media-mini-player]')) return false;
 
       /* Another lesson word: don't close on mousedown so word-to-word selection
          doesn't briefly clear and re-trigger toolbar expand animation. */
