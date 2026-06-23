@@ -1630,6 +1630,8 @@ export const Reader: React.FC = () => {
                 onPhraseWordOpen={handlePhraseWordOpen}
                 onClose={handlePhrasePopupClose}
                 onLynx={() => setLynxChatOpen(true)}
+                isTablet={isTablet}
+                onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(true) : undefined}
               />
             );
           })()}
