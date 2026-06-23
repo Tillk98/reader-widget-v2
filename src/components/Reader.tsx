@@ -133,6 +133,8 @@ export const Reader: React.FC = () => {
   const prevMediaModeRef = useRef<MediaMode>(mediaMode);
   /** Measured height of fixed media bottom bar — positions LingQ strip above it. */
   const [mediaBarChromeHeightPx, setMediaBarChromeHeightPx] = useState(0);
+  /** Measured card height of the mini player when it stands in as the bottom bar (page mode). */
+  const [mediaMiniBarHeightPx, setMediaMiniBarHeightPx] = useState(0);
   /** No View Transitions: slide media bar out before leaving media mode. */
   const [mediaBarExitAnimating, setMediaBarExitAnimating] = useState(false);
   /** Floating mini player while still in page mode. */
@@ -1312,9 +1314,25 @@ export const Reader: React.FC = () => {
     if (el) el.scrollTop = 0;
   }, [mediaMode]);
 
+  /* The docked side panel is only available on tablet, and is suspended while the audio
+     player is expanded (its tall chrome would overlap the panel). When suspended the widget
+     falls back to the bottom sheet; it re-docks once the player collapses. */
+  const panelModeAvailable = isTablet && !(isLessonMediaMode && mediaBarExpanded);
+
   /* A valid phrase selected while the side panel is docked shows its detail IN the panel
      (instead of the floating popup) — mirroring how a tapped word fills the panel. */
-  const showPhraseInPanel = isTablet && wordDetailPanelMode && phraseSelection != null && phraseSelection.valid;
+  const showPhraseInPanel = panelModeAvailable && wordDetailPanelMode && phraseSelection != null && phraseSelection.valid;
+
+  /* Space the docked side panel must leave below itself so its card clears whatever floating
+     bar occupies the bottom (taller than the standard ~48px reader bar), plus a 24px gap:
+     - Full audio mode: `effectiveMediaChromePx` already includes the bar's 24px float + safe area.
+     - Page mode with the mini player standing in as the bottom bar: its measured height is the
+       card only, so add its 24px float offset, the 24px gap, and the safe-area inset. */
+  const panelBottomClearance = isLessonMediaMode
+    ? `${effectiveMediaChromePx + 24}px`
+    : showMediaMiniAsBottomBar && mediaMiniBarHeightPx > 0
+      ? `calc(${mediaMiniBarHeightPx + 48}px + env(safe-area-inset-bottom, 0px))`
+      : undefined;
 
   return (
     <div
@@ -1372,7 +1390,7 @@ export const Reader: React.FC = () => {
             </div>
           )}
           {/* reader-layout: flex-column normally; flex-row in tablet panel mode. */}
-          <div className={`reader-layout${isTablet && wordDetailPanelMode ? ' reader-layout--split' : ''}`}>
+          <div className={`reader-layout${panelModeAvailable && wordDetailPanelMode ? ' reader-layout--split' : ''}`}>
             <div
               className={contentClassName}
               style={readerContentMediaStyle}
@@ -1459,8 +1477,19 @@ export const Reader: React.FC = () => {
 
             {/* Tablet side panel: docked beside the lesson text (no overlay), 24px gap.
                 Shows the selected phrase's detail when one is active, otherwise the word's. */}
-            {isTablet && wordDetailPanelMode && (showPhraseInPanel || (selectedWordId && selectedWordData)) && (
-              <div className="reader-panel-slot" style={{ width: panelWidth }}>
+            {panelModeAvailable && wordDetailPanelMode && (showPhraseInPanel || (selectedWordId && selectedWordData)) && (
+              <div
+                className="reader-panel-slot"
+                style={{
+                  width: panelWidth,
+                  // When a taller floating audio bar occupies the bottom, pull the whole docked
+                  // card (incl. its drop shadow) above it via margin, and drop the default bottom
+                  // padding so the clearance isn't double-counted.
+                  ...(panelBottomClearance
+                    ? { paddingBottom: 8, marginBottom: panelBottomClearance }
+                    : null),
+                }}
+              >
                 <div
                   className="reader-panel-resize"
                   role="separator"
@@ -1582,7 +1611,7 @@ export const Reader: React.FC = () => {
               Shown in page reading and sentence mode. Hidden when the widget is docked as a
               side panel (the panel slot above renders it instead). */}
           {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen &&
-           !(isTablet && wordDetailPanelMode) && (
+           !(panelModeAvailable && wordDetailPanelMode) && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
@@ -1594,8 +1623,8 @@ export const Reader: React.FC = () => {
               onClose={handleClosePopup}
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
               onLynx={() => setLynxChatOpen(true)}
-              isTablet={isTablet}
-              onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(true) : undefined}
+              isTablet={panelModeAvailable}
+              onTogglePanelMode={panelModeAvailable ? () => setWordDetailPanelMode(true) : undefined}
               initialExpanded={wordDetailSheetOpen}
             />
           )}
@@ -1630,8 +1659,8 @@ export const Reader: React.FC = () => {
                 onPhraseWordOpen={handlePhraseWordOpen}
                 onClose={handlePhrasePopupClose}
                 onLynx={() => setLynxChatOpen(true)}
-                isTablet={isTablet}
-                onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(true) : undefined}
+                isTablet={panelModeAvailable}
+                onTogglePanelMode={panelModeAvailable ? () => setWordDetailPanelMode(true) : undefined}
               />
             );
           })()}
@@ -1648,9 +1677,9 @@ export const Reader: React.FC = () => {
                 onWordStatusChange={status => handleStatusChange(wordId, status)}
                 onClose={handleClosePopup}
                 onLynx={() => setLynxChatOpen(true)}
-                isTablet={isTablet}
-                panelMode={isTablet && wordDetailPanelMode}
-                onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(prev => !prev) : undefined}
+                isTablet={panelModeAvailable}
+                panelMode={panelModeAvailable && wordDetailPanelMode}
+                onTogglePanelMode={panelModeAvailable ? () => setWordDetailPanelMode(prev => !prev) : undefined}
               />
             );
           })()}
@@ -1717,6 +1746,7 @@ export const Reader: React.FC = () => {
           )}
           {showMediaMiniAsBottomBar && (
             <MediaMiniPlayer
+              onHeightChange={setMediaMiniBarHeightPx}
               lessonTitle={lesson.title}
               lessonSource={lesson.source ?? ''}
               lessonImageSrc={lessonImage}
