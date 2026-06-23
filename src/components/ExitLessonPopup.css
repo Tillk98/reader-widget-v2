@@ -108,8 +108,8 @@
   appearance: none;
   -webkit-appearance: none;
   flex-shrink: 0;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border: 1px solid #d1d6d9;
   border-radius: 2px;
   background: #fff;
@@ -118,8 +118,8 @@
 }
 
 .exit-lesson-popup__checkbox:checked {
-  background: var(--surfaces-primary, #42a564);
-  border-color: var(--surfaces-primary, #42a564);
+  background: var(--typography-action-secondary, #2e75cd);
+  border-color: var(--typography-action-secondary, #2e75cd);
 }
 
 .exit-lesson-popup__checkbox:checked::after {
@@ -131,7 +131,7 @@
 
 .exit-lesson-popup__dont-show-label {
   font-weight: 400;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 16px;
   color: #49525b;
   white-space: nowrap;
