@@ -87,7 +87,7 @@
 .phrase-word,
 .phrase-word.blue-word,
 .phrase-word.yellow-word {
-  background-color: rgba(66, 165, 100, 0.25);
+  background-color: var(--phrase-fill, rgba(66, 165, 100, 0.25));
   color: rgb(0, 0, 0);
   border-radius: 0;
 }
@@ -110,23 +110,31 @@
 .sentence-item.phrase-word--focus,
 .sentence-item.phrase-word--focus:hover,
 .reader-space--phrase-focus {
-  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564;
+  box-shadow: inset 0 2px 0 0 var(--phrase-stroke, #42a564), inset 0 -2px 0 0 var(--phrase-stroke, #42a564);
   z-index: 2;
 }
 
 .sentence-item.phrase-word--focus.phrase-word--start,
 .sentence-item.phrase-word--focus.phrase-word--start:hover {
-  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564, inset 2px 0 0 0 #42a564;
+  box-shadow: inset 0 2px 0 0 var(--phrase-stroke, #42a564), inset 0 -2px 0 0 var(--phrase-stroke, #42a564), inset 2px 0 0 0 var(--phrase-stroke, #42a564);
 }
 
 .sentence-item.phrase-word--focus.phrase-word--end,
 .sentence-item.phrase-word--focus.phrase-word--end:hover {
-  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564, inset -2px 0 0 0 #42a564;
+  box-shadow: inset 0 2px 0 0 var(--phrase-stroke, #42a564), inset 0 -2px 0 0 var(--phrase-stroke, #42a564), inset -2px 0 0 0 var(--phrase-stroke, #42a564);
 }
 
 .sentence-item.phrase-word--focus.phrase-word--start.phrase-word--end,
 .sentence-item.phrase-word--focus.phrase-word--start.phrase-word--end:hover {
-  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564, inset 2px 0 0 0 #42a564, inset -2px 0 0 0 #42a564;
+  box-shadow: inset 0 2px 0 0 var(--phrase-stroke, #42a564), inset 0 -2px 0 0 var(--phrase-stroke, #42a564), inset 2px 0 0 0 var(--phrase-stroke, #42a564), inset -2px 0 0 0 var(--phrase-stroke, #42a564);
+}
+
+/* Invalid active selection (>9 words and/or spans sentences): swap the band + stroke to grey.
+   These words can't become a LingQ, so they revert to their prior colour when dismissed. */
+.phrase-word--invalid,
+.reader-space--phrase-invalid {
+  --phrase-fill: rgba(109, 118, 128, 0.2);
+  --phrase-stroke: #6d7680;
 }
 
 /* Phrase anchor: the word the upcoming phrase starts from, awaiting the end word.
@@ -173,7 +181,7 @@
 }
 
 .reader-space--phrase {
-  background-color: rgba(66, 165, 100, 0.25);
+  background-color: var(--phrase-fill, rgba(66, 165, 100, 0.25));
 }
 
 /* ── AI "new phrase": a continuous BLUE band over several words (a multi-word "new word"). ──

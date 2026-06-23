@@ -24,6 +24,8 @@ interface PageProps {
   phraseSelectedWords?: ReadonlySet<string>;
   /** The anchor word while picking a phrase — gets a distinct focus highlight. */
   phraseAnchorWordId?: string | null;
+  /** The active phrase can't form a LingQ (>9 words and/or cross-sentence) — render it grey, not green. */
+  phraseInvalid?: boolean;
   /** Word ids belonging to an AI "new phrase" — rendered as one continuous blue band. */
   newPhraseWords?: ReadonlySet<string>;
   /** Word ids of committed phrase LingQs — rendered as a persistent green band. */
@@ -80,6 +82,7 @@ export const Page: React.FC<PageProps> = ({
   wordToSentenceIndex,
   phraseSelectedWords,
   phraseAnchorWordId,
+  phraseInvalid = false,
   newPhraseWords,
   committedPhraseWords,
 }) => {
@@ -111,7 +114,9 @@ export const Page: React.FC<PageProps> = ({
          neighbours are the active phrase), else blue when inside a new phrase, else a plain space. */
       const spaceClass =
         selected && nextSelected
-          ? `reader-space reader-space--phrase${activePhrase && nextActivePhrase ? ' reader-space--phrase-focus' : ''}`
+          ? `reader-space reader-space--phrase${
+              activePhrase && nextActivePhrase ? ' reader-space--phrase-focus' : ''
+            }${activePhrase && nextActivePhrase && phraseInvalid ? ' reader-space--phrase-invalid' : ''}`
           : newPhrase && nextNewPhrase
           ? 'reader-space reader-space--new-phrase'
           : 'reader-space';
@@ -130,6 +135,7 @@ export const Page: React.FC<PageProps> = ({
             isIgnored={ignoredWords.has(word.id)}
             isPhraseSelected={selected}
             isPhraseFocused={activePhrase}
+            isPhraseInvalid={activePhrase && phraseInvalid}
             isPhraseStart={selected && !prevSelected}
             isPhraseEnd={selected && !nextSelected}
             isPhraseAnchor={phraseAnchorWordId === word.id}

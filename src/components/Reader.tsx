@@ -34,8 +34,8 @@ import './Reader.css';
 const DRAG_THRESHOLD_PX = 10;
 const SWIPE_THRESHOLD_RATIO = 0.15;
 
-/** Docked side-panel sizing (px). Default 340; min 300; max is half the page width at drag time. */
-const PANEL_DEFAULT_WIDTH = 340;
+/** Docked side-panel sizing (px). Default 360; min 300; max is half the page width at drag time. */
+const PANEL_DEFAULT_WIDTH = 360;
 const PANEL_MIN_WIDTH = 300;
 
 interface PhraseSelection {
@@ -241,6 +241,17 @@ export const Reader: React.FC = () => {
     allWords.forEach(w => m.set(w.id, w));
     return m;
   }, [allWords]);
+
+  /** Live validity of the active phrase highlight (same rule as commit): a selection of >9 real
+   *  words or one spanning sentences can't form a LingQ. Drives the grey highlight in real time
+   *  while dragging and after the popup appears. */
+  const phraseHighlightInvalid = React.useMemo(() => {
+    if (phraseHighlightIds.size <= 1) return false;
+    const ids = [...phraseHighlightIds];
+    const words = ids.map(id => wordById.get(id)).filter((w): w is Word => Boolean(w));
+    const sentenceIds = new Set(ids.map(id => wordToSentenceIndex.get(id)));
+    return sentenceIds.size > 1 || countWords(words) > MAX_PHRASE_WORDS;
+  }, [phraseHighlightIds, wordById, wordToSentenceIndex]);
 
   /** Words currently on screen, in document order — the current sentence in sentence mode,
    *  otherwise the visible page. Drives the word-index maps used for phrase selection. */
@@ -567,9 +578,11 @@ export const Reader: React.FC = () => {
       const wordItems: PhraseWordItem[] = words
         .filter(w => !isPunctuation(w.text))
         .map(w => ({ id: w.id, text: w.text, translation: w.translation ?? w.text }));
-      /* Selecting a phrase promotes any untracked (blue) words to a level-1 LingQ —
-         they're being actively selected, so they're no longer "new/unseen". */
-      if (opts?.promote ?? true) {
+      /* Selecting a VALID phrase promotes any untracked (blue) words to a level-1 LingQ —
+         they're being actively selected, so they're no longer "new/unseen". An invalid
+         selection (>9 words / cross-sentence) creates nothing, so its words must stay
+         untracked and revert to their prior colour when the popup is dismissed. */
+      if ((opts?.promote ?? true) && valid) {
         setWordStatusMap(prev => {
           let changed = false;
           const next = { ...prev };
@@ -713,7 +726,8 @@ export const Reader: React.FC = () => {
         if (idx === anchor.index) return; // still on the anchor word — don't hijack the menu yet
         dragSelectActiveRef.current = true;
         setLongPressWordId(null); // a real drag began → close the long-press menu
-        setSelectedWordId(null);
+        // Keep the docked side panel open while selecting a phrase (like tapping word-to-word).
+        if (!panelModeRef.current) setSelectedWordId(null);
         setPhraseSelection(null);
         setPhraseDetailOpen(false);
         setPhrasePick(null);
@@ -792,7 +806,7 @@ export const Reader: React.FC = () => {
         const startIdx = currentPageWordIndex.get(np.wordIds[0]);
         const endIdx = currentPageWordIndex.get(np.wordIds[np.wordIds.length - 1]);
         if (startIdx !== undefined && endIdx !== undefined) {
-          setSelectedWordId(null);
+          if (!panelModeRef.current) setSelectedWordId(null);
           setSnackbar(null);
           commitPhraseRange(startIdx, endIdx, { meaning: np.translation, promote: false });
           return;
@@ -804,7 +818,7 @@ export const Reader: React.FC = () => {
         const startIdx = currentPageWordIndex.get(committedIds[0]);
         const endIdx = currentPageWordIndex.get(committedIds[committedIds.length - 1]);
         if (startIdx !== undefined && endIdx !== undefined) {
-          setSelectedWordId(null);
+          if (!panelModeRef.current) setSelectedWordId(null);
           setSnackbar(null);
           commitPhraseRange(startIdx, endIdx, { promote: false });
           return;
@@ -1298,6 +1312,10 @@ export const Reader: React.FC = () => {
     if (el) el.scrollTop = 0;
   }, [mediaMode]);
 
+  /* A valid phrase selected while the side panel is docked shows its detail IN the panel
+     (instead of the floating popup) — mirroring how a tapped word fills the panel. */
+  const showPhraseInPanel = isTablet && wordDetailPanelMode && phraseSelection != null && phraseSelection.valid;
+
   return (
     <div
       className={[
@@ -1397,6 +1415,7 @@ export const Reader: React.FC = () => {
                       wordToSentenceIndex={wordToSentenceIndex}
                       phraseSelectedWords={phraseHighlightIds}
                       phraseAnchorWordId={phrasePick?.anchorId ?? null}
+                      phraseInvalid={phraseHighlightInvalid}
                       newPhraseWords={newPhraseBandWords}
                       committedPhraseWords={committedPhraseBandWords}
                     />
@@ -1427,6 +1446,7 @@ export const Reader: React.FC = () => {
                           wordToSentenceIndex={wordToSentenceIndex}
                           phraseSelectedWords={phraseHighlightIds}
                           phraseAnchorWordId={phrasePick?.anchorId ?? null}
+                          phraseInvalid={phraseHighlightInvalid}
                           newPhraseWords={newPhraseBandWords}
                           committedPhraseWords={committedPhraseBandWords}
                         />
@@ -1437,30 +1457,44 @@ export const Reader: React.FC = () => {
               </div>
             </div>
 
-            {/* Tablet side panel: docked beside the lesson text (no overlay), 24px gap. */}
-            {isTablet && wordDetailPanelMode && selectedWordId && selectedWordData && (() => {
-              const wordId = selectedWordId;
-              const word = selectedWordData.word;
-              return (
-                <div className="reader-panel-slot" style={{ width: panelWidth }}>
-                  <div
-                    className="reader-panel-resize"
-                    role="separator"
-                    aria-orientation="vertical"
-                    aria-label="Drag to resize panel"
-                    onPointerDown={handlePanelResizeDown}
-                    onPointerMove={handlePanelResizeMove}
-                    onPointerUp={handlePanelResizeUp}
-                    onPointerCancel={handlePanelResizeUp}
-                  >
-                    <GripVertical size={14} aria-hidden />
-                  </div>
+            {/* Tablet side panel: docked beside the lesson text (no overlay), 24px gap.
+                Shows the selected phrase's detail when one is active, otherwise the word's. */}
+            {isTablet && wordDetailPanelMode && (showPhraseInPanel || (selectedWordId && selectedWordData)) && (
+              <div className="reader-panel-slot" style={{ width: panelWidth }}>
+                <div
+                  className="reader-panel-resize"
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Drag to resize panel"
+                  onPointerDown={handlePanelResizeDown}
+                  onPointerMove={handlePanelResizeMove}
+                  onPointerUp={handlePanelResizeUp}
+                  onPointerCancel={handlePanelResizeUp}
+                >
+                  <GripVertical size={14} aria-hidden />
+                </div>
+                {showPhraseInPanel && phraseSelection ? (
                   <WordDetailBottomSheet
-                    key={wordId}
-                    wordText={word.text}
-                    wordTranslation={word.translation}
-                    wordStatus={wordStatusMap[wordId] ?? 'New'}
-                    onWordStatusChange={status => handleStatusChange(wordId, status)}
+                    key={phraseSelection.ids.join('-')}
+                    wordText={phraseSelection.phraseText}
+                    wordTranslation={phraseSelection.meaning}
+                    wordStatus={phraseStatusMap[phraseSelection.ids.join('-')] ?? 'New'}
+                    onWordStatusChange={handlePhraseStatusChange}
+                    phraseWords={phraseSelection.words}
+                    onPhraseWordOpen={handlePhraseWordOpen}
+                    onClose={handlePhrasePopupClose}
+                    onLynx={() => setLynxChatOpen(true)}
+                    isTablet={isTablet}
+                    panelMode
+                    onTogglePanelMode={() => setWordDetailPanelMode(false)}
+                  />
+                ) : selectedWordId && selectedWordData ? (
+                  <WordDetailBottomSheet
+                    key={selectedWordId}
+                    wordText={selectedWordData.word.text}
+                    wordTranslation={selectedWordData.word.translation}
+                    wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
+                    onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
                     onClose={handleClosePopup}
                     onLynx={() => setLynxChatOpen(true)}
                     isTablet={isTablet}
@@ -1471,9 +1505,9 @@ export const Reader: React.FC = () => {
                       setWordDetailPanelMode(false);
                     }}
                   />
-                </div>
-              );
-            })()}
+                ) : null}
+              </div>
+            )}
           </div>
           {isLessonMediaMode && mediaBarExpanded && (
             <div className="reader-lesson-fade-bottom" aria-hidden />
@@ -1565,7 +1599,7 @@ export const Reader: React.FC = () => {
               initialExpanded={wordDetailSheetOpen}
             />
           )}
-          {phraseSelection && !phraseDetailOpen && (
+          {phraseSelection && !phraseDetailOpen && !showPhraseInPanel && (
             <PhrasePopUp
               key={phraseSelection.ids.join('-')}
               phraseText={phraseSelection.phraseText}
@@ -1583,7 +1617,7 @@ export const Reader: React.FC = () => {
               onStatusChange={handlePhraseStatusChange}
             />
           )}
-          {phraseDetailOpen && phraseSelection && (() => {
+          {phraseDetailOpen && phraseSelection && !showPhraseInPanel && (() => {
             const phraseKey = phraseSelection.ids.join('-');
             return (
               <WordDetailBottomSheet

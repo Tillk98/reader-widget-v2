@@ -14,7 +14,7 @@
 .exit-lesson-popup {
   position: relative;
   width: 100%;
-  max-width: 368px;
+  max-width: 320px;
   box-sizing: border-box;
   font-family: 'DM Sans', sans-serif;
   display: flex;
@@ -29,56 +29,21 @@
   overflow: clip;
 }
 
-/* Title + subtitle group */
-.exit-lesson-popup__content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-/* Header row: title + inline close button */
+/* Header: title + subtitle (Figma Header 4277:15013, 8px gap) */
 .exit-lesson-popup__header {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
 }
 
 .exit-lesson-popup__title {
-  flex: 1 0 0;
-  min-width: 0;
   margin: 0;
   font-weight: 500;
   font-size: 20px;
   line-height: 24px;
   color: #0a0a0a;
-}
-
-.exit-lesson-popup__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  padding: 10px;
-  box-sizing: border-box;
-  border: none;
-  border-radius: 999px;
-  background: #fff;
-  color: #1c1c1e;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.exit-lesson-popup__close:hover {
-  background: #f8f9fa;
-}
-
-.exit-lesson-popup__close:active {
-  transform: scale(0.94);
 }
 
 .exit-lesson-popup__subtitle {
@@ -94,7 +59,8 @@
   display: flex;
   gap: 12px;
   width: 100%;
-  margin: 0;
+  max-width: 300px;
+  margin: 0 auto;
 }
 
 .exit-lesson-popup__btn {
@@ -123,9 +89,10 @@
   color: #0a0a0a;
 }
 
-.exit-lesson-popup__btn--primary {
-  background: var(--surfaces-primary, #42a564);
-  color: #fff;
+/* Destructive action (Figma 3925:6529): subtle red surface + red label. */
+.exit-lesson-popup__btn--danger {
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+  color: var(--foreground-destructive, #dd2525);
 }
 
 /* "Don't show this again" row — right-aligned, label then checkbox */
@@ -143,7 +110,7 @@
   flex-shrink: 0;
   width: 14px;
   height: 14px;
-  border: 1px solid #f1f3f4;
+  border: 1px solid #d1d6d9;
   border-radius: 2px;
   background: #fff;
   cursor: pointer;

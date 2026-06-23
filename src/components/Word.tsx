@@ -26,6 +26,8 @@ interface WordProps {
   isPhraseSelected?: boolean;
   /** Part of the actively-selected phrase (the one driving the popup) — gets the green focus stroke. */
   isPhraseFocused?: boolean;
+  /** The active phrase can't become a LingQ (>9 words and/or spans sentences) — highlight grey, not green. */
+  isPhraseInvalid?: boolean;
   /** First word of the phrase run (rounds the left edge of the highlight). */
   isPhraseStart?: boolean;
   /** Last word of the phrase run (rounds the right edge of the highlight). */
@@ -54,6 +56,7 @@ export const Word: React.FC<WordProps> = ({
   isIgnored,
   isPhraseSelected = false,
   isPhraseFocused = false,
+  isPhraseInvalid = false,
   isPhraseStart = false,
   isPhraseEnd = false,
   isPhraseAnchor = false,
@@ -160,6 +163,8 @@ export const Word: React.FC<WordProps> = ({
       isPhraseSelected && isPhraseEnd && 'phrase-word--end',
       /* Focus stroke on the actively-selected phrase run (analogous to the selected-word ring). */
       isPhraseSelected && isPhraseFocused && 'phrase-word--focus',
+      /* Invalid selection → grey band/stroke (won't become a LingQ). */
+      isPhraseSelected && isPhraseInvalid && 'phrase-word--invalid',
       isPhraseAnchor && 'phrase-word--anchor',
       /* Focus ring on the actively-selected word (with or without the popup). */
       isSelected && 'word--focused',

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
 import './ExitLessonPopup.css';
 
 export interface ExitLessonPopupProps {
@@ -30,19 +29,8 @@ export const ExitLessonPopup: React.FC<ExitLessonPopupProps> = ({ open, onClose,
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="exit-lesson-popup" role="dialog" aria-modal="true" aria-label="Exit lesson">
-        <div className="exit-lesson-popup__content">
-          <div className="exit-lesson-popup__header">
-            <p className="exit-lesson-popup__title">Are you sure you want to exit this lesson?</p>
-            <button
-              type="button"
-              className="exit-lesson-popup__close"
-              aria-label="Close"
-              onClick={onClose}
-            >
-              <X size={20} strokeWidth={1.5} />
-            </button>
-          </div>
-
+        <div className="exit-lesson-popup__header">
+          <p className="exit-lesson-popup__title">Exit this lesson?</p>
           <p className="exit-lesson-popup__subtitle">You will be taken back to the library.</p>
         </div>
 
@@ -56,7 +44,7 @@ export const ExitLessonPopup: React.FC<ExitLessonPopupProps> = ({ open, onClose,
           </button>
           <button
             type="button"
-            className="exit-lesson-popup__btn exit-lesson-popup__btn--primary"
+            className="exit-lesson-popup__btn exit-lesson-popup__btn--danger"
             onClick={onExit}
           >
             Exit Lesson

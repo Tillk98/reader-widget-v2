@@ -211,7 +211,7 @@
 .reader-panel-slot {
   position: relative;
   flex-shrink: 0;
-  width: 340px; /* default; overridden by the drag-resize inline width */
+  width: 360px; /* default; overridden by the drag-resize inline width */
   min-width: 300px;
   display: flex;
   flex-direction: column;
