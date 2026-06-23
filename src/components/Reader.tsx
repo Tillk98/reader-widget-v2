@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { Library } from 'lucide-react';
+import { Library, GripVertical } from 'lucide-react';
 import { lesson, reviewTerms, buildReviewTerms } from '../data/lesson';
 import type { Word, NewPhrase } from '../data/lesson';
 import { Page as PageComponent } from './Page';
@@ -33,6 +33,10 @@ import './Reader.css';
 
 const DRAG_THRESHOLD_PX = 10;
 const SWIPE_THRESHOLD_RATIO = 0.15;
+
+/** Docked side-panel sizing (px). Default 340; min 300; max is half the page width at drag time. */
+const PANEL_DEFAULT_WIDTH = 340;
+const PANEL_MIN_WIDTH = 300;
 
 interface PhraseSelection {
   ids: string[];
@@ -904,19 +908,55 @@ export const Reader: React.FC = () => {
   const [wordDetailSheetOpen, setWordDetailSheetOpen] = useState(false);
   /** Word detail sheet opened directly from a vocabulary list item (Review / Sentence mode). */
   const [listDetailOpen, setListDetailOpen] = useState(false);
-  /** True when viewport is ≥768px (tablet / desktop surface). */
+  /** True when the viewport is ≥768px — surfaces the side-panel toggle in the widget header. */
   const [isTablet, setIsTablet] = useState(() => window.innerWidth >= 768);
-  /** True when the word detail is displayed as a floating side panel (tablet+ only). */
+  /** True when the word-detail widget is docked as a side panel beside the text (tablet only). */
   const [wordDetailPanelMode, setWordDetailPanelMode] = useState(false);
+  /** Docked side-panel width (px), drag-adjustable between 300 and half the page width. */
+  const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_WIDTH);
+  /** Drag origin while resizing the panel: pointer x + panel width at grab time. */
+  const panelResizeStart = useRef<{ x: number; width: number } | null>(null);
+  /** Mirror of wordDetailPanelMode for the resize listener (which closes over stale state). */
+  const panelModeRef = useRef(false);
+  useEffect(() => {
+    panelModeRef.current = wordDetailPanelMode;
+  }, [wordDetailPanelMode]);
 
   useEffect(() => {
     const handleResize = () => {
       const tablet = window.innerWidth >= 768;
       setIsTablet(tablet);
-      if (!tablet) setWordDetailPanelMode(false);
+      if (!tablet) {
+        // Below the breakpoint there is no panel: fall back to the page-state sheet (not closed).
+        if (panelModeRef.current) setWordDetailSheetOpen(true);
+        setWordDetailPanelMode(false);
+      }
+      // Keep the panel within half the (possibly shrunk) page width.
+      setPanelWidth(w => Math.min(w, Math.max(PANEL_MIN_WIDTH, Math.floor(window.innerWidth / 2))));
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  /** Grab the left-edge handle: dragging left widens the panel, right narrows it. */
+  const handlePanelResizeDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    panelResizeStart.current = { x: e.clientX, width: panelWidth };
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  }, [panelWidth]);
+
+  const handlePanelResizeMove = useCallback((e: React.PointerEvent) => {
+    const start = panelResizeStart.current;
+    if (!start) return;
+    const maxWidth = Math.max(PANEL_MIN_WIDTH, Math.floor(window.innerWidth / 2));
+    const next = start.width + (start.x - e.clientX); // drag left (x decreases) → wider
+    setPanelWidth(Math.min(maxWidth, Math.max(PANEL_MIN_WIDTH, next)));
+  }, []);
+
+  const handlePanelResizeUp = useCallback((e: React.PointerEvent) => {
+    panelResizeStart.current = null;
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
   }, []);
 
   useEffect(() => {
@@ -1345,6 +1385,7 @@ export const Reader: React.FC = () => {
                     <PageComponent
                       words={allWords}
                       clickedWords={clickedWords}
+                      selectedWordId={selectedWordId}
                       lingqWords={lingqWords}
                       onWordClick={handleWordClick}
                       onWordLongPress={handleWordLongPress}
@@ -1374,6 +1415,7 @@ export const Reader: React.FC = () => {
                         <PageComponent
                           words={page.words}
                           clickedWords={clickedWords}
+                          selectedWordId={selectedWordId}
                           lingqWords={lingqWords}
                           onWordClick={handleWordClick}
                           onWordLongPress={handleWordLongPress}
@@ -1395,12 +1437,24 @@ export const Reader: React.FC = () => {
               </div>
             </div>
 
-            {/* Tablet side panel: inline flex sibling of the lesson text (no overlay). */}
+            {/* Tablet side panel: docked beside the lesson text (no overlay), 24px gap. */}
             {isTablet && wordDetailPanelMode && selectedWordId && selectedWordData && (() => {
               const wordId = selectedWordId;
               const word = selectedWordData.word;
               return (
-                <div className="reader-panel-slot">
+                <div className="reader-panel-slot" style={{ width: panelWidth }}>
+                  <div
+                    className="reader-panel-resize"
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="Drag to resize panel"
+                    onPointerDown={handlePanelResizeDown}
+                    onPointerMove={handlePanelResizeMove}
+                    onPointerUp={handlePanelResizeUp}
+                    onPointerCancel={handlePanelResizeUp}
+                  >
+                    <GripVertical size={14} aria-hidden />
+                  </div>
                   <WordDetailBottomSheet
                     key={wordId}
                     wordText={word.text}
@@ -1410,8 +1464,12 @@ export const Reader: React.FC = () => {
                     onClose={handleClosePopup}
                     onLynx={() => setLynxChatOpen(true)}
                     isTablet={isTablet}
-                    panelMode={true}
-                    onTogglePanelMode={() => setWordDetailPanelMode(false)}
+                    panelMode
+                    onTogglePanelMode={() => {
+                      // Undock → return to the page-state sheet (not closed).
+                      setWordDetailSheetOpen(true);
+                      setWordDetailPanelMode(false);
+                    }}
                   />
                 </div>
               );
@@ -1486,8 +1544,9 @@ export const Reader: React.FC = () => {
               window.setTimeout(() => setReviewFilterOpen(false), 320);
             }}
           />
-          {/* Compact popup → floating card (tablet) or bottom sheet (mobile).
-              Shown in page reading and sentence mode (anchored to the tapped word). */}
+          {/* Compact popup → bottom sheet (anchored to the tapped word).
+              Shown in page reading and sentence mode. Hidden when the widget is docked as a
+              side panel (the panel slot above renders it instead). */}
           {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen &&
            !(isTablet && wordDetailPanelMode) && (
             <ReaderPopUp
@@ -1502,8 +1561,8 @@ export const Reader: React.FC = () => {
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
               onLynx={() => setLynxChatOpen(true)}
               isTablet={isTablet}
-              panelMode={false}
               onTogglePanelMode={isTablet ? () => setWordDetailPanelMode(true) : undefined}
+              initialExpanded={wordDetailSheetOpen}
             />
           )}
           {phraseSelection && !phraseDetailOpen && (

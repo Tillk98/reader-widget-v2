@@ -19,12 +19,13 @@ interface ReaderPopUpProps {
   onWordDetailSheetOpen?: () => void;
   /** Footer Lynx button (in the expanded detail sheet) — opens the Lynx chat. */
   onLynx?: () => void;
-  /** True when the viewport is ≥768px (tablet/desktop surface). */
+  /** True when the viewport is ≥768px — surfaces the side-panel toggle in the expanded sheet. */
   isTablet?: boolean;
-  /** True when the word detail is shown as a floating side panel instead of a bottom sheet. */
-  panelMode?: boolean;
-  /** Toggle between panel and bottom-sheet presentation. */
+  /** Dock the expanded sheet as a side panel (tablet only). */
   onTogglePanelMode?: () => void;
+  /** Mount straight into the expanded sheet (page state) instead of the compact bubble —
+   *  e.g. when returning from the docked side panel. */
+  initialExpanded?: boolean;
 }
 
 export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
@@ -39,23 +40,15 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   onWordDetailSheetOpen,
   onLynx,
   isTablet,
-  panelMode,
   onTogglePanelMode,
+  initialExpanded,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
-  // If panel mode is already active (e.g. user tapped a new word while the panel was open),
-  // skip the compact popup and go straight to the full sheet so the panel stays persistent.
-  const [showBottomSheet, setShowBottomSheet] = useState(() => panelMode === true);
+  const [showBottomSheet, setShowBottomSheet] = useState(() => initialExpanded === true);
   /** Local override after editing meaning in the expanded sheet */
   const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
   /** Whether the floating status-picker bar is open */
   const [showStatusBar, setShowStatusBar] = useState(false);
-
-  // Notify Reader that the sheet is open when we auto-expand in panel mode.
-  useEffect(() => {
-    if (panelMode) onWordDetailSheetOpen?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     setMeaningOverride(undefined);
@@ -178,8 +171,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   };
 
   if (showBottomSheet) {
-    // On tablet (no panel mode yet): show as a floating positioned card instead of a bottom sheet.
-    const useFloating = isTablet === true && !panelMode;
     return (
       <WordDetailBottomSheet
         wordText={wordText}
@@ -190,9 +181,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
         onClose={onClose}
         onLynx={onLynx}
         isTablet={isTablet}
-        panelMode={panelMode}
-        floatingMode={useFloating}
-        resolveAnchorElement={useFloating ? resolveAnchorElement : undefined}
         onTogglePanelMode={onTogglePanelMode}
       />
     );

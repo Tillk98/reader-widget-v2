@@ -11,6 +11,8 @@ interface WordProps {
   domId?: string;
   isClicked: boolean;
   isLingQ: boolean;
+  /** The currently-selected word — gets a solid green focus ring (with or without the popup). */
+  isSelected?: boolean;
   onClick: (wordId: string) => void;
   /** Called when the user holds the word for LONG_PRESS_MS without releasing. Does NOT trigger onClick. */
   onLongPress?: (wordId: string) => void;
@@ -22,6 +24,8 @@ interface WordProps {
   isIgnored: boolean;
   /** Part of an in-progress / active phrase selection. */
   isPhraseSelected?: boolean;
+  /** Part of the actively-selected phrase (the one driving the popup) — gets the green focus stroke. */
+  isPhraseFocused?: boolean;
   /** First word of the phrase run (rounds the left edge of the highlight). */
   isPhraseStart?: boolean;
   /** Last word of the phrase run (rounds the right edge of the highlight). */
@@ -41,6 +45,7 @@ export const Word: React.FC<WordProps> = ({
   domId,
   isClicked,
   isLingQ,
+  isSelected = false,
   onClick,
   onLongPress,
   onLongPressDragMove,
@@ -48,6 +53,7 @@ export const Word: React.FC<WordProps> = ({
   isKnown,
   isIgnored,
   isPhraseSelected = false,
+  isPhraseFocused = false,
   isPhraseStart = false,
   isPhraseEnd = false,
   isPhraseAnchor = false,
@@ -143,7 +149,6 @@ export const Word: React.FC<WordProps> = ({
 
   const getClassName = () => {
     const base = isKnown || isIgnored ? 'sentence-item' : `sentence-item ${isClicked || isLingQ ? 'yellow-word' : 'blue-word'}`;
-    if (!isPhraseSelected && !isPhraseAnchor && !isNewPhrase) return base;
     return [
       base,
       /* New-phrase band (blue) — superseded by the green selection band when active. */
@@ -153,7 +158,11 @@ export const Word: React.FC<WordProps> = ({
       isPhraseSelected && 'phrase-word',
       isPhraseSelected && isPhraseStart && 'phrase-word--start',
       isPhraseSelected && isPhraseEnd && 'phrase-word--end',
+      /* Focus stroke on the actively-selected phrase run (analogous to the selected-word ring). */
+      isPhraseSelected && isPhraseFocused && 'phrase-word--focus',
       isPhraseAnchor && 'phrase-word--anchor',
+      /* Focus ring on the actively-selected word (with or without the popup). */
+      isSelected && 'word--focused',
     ]
       .filter(Boolean)
       .join(' ');

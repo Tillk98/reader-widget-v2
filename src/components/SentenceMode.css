@@ -87,9 +87,11 @@
   box-shadow: 0 0 0 1px #42a564;
 }
 
-.sentence-mode__word--active {
-  background: #e7f1ff;
-  box-shadow: 0 0 0 2px #e7f1ff;
+/* Selected word: solid green focus ring (#42A564), matching page mode. Keeps the word's
+   underlying status colour; the :hover pair ensures the ring wins over the hover outline. */
+.sentence-mode__word--active,
+.sentence-mode__word--active:hover {
+  box-shadow: 0 0 0 2px #42a564;
 }
 
 .sentence-mode__punct {

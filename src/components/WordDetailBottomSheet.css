@@ -37,6 +37,36 @@
   transform: translateY(0);
 }
 
+/* ── Docked side-panel mode (tablet ≥768px, Figma 4611:17205) ─────────────────
+   Rendered inline inside .reader-panel-slot rather than as a full-screen overlay:
+   no backdrop dim, no slide transform — the widget fills the slot column. */
+.word-detail-sheet-root.is-panel-mode,
+.word-detail-sheet-root.is-panel-mode.is-open {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+  z-index: 1;
+}
+
+.word-detail-sheet-root.is-panel-mode .word-detail-sheet-panel {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px -2px rgba(0, 0, 0, 0.15);
+  transform: none;
+  transition: none;
+}
+
+/* Docked header chrome sits inline — drop the bottom sheet's safe-area top inset. */
+.word-detail-sheet-root.is-panel-mode .word-detail-sheet-handle {
+  padding: 12px 24px;
+}
+
 .word-detail-sheet-handle {
   width: 100%;
   min-width: 80px;
@@ -140,11 +170,25 @@
 }
 
 /* Close button — absolute top-right of the drag chrome (Figma ReaderButton 4446:87313) */
-.word-detail-sheet-close {
+/* Top-right header button set: X close + (tablet) side-panel toggle, 12px apart. */
+.word-detail-sheet-button-set {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Side-panel toggle — circular button reusing the volume-button look; turns blue when docked. */
+.word-detail-sheet-panel-toggle.is-active {
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  color: var(--foreground-secondary, #2e75cd);
+}
+
+.word-detail-sheet-panel-toggle.is-active:hover {
+  background: #e4eefc;
 }
 
 .word-detail-sheet-original-row-left {
@@ -1032,88 +1076,6 @@ button.note-field__box {
   flex-shrink: 0;
 }
 
-/* Panel layout toggle button (Figma 3985:58507 — panel-right icon).
-   Visible only on tablet+ (≥768px); hidden below via media query. */
-.word-detail-sheet-panel-btn {
-  display: none; /* hidden by default; shown on tablet+ */
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  border-radius: var(--ui-ctrl-radius-pill);
-  background: #ffffff;
-  box-shadow: 0px 1.333px 5.333px -1.333px rgba(0, 0, 0, 0.15);
-  color: var(--typography-default, #000000);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: var(--ui-ctrl-transition);
-}
-
-@media (min-width: 768px) {
-  .word-detail-sheet-panel-btn {
-    display: flex;
-  }
-}
-
-.word-detail-sheet-panel-btn:hover {
-  box-shadow: var(--ui-ctrl-shadow-hover);
-}
-
-.word-detail-sheet-panel-btn:active {
-  transform: var(--ui-ctrl-press);
-}
-
-.word-detail-sheet-panel-btn:focus-visible {
-  outline: var(--ui-focus-ring);
-  outline-offset: 2px;
-}
-
-/* Panel mode header (Figma 3985:59330) — compact header replacing drag+quote when in side panel.
-   Reset the center alignment so the panel header + tabs fill the narrow (≤400px) panel. */
-.word-detail-sheet-header-block--panel {
-  align-items: stretch;
-  gap: 0;
-}
-
-.word-detail-sheet-panel-header {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  background: var(--backgrounds-page, #ffffff);
-}
-
-.word-detail-sheet-panel-header-left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-
-/* In the panel header, the meaning row gets min-height to match Figma spec */
-.word-detail-sheet-panel-header-left .word-detail-sheet-meaning-row {
-  min-height: 40px;
-}
-
-/* Action buttons in the panel header — always visible (panel mode is tablet-only) */
-.word-detail-sheet-panel-btn-group {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.word-detail-sheet-panel-btn-group .word-detail-sheet-panel-btn {
-  display: flex; /* always show; media query hidden class is overridden here */
-}
-
-
 /* Footer — status bar + Lynx button (Figma 4011:11766) */
 .word-detail-sheet-footer {
   flex-shrink: 0;
@@ -1179,33 +1141,3 @@ button.note-field__box {
   object-fit: contain;
 }
 
-/* ─── Floating mode (Figma 3989:45163) ─────────────────────────────────────
-   On tablet+, the word detail shows as a positioned card near the tapped word
-   instead of a bottom sheet. The panel's left / top / bottom / width / maxHeight
-   are applied via inline style by the position-calculation useLayoutEffect.
-   ──────────────────────────────────────────────────────────────────────────── */
-.word-detail-sheet-root.is-floating-mode {
-  /* Zero-size fixed anchor so the child panel can use position:fixed freely. */
-  position: fixed;
-  inset: auto;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  overflow: visible;
-  background: transparent !important;
-  pointer-events: none;
-  z-index: 1001;
-}
-
-.word-detail-sheet-root.is-floating-mode .word-detail-sheet-panel {
-  /* position + coords injected via inline style by useLayoutEffect */
-  position: fixed;
-  inset: auto;
-  pointer-events: auto;
-  border-radius: var(--radius-md, 12px);
-  box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.25);
-  transform: none !important;
-  transition: none !important;
-  overflow: hidden;
-}

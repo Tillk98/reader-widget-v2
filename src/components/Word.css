@@ -71,6 +71,16 @@
   box-shadow: 0 0 0 1px #42a564;
 }
 
+/* Universal focus state for the actively-selected word: a solid green ring (#42A564),
+   shown with or without the meaning popup. Defined after the hover rules and raised above
+   neighbours so the ring stays visible even when hovered or beside other highlighted words. */
+.sentence-item.word--focused,
+.sentence-item.word--focused:hover {
+  box-shadow: 0 0 0 2px #42a564;
+  border-radius: 4px;
+  z-index: 2;
+}
+
 /* Active phrase selection: continuous green band (matches a clicked word's highlight).
    Interior edges are square so the run reads as one fluid highlight; only the run's
    outer ends are rounded. The connecting spaces (.reader-space--phrase) fill the gaps. */
@@ -90,6 +100,33 @@
 .phrase-word.phrase-word--end {
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
+}
+
+/* Active phrase focus stroke (#42A564) — the phrase analogue of the selected-word ring.
+   Inset directional shadows: every segment (words + connecting spaces) draws top/bottom
+   lines that join into one continuous outline with no interior verticals and no layout
+   shift; the run's start/end carry the rounded side strokes. :hover pairs keep the stroke
+   from being replaced by the blue/yellow hover outline. */
+.sentence-item.phrase-word--focus,
+.sentence-item.phrase-word--focus:hover,
+.reader-space--phrase-focus {
+  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564;
+  z-index: 2;
+}
+
+.sentence-item.phrase-word--focus.phrase-word--start,
+.sentence-item.phrase-word--focus.phrase-word--start:hover {
+  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564, inset 2px 0 0 0 #42a564;
+}
+
+.sentence-item.phrase-word--focus.phrase-word--end,
+.sentence-item.phrase-word--focus.phrase-word--end:hover {
+  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564, inset -2px 0 0 0 #42a564;
+}
+
+.sentence-item.phrase-word--focus.phrase-word--start.phrase-word--end,
+.sentence-item.phrase-word--focus.phrase-word--start.phrase-word--end:hover {
+  box-shadow: inset 0 2px 0 0 #42a564, inset 0 -2px 0 0 #42a564, inset 2px 0 0 0 #42a564, inset -2px 0 0 0 #42a564;
 }
 
 /* Phrase anchor: the word the upcoming phrase starts from, awaiting the end word.

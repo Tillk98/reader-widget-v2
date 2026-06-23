@@ -7,6 +7,8 @@ interface PageProps {
   words: WordType[];
   clickedWords: Set<string>;
   lingqWords: Set<string>;
+  /** The currently-selected word — gets the solid green focus ring. */
+  selectedWordId?: string | null;
   onWordClick: (wordId: string) => void;
   onWordLongPress?: (wordId: string) => void;
   /** Drag after the long-press menu appears → live phrase drag-select. */
@@ -67,6 +69,7 @@ export const Page: React.FC<PageProps> = ({
   words,
   clickedWords,
   lingqWords,
+  selectedWordId,
   onWordClick,
   onWordLongPress,
   onWordLongPressDragMove,
@@ -97,14 +100,18 @@ export const Page: React.FC<PageProps> = ({
       const selected = isPhrase(word);
       const prevSelected = index > 0 && isPhrase(run[index - 1]);
       const nextSelected = index < run.length - 1 && isPhrase(run[index + 1]);
+      /* The actively-selected phrase (drives the popup) — gets the green focus stroke. */
+      const activePhrase = phraseSelectedWords?.has(word.id) ?? false;
+      const nextActivePhrase =
+        index < run.length - 1 && (phraseSelectedWords?.has(run[index + 1].id) ?? false);
       const newPhrase = isNewPhrase(word);
       const prevNewPhrase = index > 0 && isNewPhrase(run[index - 1]);
       const nextNewPhrase = index < run.length - 1 && isNewPhrase(run[index + 1]);
-      /* Inter-word space: green when inside an active selection, else blue when inside a new
-         phrase, else a plain space. */
+      /* Inter-word space: green when inside an active selection (with the focus stroke when both
+         neighbours are the active phrase), else blue when inside a new phrase, else a plain space. */
       const spaceClass =
         selected && nextSelected
-          ? 'reader-space reader-space--phrase'
+          ? `reader-space reader-space--phrase${activePhrase && nextActivePhrase ? ' reader-space--phrase-focus' : ''}`
           : newPhrase && nextNewPhrase
           ? 'reader-space reader-space--new-phrase'
           : 'reader-space';
@@ -114,6 +121,7 @@ export const Page: React.FC<PageProps> = ({
             word={word}
             isClicked={clickedWords.has(word.id)}
             isLingQ={lingqWords.has(word.id)}
+            isSelected={selectedWordId === word.id}
             onClick={onWordClick}
             onLongPress={onWordLongPress}
             onLongPressDragMove={onWordLongPressDragMove}
@@ -121,6 +129,7 @@ export const Page: React.FC<PageProps> = ({
             isKnown={knownWords.has(word.id)}
             isIgnored={ignoredWords.has(word.id)}
             isPhraseSelected={selected}
+            isPhraseFocused={activePhrase}
             isPhraseStart={selected && !prevSelected}
             isPhraseEnd={selected && !nextSelected}
             isPhraseAnchor={phraseAnchorWordId === word.id}

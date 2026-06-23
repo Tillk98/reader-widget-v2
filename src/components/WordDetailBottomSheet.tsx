@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
-import { Volume2, Tags, BookOpenText, PanelRightOpen, PanelRightClose, X } from 'lucide-react';
+import { Volume2, Tags, BookOpenText, PanelRight, X } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -183,16 +183,12 @@ export interface WordDetailBottomSheetProps {
   phraseWords?: PhraseWordItem[];
   /** Tap a word in the phrase breakdown → open that word's detail. */
   onPhraseWordOpen?: (wordId: string) => void;
-  /** True when the viewport is ≥768px (tablet/desktop surface). Shows the panel toggle button. */
+  /** True when the viewport is ≥768px — shows the side-panel toggle button beside the X. */
   isTablet?: boolean;
-  /** True when displaying as a floating side panel instead of a bottom sheet. */
+  /** True when the widget is docked as a side panel beside the text (rendered inline, no overlay). */
   panelMode?: boolean;
-  /** True when displaying as a positioned floating card (tablet, ≥768px, before entering panel mode). */
-  floatingMode?: boolean;
-  /** Toggle between floating → panel (or panel → floating) presentation. */
+  /** Toggle between the bottom sheet and the docked side panel. */
   onTogglePanelMode?: () => void;
-  /** Resolves the anchor word element for floating-mode positioning. */
-  resolveAnchorElement?: () => HTMLElement | null;
 }
 
 export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
@@ -218,25 +214,20 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   onLynx,
   phraseWords,
   onPhraseWordOpen,
+  isTablet,
   panelMode,
-  floatingMode,
   onTogglePanelMode,
-  resolveAnchorElement,
 }) => {
   const handleDragStartYRef = useRef<number | null>(null);
   const onCloseRef = useRef(onClose);
   const hasPresentedRef = useRef(false);
   const panelModeRef = useRef(panelMode ?? false);
-  const floatingModeRef = useRef(floatingMode ?? false);
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
   useEffect(() => {
     panelModeRef.current = panelMode ?? false;
   }, [panelMode]);
-  useEffect(() => {
-    floatingModeRef.current = floatingMode ?? false;
-  }, [floatingMode]);
 
   const [activeTab, setActiveTab] = React.useState<WordDetailTabId>('meanings');
 
@@ -282,12 +273,12 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
       ? wordTranslation
       : DEFAULT_PRIMARY_MEANING;
 
-  // In panel / floating mode the sheet is immediately "open" — no slide-in animation.
-  const [sheetOpen, setSheetOpen] = React.useState(() => panelMode === true || floatingMode === true);
+  // In panel mode the widget is docked and shown immediately — no slide-in / slide-out.
+  const [sheetOpen, setSheetOpen] = React.useState(() => panelMode === true);
 
   const requestClose = useCallback(() => {
-    // In panel / floating mode: dismiss immediately (no slide-down animation).
-    if (panelModeRef.current || floatingModeRef.current) {
+    // Docked panel: dismiss immediately (no slide-down animation).
+    if (panelModeRef.current) {
       onCloseRef.current();
       return;
     }
@@ -331,7 +322,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   }, []);
 
   useEffect(() => {
-    if (panelMode || floatingMode) return; // already open; no slide-in needed
+    if (panelMode) return; // docked panel is already open; no slide-in
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setSheetOpen(true));
     });
@@ -339,79 +330,11 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // In panel / floating mode: close when the user clicks/taps outside.
-  // Clicks on lesson words are excluded — those update the panel to the new word.
-  useEffect(() => {
-    if (!panelMode && !floatingMode) return;
-    const handleOutside = (e: MouseEvent | TouchEvent) => {
-      const target = e instanceof MouseEvent ? e.target : e.changedTouches[0]?.target;
-      if (!(target instanceof Node)) return;
-      if (panelRef.current?.contains(target)) return;
-      if ((target as Element).closest?.('.blue-word, .yellow-word, .sentence-mode__word')) return;
-      // Bottom bar interactions should not close the floating popup
-      if ((target as Element).closest?.('.reader-bottom-bar')) return;
-      requestClose();
-    };
-    document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('touchstart', handleOutside, { passive: true });
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('touchstart', handleOutside);
-    };
-  }, [panelMode, floatingMode, requestClose]);
-
   useEffect(() => {
     if (sheetOpen) hasPresentedRef.current = true;
   }, [sheetOpen]);
 
   const panelRef = useRef<HTMLDivElement>(null);
-
-  // Floating mode: calculate and apply fixed position near the anchor word.
-  useLayoutEffect(() => {
-    if (!floatingMode || !resolveAnchorElement || !panelRef.current) return;
-    const POPUP_WIDTH = 400;
-    const GAP = 8;
-
-    const recalculate = () => {
-      const anchor = resolveAnchorElement();
-      const panel = panelRef.current;
-      if (!anchor || !panel) return;
-
-      const anchorRect = anchor.getBoundingClientRect();
-      const bottomBar = document.querySelector('.reader-bottom-bar');
-      const bottomBarTop = bottomBar ? bottomBar.getBoundingClientRect().top : window.innerHeight;
-      const readerEl = panel.closest('.reader') ?? document.documentElement;
-      const readerRect = readerEl.getBoundingClientRect();
-
-      const spaceAbove = anchorRect.top - readerRect.top - GAP;
-      const spaceBelow = bottomBarTop - anchorRect.bottom - GAP;
-      const placeAbove = spaceAbove > spaceBelow;
-      const maxH = Math.max(Math.floor(placeAbove ? spaceAbove : spaceBelow) - GAP, 240);
-
-      let left = anchorRect.left + anchorRect.width / 2 - POPUP_WIDTH / 2;
-      left = Math.max(left, readerRect.left + GAP);
-      left = Math.min(left, readerRect.right - POPUP_WIDTH - GAP);
-
-      panel.style.width = `${POPUP_WIDTH}px`;
-      panel.style.maxHeight = `${maxH}px`;
-      panel.style.left = `${left}px`;
-      if (placeAbove) {
-        panel.style.top = '';
-        panel.style.bottom = `${window.innerHeight - anchorRect.top + GAP}px`;
-      } else {
-        panel.style.top = `${anchorRect.bottom + GAP}px`;
-        panel.style.bottom = '';
-      }
-    };
-
-    recalculate();
-    window.addEventListener('scroll', recalculate, true);
-    window.addEventListener('resize', recalculate);
-    return () => {
-      window.removeEventListener('scroll', recalculate, true);
-      window.removeEventListener('resize', recalculate);
-    };
-  }, [floatingMode, resolveAnchorElement]);
 
   useEffect(() => {
     if (sheetOpen || !hasPresentedRef.current) return;
@@ -632,29 +555,43 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
   return (
     <div
-      className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''} ${panelMode ? 'is-panel-mode' : ''} ${floatingMode ? 'is-floating-mode' : ''}`}
+      className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''} ${panelMode ? 'is-panel-mode' : ''}`}
       role="dialog"
       aria-label="Word details"
-      onClick={(e) => !panelMode && !floatingMode && e.target === e.currentTarget && requestClose()}
+      onClick={(e) => !panelMode && e.target === e.currentTarget && requestClose()}
     >
       <div ref={panelRef} className="word-detail-sheet-panel">
-        {!panelMode && !floatingMode && (
-          <button
-            type="button"
-            className="word-detail-sheet-handle"
-            aria-label="Drag down or tap to close"
-            onClick={(e) => {
-              e.stopPropagation();
-              requestClose();
-            }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerCancel}
-          />
-        )}
+        <button
+          type="button"
+          className="word-detail-sheet-handle"
+          aria-label="Drag down or tap to close"
+          onClick={(e) => {
+            e.stopPropagation();
+            requestClose();
+          }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
+        />
 
-        {!panelMode && !floatingMode && (
+        {/* Top-right button set (Figma ButtonSet 4613:17842): the side-panel toggle joins the X
+            close on tablet (≥768px). The toggle is active (blue) while the panel is docked. */}
+        <div className="word-detail-sheet-button-set">
+          {(isTablet || panelMode) && (
+            <button
+              type="button"
+              className={`word-detail-sheet-vol-btn word-detail-sheet-panel-toggle${panelMode ? ' is-active' : ''}`}
+              aria-label={panelMode ? 'Dock as bottom sheet' : 'Open as side panel'}
+              aria-pressed={panelMode}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePanelMode?.();
+              }}
+            >
+              <PanelRight size={16} aria-hidden />
+            </button>
+          )}
           <button
             type="button"
             className="word-detail-sheet-vol-btn word-detail-sheet-close"
@@ -666,76 +603,36 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           >
             <X size={16} aria-hidden />
           </button>
-        )}
+        </div>
 
-        <div className={`word-detail-sheet-header-block${(panelMode || floatingMode) ? ' word-detail-sheet-header-block--panel' : ''}`}>
-          {(panelMode || floatingMode) ? (
-            <div className="word-detail-sheet-panel-header">
-              <div className="word-detail-sheet-panel-header-left">
-                <div className="word-detail-sheet-original-row">
-                  <button type="button" className="word-detail-sheet-audio-btn" aria-label="Play audio">
-                    <Volume2 size={18} aria-hidden />
-                  </button>
-                  <p className="word-detail-sheet-original-text">{quoteLine}</p>
-                </div>
-                <div className="word-detail-sheet-meaning-row">
-                  <p className="word-detail-sheet-meaning-text">{masterMeaning}</p>
-                </div>
-              </div>
-              <div className="word-detail-sheet-panel-btn-group">
-                <button
-                  type="button"
-                  className="word-detail-sheet-panel-btn"
-                  aria-label={panelMode ? 'Return to floating view' : 'Open as side panel'}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTogglePanelMode?.();
-                  }}
-                >
-                  {panelMode ? <PanelRightClose size={16} aria-hidden /> : <PanelRightOpen size={16} aria-hidden />}
-                </button>
-                <button
-                  type="button"
-                  className="word-detail-sheet-panel-btn"
-                  aria-label="Close word detail"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    requestClose();
-                  }}
-                >
-                  <X size={16} aria-hidden />
-                </button>
-              </div>
+        <div className="word-detail-sheet-header-block">
+          <div className="word-detail-sheet-header-content">
+            <div className="word-detail-sheet-original-row">
+              <button type="button" className="word-detail-sheet-audio-btn" aria-label="Play audio">
+                <Volume2 size={18} aria-hidden />
+              </button>
+              <p className="word-detail-sheet-original-text">{quoteLine}</p>
             </div>
-          ) : (
-            <div className="word-detail-sheet-header-content">
-              <div className="word-detail-sheet-original-row">
-                <button type="button" className="word-detail-sheet-audio-btn" aria-label="Play audio">
-                  <Volume2 size={18} aria-hidden />
-                </button>
-                <p className="word-detail-sheet-original-text">{quoteLine}</p>
-              </div>
-              <div className="word-detail-sheet-meaning-row">
-                <p className="word-detail-sheet-meaning-text">{masterMeaning}</p>
-              </div>
-              {meaningsActive && tags.length > 0 && (
-                <div
-                  className={`word-detail-sheet-tag-row${headerCondensed ? ' word-detail-sheet-tag-row--collapsed' : ''}`}
-                >
-                  <button type="button" className="word-detail-sheet-tags-btn" aria-label="Add tags">
-                    <Tags size={16} aria-hidden />
-                  </button>
-                  <div className="word-detail-sheet-tag-list">
-                    {tags.map((tag) => (
-                      <span key={tag} className="word-detail-sheet-tag-pill">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="word-detail-sheet-meaning-row">
+              <p className="word-detail-sheet-meaning-text">{masterMeaning}</p>
             </div>
-          )}
+            {meaningsActive && tags.length > 0 && (
+              <div
+                className={`word-detail-sheet-tag-row${headerCondensed ? ' word-detail-sheet-tag-row--collapsed' : ''}`}
+              >
+                <button type="button" className="word-detail-sheet-tags-btn" aria-label="Add tags">
+                  <Tags size={16} aria-hidden />
+                </button>
+                <div className="word-detail-sheet-tag-list">
+                  {tags.map((tag) => (
+                    <span key={tag} className="word-detail-sheet-tag-pill">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="word-detail-sheet-tabs" role="tablist" aria-label="Word detail sections">
             <button
@@ -1022,18 +919,19 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           </div>
         </div>
 
-        {!panelMode && !floatingMode && (
-          <footer className="word-detail-sheet-footer">
-            <div className="word-detail-sheet-footer-row">
-              {onWordStatusChange ? (
-                <LingQStatusBar
-                  variant="sheet"
-                  status={wordStatus}
-                  onStatusChange={onWordStatusChange}
-                />
-              ) : (
-                <span className="word-detail-sheet-footer-spacer" />
-              )}
+        <footer className="word-detail-sheet-footer">
+          <div className="word-detail-sheet-footer-row">
+            {onWordStatusChange ? (
+              <LingQStatusBar
+                variant="sheet"
+                status={wordStatus}
+                onStatusChange={onWordStatusChange}
+              />
+            ) : (
+              <span className="word-detail-sheet-footer-spacer" />
+            )}
+            {/* SidePanel footer variant: drop the Lynx button (Figma WidgetFooter Page vs SidePanel). */}
+            {!panelMode && (
               <button
                 type="button"
                 className="word-detail-sheet-lynx-btn"
@@ -1042,9 +940,9 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
               >
                 <img src={lynxFooterIcon} alt="" className="word-detail-sheet-lynx-btn__icon" aria-hidden />
               </button>
-            </div>
-          </footer>
-        )}
+            )}
+          </div>
+        </footer>
       </div>
 
       <DictionaryMenuSheet
