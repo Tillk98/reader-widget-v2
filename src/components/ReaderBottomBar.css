@@ -22,8 +22,8 @@
   overflow: visible;
 }
 
-/* Word status strip sits above the fixed lesson video bar */
-.reader-bottom-bar--above-video-bar {
+/* Word status strip sits above the fixed lesson media bar */
+.reader-bottom-bar--above-media-bar {
   z-index: 55;
 }
 
@@ -33,6 +33,7 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  max-width: 520px;
   pointer-events: auto;
   overflow: visible;
 }
@@ -628,7 +629,7 @@
   }
 }
 
-/* Play area: when not playing, flex row with play pill + optional video pill; when playing, expanded mini player */
+/* Play area: when not playing, flex row with play pill; when playing, expanded mini player */
 .reader-bottom-bar-play-area {
   display: flex;
   flex-direction: row;
@@ -636,15 +637,14 @@
   gap: 8px;
   height: 48px;
   flex-shrink: 0;
-  /* Let play / video control shadows paint outside the track (morph clip is on .reader-bottom-bar-play-pill__morph-inner). */
+  /* Let play control shadows paint outside the track (morph clip is on .reader-bottom-bar-play-pill__morph-inner). */
   overflow: visible;
   transition: width 0.25s ease, flex 0.25s ease, background 0.2s ease, box-shadow 0.2s ease;
   width: auto;
 }
 
-/* Same glass pill style as before, used for play and video buttons when not playing */
-.reader-bottom-bar-play-pill,
-.reader-bottom-bar-video-btn {
+/* Glass pill style for the play button when not playing */
+.reader-bottom-bar-play-pill {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -703,28 +703,6 @@
   width: 40px;
   height: 40px;
   border-radius: 999px;
-}
-
-.reader-bottom-bar-video-btn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  cursor: pointer;
-  color: #1a1a1a;
-  transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.reader-bottom-bar-video-btn:hover {
-  background: #f4f5f6;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.2);
-}
-
-.reader-bottom-bar-video-btn:active {
-  transform: var(--ui-ctrl-press);
-}
-
-.reader-bottom-bar-video-icon {
-  flex-shrink: 0;
 }
 
 .reader-bottom-bar-play-area.reader-bottom-bar-play-area-playing {
@@ -1099,16 +1077,6 @@
 
   .reader-bottom-bar-play-pill--morph.reader-bottom-bar-play-pill--playing .reader-bottom-bar-play-pill__morph-inner {
     padding: 4px 6px 4px 4px;
-  }
-
-  .reader-bottom-bar-video-btn {
-    width: 32px;
-    height: 32px;
-  }
-
-  .reader-bottom-bar-video-btn svg {
-    width: 16px;
-    height: 16px;
   }
 
   .reader-bottom-bar-play-area.reader-bottom-bar-play-area-playing {

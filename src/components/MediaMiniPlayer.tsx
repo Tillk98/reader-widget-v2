@@ -1,9 +1,9 @@
 import React, { useRef, useLayoutEffect, useEffect } from 'react';
 import { Pause, Play, X, Menu } from 'lucide-react';
 import playerBack from '../assets/player-back.png';
-import './AudioMiniPlayer.css';
+import './MediaMiniPlayer.css';
 
-export interface AudioMiniPlayerProps {
+export interface MediaMiniPlayerProps {
   lessonTitle: string;
   lessonSource?: string;
   lessonImageSrc: string;
@@ -23,7 +23,7 @@ export interface AudioMiniPlayerProps {
   onHeightChange?: (heightPx: number) => void;
 }
 
-export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
+export const MediaMiniPlayer: React.FC<MediaMiniPlayerProps> = ({
   lessonTitle,
   lessonSource,
   lessonImageSrc,
@@ -50,7 +50,7 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
 
   const handleRootAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
-    if (e.animationName !== 'audio-mini-player-exit') return;
+    if (e.animationName !== 'media-mini-player-exit') return;
     onExitAnimationComplete?.();
   };
 
@@ -71,15 +71,15 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
   return (
     <div
       ref={rootRef}
-      className={['audio-mini-player', isExiting && 'audio-mini-player--exiting'].filter(Boolean).join(' ')}
-      data-audio-mini-player
+      className={['media-mini-player', isExiting && 'media-mini-player--exiting'].filter(Boolean).join(' ')}
+      data-media-mini-player
       onAnimationEnd={handleRootAnimationEnd}
     >
-      <div className="audio-mini-player__card" role="region" aria-label="Lesson audio">
-        <div className="audio-mini-player__row">
+      <div className="media-mini-player__card" role="region" aria-label="Lesson audio">
+        <div className="media-mini-player__row">
           <button
             type="button"
-            className="audio-mini-player__icon-btn audio-mini-player__icon-btn--lg"
+            className="media-mini-player__icon-btn media-mini-player__icon-btn--lg"
             aria-label={isPaused ? 'Play' : 'Pause'}
             onClick={e => {
               e.stopPropagation();
@@ -91,19 +91,19 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
 
           <button
             type="button"
-            className="audio-mini-player__expand-hit"
+            className="media-mini-player__expand-hit"
             onClick={onExpand}
             aria-label={`Open expanded audio mode — ${lessonTitle}`}
           >
-            <span className="audio-mini-player__thumb-wrap">
-              <img src={lessonImageSrc} alt="" className="audio-mini-player__thumb" />
+            <span className="media-mini-player__thumb-wrap">
+              <img src={lessonImageSrc} alt="" className="media-mini-player__thumb" />
             </span>
           </button>
 
-          <div className="audio-mini-player__controls">
+          <div className="media-mini-player__controls">
             <button
               type="button"
-              className="audio-mini-player__icon-btn audio-mini-player__icon-btn--md"
+              className="media-mini-player__icon-btn media-mini-player__icon-btn--md"
               aria-label="Audio controls menu"
               onClick={e => {
                 e.stopPropagation();
@@ -114,7 +114,7 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
             </button>
             <button
               type="button"
-              className="audio-mini-player__icon-btn audio-mini-player__icon-btn--md"
+              className="media-mini-player__icon-btn media-mini-player__icon-btn--md"
               aria-label="Skip back 5 seconds"
               onClick={e => {
                 e.stopPropagation();
@@ -125,7 +125,7 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
             </button>
             <button
               type="button"
-              className="audio-mini-player__icon-btn audio-mini-player__icon-btn--sm audio-mini-player__dismiss"
+              className="media-mini-player__icon-btn media-mini-player__icon-btn--sm media-mini-player__dismiss"
               aria-label="Close audio player"
               onClick={e => {
                 e.stopPropagation();
@@ -137,9 +137,9 @@ export const AudioMiniPlayer: React.FC<AudioMiniPlayerProps> = ({
           </div>
         </div>
 
-        <div className="audio-mini-player__progress" aria-hidden>
-          <div className="audio-mini-player__progress-track">
-            <div className="audio-mini-player__progress-fill" style={{ width: `${progressPct}%` }} />
+        <div className="media-mini-player__progress" aria-hidden>
+          <div className="media-mini-player__progress-track">
+            <div className="media-mini-player__progress-fill" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
       </div>

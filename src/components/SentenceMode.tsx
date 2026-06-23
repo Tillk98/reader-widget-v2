@@ -314,13 +314,15 @@ export const SentenceMode: React.FC<SentenceModeProps> = ({
           {showTranslation && <p className="sentence-mode__sentence-translation">{sentenceTranslation}</p>}
         </div>
 
-        <HorizontalTermList
-          items={vocabWords}
-          wordStatusMap={wordStatusMap}
-          selectedWordId={selectedWordId}
-          onOpenDetail={handleListDetail}
-          onStatusChange={(wordId, status) => onListWordStatusChange?.(wordId, status)}
-        />
+        <div className="sentence-mode__term-list">
+          <HorizontalTermList
+            items={vocabWords}
+            wordStatusMap={wordStatusMap}
+            selectedWordId={selectedWordId}
+            onOpenDetail={handleListDetail}
+            onStatusChange={(wordId, status) => onListWordStatusChange?.(wordId, status)}
+          />
+        </div>
       </div>
 
       {sentenceSticky && (

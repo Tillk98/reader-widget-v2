@@ -157,8 +157,6 @@ export const CourseInfoSheet: React.FC<CourseInfoSheetProps> = ({
             </button>
           </div>
 
-          <div className="course-info__divider course-info__divider--thin" role="separator" aria-hidden="true" />
-
           <div className="course-info__lessons">
             {tiles.map((tile, i) => (
               <React.Fragment key={tile.id}>

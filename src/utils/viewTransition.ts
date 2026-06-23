@@ -1,4 +1,4 @@
-/** True when the View Transitions API can coordinate reader ↔ video mode. */
+/** True when the View Transitions API can coordinate reader ↔ media mode. */
 export function supportsViewTransition(): boolean {
   return typeof document !== 'undefined' && 'startViewTransition' in document;
 }

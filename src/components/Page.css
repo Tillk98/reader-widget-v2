@@ -8,8 +8,8 @@
   overflow: hidden;
 }
 
-/* Full-lesson scroll in video lesson layout: natural content height, not viewport-tall page. */
-.page--video-lesson-scroll {
+/* Full-lesson scroll in media lesson layout: natural content height, not viewport-tall page. */
+.page--media-lesson-scroll {
   height: auto;
   min-height: 0;
   overflow: visible;
@@ -17,6 +17,8 @@
 
 .page-content {
   width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
   text-align: left;
   padding-top: 6px;
   padding-bottom: 6px;
@@ -30,8 +32,8 @@
   font-size: 18px;
 }
 
-/* Video lesson: sentence blocks + reader typography aligned with Figma ReaderContent */
-.page-content--video-lesson {
+/* Media lesson: sentence blocks + reader typography aligned with Figma ReaderContent */
+.page-content--media-lesson {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -42,16 +44,16 @@
   letter-spacing: 0;
 }
 
-.page-content--video-lesson .page-content__sentence {
+.page-content--media-lesson .page-content__sentence {
   margin: 0;
 }
 
 /*
  * Word chips: keep the same highlight box as default mode (Word.css: 18px line, 22px tall incl. padding).
- * Paragraph/sentence rhythm stays 44px from .page-content--video-lesson; spans stay compact so blue/yellow
+ * Paragraph/sentence rhythm stays 44px from .page-content--media-lesson; spans stay compact so blue/yellow
  * bars are not stretched to the full line.
  */
-.page-content--video-lesson .sentence-item {
+.page-content--media-lesson .sentence-item {
   font-family: 'DM Sans', sans-serif;
   font-size: 18px;
   font-weight: 500;

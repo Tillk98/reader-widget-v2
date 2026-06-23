@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Play,
   Pause,
-  Youtube,
   FileText,
   ChevronsUpDown,
   PictureInPicture,
@@ -29,15 +28,15 @@ import simplifyDefaultIcon from '../assets/simplify-default.png';
 import './ReaderBottomBar.css';
 
 export interface ReaderBottomBarProps {
-  mediaMode?: 'none' | 'video' | 'audio';
-  isVideoPlaying?: boolean;
+  mediaMode?: 'none' | 'media';
+  isMediaPlaying?: boolean;
   lessonImageSrc?: string;
   selectedWordId?: string | null;
   selectedWordStatus?: LingQStatusType;
   onSelectedWordStatusChange?: (status: LingQStatusType) => void;
   onPlay?: () => void;
-  onToggleVideoPlayback?: () => void;
-  onExpandVideoBar?: () => void;
+  onToggleMediaPlayback?: () => void;
+  onExpandMediaBar?: () => void;
   onSentence?: () => void;
   /** Controlled sentence-mode toggle state. When provided, the sentence button reflects this. */
   sentenceModeActive?: boolean;
@@ -54,10 +53,8 @@ export interface ReaderBottomBarProps {
   onRefresh?: () => void;
   onSettings?: () => void;
   onExit?: () => void;
-  hasVideo?: boolean;
-  onVideoMode?: () => void;
-  /** In video mode: distance from viewport bottom to anchor this bar above the fixed lesson video bar (px). */
-  anchorAboveVideoBarPx?: number;
+  /** In audio mode: distance from viewport bottom to anchor this bar above the fixed audio bar (px). */
+  anchorAboveMediaBarPx?: number;
   /** Word detail (meanings) bottom sheet is open — after a short delay the LingQ strip yields to the default row. */
   wordDetailSheetOpen?: boolean;
   /** Expanded chevron menu: `list` (default) or `grid`. */
@@ -77,7 +74,7 @@ export interface ReaderBottomBarProps {
   horizontalListOn?: boolean;
   onHorizontalListChange?: (on: boolean) => void;
   /** When true, collapsed audio mini was the bottom bar — skip the default play/menu morph into LingQ (avoids a one-frame flash of default chrome). */
-  audioMiniActive?: boolean;
+  mediaMiniActive?: boolean;
 }
 
 /** Lucide stroke width for expanded list menu (Figma 1.5px). */
@@ -103,14 +100,14 @@ const EXPANDED_MENU_SETTINGS_ITEM = EXPANDED_SECONDARY_ITEMS[6]!;
 
 export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   mediaMode: _mediaMode = 'none',
-  isVideoPlaying = false,
+  isMediaPlaying = false,
   lessonImageSrc,
   selectedWordId,
   selectedWordStatus: _selectedWordStatus = 'New',
   onSelectedWordStatusChange: _onSelectedWordStatusChange,
   onPlay,
-  onToggleVideoPlayback,
-  onExpandVideoBar,
+  onToggleMediaPlayback,
+  onExpandMediaBar,
   onSentence,
   sentenceModeActive,
   onReview,
@@ -125,9 +122,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onRefresh,
   onSettings,
   onExit,
-  hasVideo = false,
-  onVideoMode,
-  anchorAboveVideoBarPx,
+  anchorAboveMediaBarPx,
   wordDetailSheetOpen: _wordDetailSheetOpen = false,
   expandedMenuLayout = 'list',
   menuHeaderTitle,
@@ -140,7 +135,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
   onShowTranslation,
   horizontalListOn,
   onHorizontalListChange,
-  audioMiniActive: _audioMiniActive = false,
+  mediaMiniActive: _mediaMiniActive = false,
 }) => {
   const [isActionsExpanded, setIsActionsExpanded] = useState(false);
   const [menuSheetOpen, setMenuSheetOpen] = useState(false);
@@ -206,13 +201,13 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
     <div
       className={[
         'reader-bottom-bar',
-        anchorAboveVideoBarPx != null && anchorAboveVideoBarPx > 0 ? 'reader-bottom-bar--above-video-bar' : '',
+        anchorAboveMediaBarPx != null && anchorAboveMediaBarPx > 0 ? 'reader-bottom-bar--above-media-bar' : '',
       ]
         .filter(Boolean)
         .join(' ')}
       style={
-        anchorAboveVideoBarPx != null && anchorAboveVideoBarPx > 0
-          ? { bottom: anchorAboveVideoBarPx }
+        anchorAboveMediaBarPx != null && anchorAboveMediaBarPx > 0
+          ? { bottom: anchorAboveMediaBarPx }
           : undefined
       }
     >
@@ -223,7 +218,7 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                 className={[
                   'reader-bottom-bar-play-pill',
                   'reader-bottom-bar-play-pill--morph',
-                  isVideoPlaying ? 'reader-bottom-bar-play-pill--playing' : '',
+                  isMediaPlaying ? 'reader-bottom-bar-play-pill--playing' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -234,15 +229,15 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                     type="button"
                     className="reader-bottom-bar-play-btn"
                     onClick={() => {
-                      if (isVideoPlaying) {
-                        onToggleVideoPlayback?.();
+                      if (isMediaPlaying) {
+                        onToggleMediaPlayback?.();
                       } else {
                         onPlay?.();
                       }
                     }}
-                    aria-label={isVideoPlaying ? 'Pause' : 'Play'}
+                    aria-label={isMediaPlaying ? 'Pause' : 'Play'}
                   >
-                    {isVideoPlaying ? (
+                    {isMediaPlaying ? (
                       <Pause size={24} className="reader-bottom-bar-play-pause-icon" />
                     ) : (
                       <Play size={24} className="reader-bottom-bar-play-pause-icon" />
@@ -253,14 +248,14 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                     className={[
                       'reader-bottom-bar-lesson-image-wrap',
                       'reader-bottom-bar-lesson-image-wrap--morph',
-                      isVideoPlaying ? 'reader-bottom-bar-lesson-image-wrap--visible' : '',
+                      isMediaPlaying ? 'reader-bottom-bar-lesson-image-wrap--visible' : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    onClick={onExpandVideoBar}
-                    aria-label="Open video player"
-                    tabIndex={isVideoPlaying ? 0 : -1}
-                    aria-hidden={!isVideoPlaying}
+                    onClick={onExpandMediaBar}
+                    aria-label="Open media player"
+                    tabIndex={isMediaPlaying ? 0 : -1}
+                    aria-hidden={!isMediaPlaying}
                   >
                     {lessonImageSrc ? (
                       <img src={lessonImageSrc} alt="" className="reader-bottom-bar-lesson-image" />
@@ -268,16 +263,6 @@ export const ReaderBottomBar: React.FC<ReaderBottomBarProps> = ({
                   </button>
                 </div>
               </div>
-              {hasVideo && (
-                <button
-                  type="button"
-                  className="reader-bottom-bar-video-btn"
-                  onClick={onVideoMode}
-                  aria-label="Video mode"
-                >
-                  <Youtube size={18} className="reader-bottom-bar-video-icon" />
-                </button>
-              )}
             </div>
 
             <div

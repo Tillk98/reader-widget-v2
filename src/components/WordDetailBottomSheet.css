@@ -2,7 +2,7 @@
  * Word detail bottom sheet — Meanings + Sentence tabs
  * (Figma 2177:35914, 2195:613, 2259:2634, 2354:1327).
  * Plain CSS; design tokens with fallbacks.
- * Open/close motion matches audio/video sheets (see WordDetailBottomSheet.css timing vars).
+ * Open/close motion matches media sheets (see WordDetailBottomSheet.css timing vars).
  */
 
 .word-detail-sheet-root {
@@ -77,18 +77,24 @@
   }
 }
 
-/* Header: ContentHeader (term / meaning / tags) + tabs (Figma WidgetHeader 4446:87126) */
+/* Header: ContentHeader (term / meaning / tags) + tabs (Figma WidgetHeader 4446:87126).
+   The block spans full width and carries the bottom stroke edge-to-edge; the content
+   inside (header-content + tabs) is capped at 520px and centered. */
 .word-detail-sheet-header-block {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0;
+  border-bottom: 1px solid var(--border-default, #f1f3f4);
 }
 
-/* ContentHeader — each row carries its own px-12 padding (Figma 4446:87124) */
+/* ContentHeader — each row carries its own px-12 padding (Figma 4446:87124).
+   max-width 520 keeps the content bounded on tablet/wide screens. */
 .word-detail-sheet-header-content {
   flex-shrink: 0;
   width: 100%;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -232,11 +238,13 @@
 .word-detail-sheet-tabs {
   display: flex;
   align-items: center;
+  width: 100%;
+  max-width: 520px;
   min-height: 56px;
   box-sizing: border-box;
   padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-xs, 8px) var(--spacing-spacing-lg, 16px);
   border: none;
-  border-bottom: 1px solid var(--border-default, #f1f3f4);
+  /* Stroke moved to .word-detail-sheet-header-block so it spans full width. */
   border-radius: 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -367,6 +375,11 @@
   gap: var(--spacing-spacing-md, 12px);
   background: var(--backgrounds-page, #ffffff);
   text-align: left;
+  /* Body content bounded to 520 and centered (Pattern #4) — aligns with the
+     520-capped header/footer content above and below. */
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
 }
 
 /*
@@ -621,13 +634,16 @@
   box-sizing: border-box;
 }
 
-/* Row: fixed manage button + horizontally scrolling dictionary strip. */
+/* Row: fixed manage button + horizontally scrolling dictionary strip.
+   Capped at 520 + centered so it lines up with the 520 body column above. */
 .word-detail-sheet-dictionary-bar {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
   width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
   min-width: 0;
 }
 
@@ -1054,8 +1070,10 @@ button.note-field__box {
   outline-offset: 2px;
 }
 
-/* Panel mode header (Figma 3985:59330) — compact header replacing drag+quote when in side panel */
+/* Panel mode header (Figma 3985:59330) — compact header replacing drag+quote when in side panel.
+   Reset the center alignment so the panel header + tabs fill the narrow (≤400px) panel. */
 .word-detail-sheet-header-block--panel {
+  align-items: stretch;
   gap: 0;
 }
 
@@ -1105,12 +1123,16 @@ button.note-field__box {
   border-top: 1px solid var(--border-default, #d1d6d9);
 }
 
+/* Footer stroke (border-top) stays on the full-width .word-detail-sheet-footer;
+   the row is capped at 520 and centered (Figma WidgetFooter Content 4446:85477). */
 .word-detail-sheet-footer-row {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: var(--spacing-spacing-md, 16px);
   width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
 }
 
 .word-detail-sheet-footer-row .lingq-status-bar {

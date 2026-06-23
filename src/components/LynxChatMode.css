@@ -67,7 +67,9 @@
 
 .lynx-chat__messages {
   width: 100%;
-  max-width: 600px;
+  /* App-wide reading-column cap: keep the conversation a centered 520px column on
+     larger tablet screens (matches sentence/review modes). The header stays full-width. */
+  max-width: 520px;
   margin: 0 auto;
   box-sizing: border-box;
   padding: 16px;
@@ -225,6 +227,10 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  /* Match the conversation column: centered 520px cap so the input field lines up
+     with the messages above it on larger screens (Figma LynxInputField 2820:59668). */
+  max-width: 520px;
+  margin: 0 auto;
   box-sizing: border-box;
   border: 1px solid #f1f3f4;
   border-radius: 12px;
@@ -287,7 +293,8 @@
   transform: scale(0.94);
 }
 
-/* Send button — always visible; default grey, secondary-subtle blue when active */
+/* Send button — always visible; default grey bg with a dark icon, secondary-subtle
+   blue when active (Figma LynxInputField 2820:59668 Default vs Active states). */
 .lynx-chat__send {
   flex-shrink: 0;
   display: flex;
@@ -297,7 +304,7 @@
   border: none;
   border-radius: 666px;
   background: #f8f9fa;
-  color: #c5c9ce;
+  color: #1c1c1e;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;

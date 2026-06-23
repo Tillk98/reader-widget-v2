@@ -27,7 +27,7 @@ There is **no test framework** configured — do not assume `npm test` exists. V
 - **Page reading** (default) — paginated word-by-word lesson text
 - **Sentence mode** (`sentenceMode`) — one sentence at a time → `SentenceMode.tsx`
 - **Review mode** (`reviewMode`) — flashcard/list review of saved terms → `ReviewMode.tsx`, filtered via `ReviewFilterSheet.tsx`
-- **Video / Audio mode** (`mediaMode: 'none' | 'video' | 'audio'`) — media player chrome around the text → `VideoMode*`, `AudioMiniPlayer`, `AudioSettingsSheet`
+- **Audio mode** (`mediaMode: 'none' | 'audio'`) — audio player chrome around the text → `AudioModeBottomBar` (collapsed/expanded player bar), `AudioMiniPlayer` (floating mini over page mode), `AudioSettingsSheet` (controls menu)
 - **Lynx chat mode** (`lynxChatOpen`) — full-screen AI chat → `LynxChatMode.tsx`
 
 ### Custom pagination (no library)
@@ -42,7 +42,7 @@ A phrase LingQ is created by long-pressing an anchor word then tapping a second 
 ### Conventions
 - Each component has a **co-located `.css` file** of the same name; shared control styles in `src/styles/ui-controls.css`.
 - Bottom sheets share `BottomSheet.tsx` as a base.
-- Reader↔video transitions use the **View Transitions API** via `src/utils/viewTransition.ts` (falls back to synchronous update when unsupported).
+- Reader↔audio-mode transitions use the **View Transitions API** via `src/utils/viewTransition.ts` (falls back to synchronous update when unsupported).
 - Per-word saved meanings persist to `localStorage` via `src/utils/savedMeanings.ts` (prefix `lingq.reader.savedMeanings.`).
 - TypeScript is strict with `noUnusedLocals`/`noUnusedParameters` and `verbatimModuleSyntax` (use `import type` for type-only imports).
 
@@ -56,8 +56,8 @@ Every component lives in `src/components/` with a co-located `.css` file. `Reade
 - **Page** — one rendered page of paginated lesson text; lays out `Word`s with phrase/status highlighting.
 
 ### Reader chrome
-- **LessonHeader** — top card with thumbnail, title, course/page label; tappable to open course info. Also appears atop audio/video settings sheets.
-- **ReaderBottomBar** — fixed bottom control bar: page nav, mode toggles (sentence/review/Lynx), video/audio buttons, settings.
+- **LessonHeader** — top card with thumbnail, title, course/page label; tappable to open course info. Also appears atop the audio settings sheet.
+- **ReaderBottomBar** — fixed bottom control bar: page nav, mode toggles (sentence/review/Lynx), audio button, settings.
 - **ReaderMenuSheet** — bottom-sheet menu: mode toggles, prev/next lesson, translation visibility, settings, help.
 - **ExitLessonPopup** — confirmation dialog when leaving a lesson via the Library button.
 - **CourseInfoSheet** — bottom sheet with course/lesson metadata, progress, related lessons.
@@ -87,11 +87,10 @@ Every component lives in `src/components/` with a co-located `.css` file. `Reade
 - **VocabTermList** — scrollable vocab list with status badges, swipe-to-delete, add button.
 - **HorizontalTermList** — horizontal scrolling vocab card strip with inline status menu via long-press drag; used in sentence mode and detail sheets.
 
-### Media mode
-- **VideoModeVideoPlayer** — video player placeholder at top of reader in video mode; maximizable.
-- **VideoModeBottomBar** — fixed bottom chrome for video mode: lesson header, playback controls, scrubber, expand/collapse.
-- **AudioMiniPlayer** — floating mini audio player shown when audio mode is active.
-- **AudioSettingsSheet** — bottom sheet of audio controls (speed, timer, lessons, theme, settings, help).
+### Audio mode
+- **AudioModeBottomBar** — fixed bottom chrome for audio mode: lesson info + playback controls (collapsed) and scrubber + transport (expanded), with one "expanded" view (no video variant). Floats: full-width wrapper, 520px-max card. (Formerly `VideoModeBottomBar`; `mediaMode='video'` and the old top video player were removed since the prototype is audio-only.)
+- **AudioMiniPlayer** — floating mini audio player shown over page mode while audio plays.
+- **AudioSettingsSheet** — floating bottom sheet of audio controls (auto-advance, speed, timer, loop, theme, settings, help).
 
 ### Lynx (AI) mode
 - **LynxChatMode** — full-screen AI chat (`lynxChatOpen`).

@@ -1,6 +1,6 @@
 /* Audio settings bottom sheet — Figma Reader 2561:2634 */
 
-.audio-settings-sheet {
+.media-settings-sheet {
   position: fixed;
   inset: 0;
   /* Above the reader header (z-index 100) so the backdrop dims it too,
@@ -9,7 +9,7 @@
   pointer-events: none;
 }
 
-.audio-settings-sheet__backdrop {
+.media-settings-sheet__backdrop {
   position: absolute;
   inset: 0;
   border: none;
@@ -20,44 +20,47 @@
   background: rgba(15, 23, 42, 0.4);
   cursor: pointer;
   pointer-events: auto;
-  animation: audio-settings-backdrop-in 0.28s ease both;
+  animation: media-settings-backdrop-in 0.28s ease both;
 }
 
-.audio-settings-sheet__backdrop:focus-visible {
+.media-settings-sheet__backdrop:focus-visible {
   outline: none;
 }
 
-.audio-settings-sheet__panel {
+/* Floating wrapper: full width, 16px sides / 24px top-bottom (Figma BottomBar/Media 2812:57835). */
+.media-settings-sheet__panel {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   display: flex;
   justify-content: center;
-  /* Full-width, flush to the bottom edge — matches the word detail sheet. */
-  padding: 0;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
-  max-width: 600px;
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
   pointer-events: none;
-  animation: audio-settings-panel-in 0.36s cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation: media-settings-panel-in 0.36s cubic-bezier(0.33, 1, 0.68, 1) both;
 }
 
-.audio-settings-sheet__card {
+.media-settings-sheet__card {
   pointer-events: auto;
   width: 100%;
-  padding: 0 0 env(safe-area-inset-bottom, 0px);
+  max-width: 520px;
   box-sizing: border-box;
 }
 
-.audio-settings-sheet__card {
+/* Floating card: capped at 520, rounded on all corners, soft shadow. */
+.media-settings-sheet__card {
   background: var(--backgrounds-page, #ffffff);
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px -2px rgba(0, 0, 0, 0.15);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
 }
 
-.audio-settings-sheet__drag-area {
+.media-settings-sheet__drag-area {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -71,11 +74,11 @@
   border-radius: 12px 12px 0 0;
 }
 
-.audio-settings-sheet__drag-area:active {
+.media-settings-sheet__drag-area:active {
   cursor: grabbing;
 }
 
-.audio-settings-sheet__drag-bar {
+.media-settings-sheet__drag-bar {
   display: block;
   width: 36px;
   height: 4px;
@@ -84,7 +87,7 @@
 }
 
 /* Content — white canvas holding grey Menu cards (Figma MenuContent 4042:15495). */
-.audio-settings-sheet__content {
+.media-settings-sheet__content {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-spacing-md, 12px);
@@ -94,7 +97,7 @@
   box-sizing: border-box;
 }
 
-@keyframes audio-settings-backdrop-in {
+@keyframes media-settings-backdrop-in {
   from {
     opacity: 0;
   }
@@ -103,7 +106,7 @@
   }
 }
 
-@keyframes audio-settings-panel-in {
+@keyframes media-settings-panel-in {
   from {
     transform: translateY(100%);
   }
@@ -113,8 +116,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .audio-settings-sheet__backdrop,
-  .audio-settings-sheet__panel {
+  .media-settings-sheet__backdrop,
+  .media-settings-sheet__panel {
     animation: none !important;
   }
 }

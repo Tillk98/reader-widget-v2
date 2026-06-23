@@ -169,7 +169,7 @@ export const ReviewFilterSheet: React.FC<ReviewFilterSheetProps> = ({
   onApply,
 }) => {
   return (
-    <BottomSheet open={open} onClose={onClose} ariaLabel="Review filter" className="review-filter-sheet">
+    <BottomSheet open={open} onClose={onClose} variant="menu" ariaLabel="Review filter" className="review-filter-sheet">
       <div className="review-filter">
         <section className="review-filter__section">
           <div className="review-filter__section-header">

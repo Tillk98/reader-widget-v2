@@ -4,7 +4,7 @@ import { Menu } from './Menu';
 import { MenuItem } from './MenuItem';
 import { LessonHeader } from './LessonHeader';
 import lynxIcon from '../assets/lynx-default.png';
-import './AudioSettingsSheet.css';
+import './MediaSettingsSheet.css';
 
 const DRAG_DISMISS_PX = 40;
 const ICON_STROKE = 2;
@@ -12,7 +12,7 @@ const ICON_STROKE = 2;
 const PLAYBACK_SPEEDS = ['0.5x', '0.75x', '1.0x', '1.25x', '1.5x', '2.0x'] as const;
 const TIMER_LABELS = ['None', '5 min', '10 min', '30 min'] as const;
 
-export interface AudioSettingsSheetProps {
+export interface MediaSettingsSheetProps {
   open: boolean;
   onClose: () => void;
   lessonTitle?: string;
@@ -31,7 +31,7 @@ export interface AudioSettingsSheetProps {
 
 const noop = () => {};
 
-export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
+export const MediaSettingsSheet: React.FC<MediaSettingsSheetProps> = ({
   open,
   onClose,
   lessonTitle,
@@ -126,18 +126,18 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
   if (!open) return null;
 
   return (
-    <div className="audio-settings-sheet" data-audio-settings-sheet aria-hidden={false}>
+    <div className="media-settings-sheet" data-media-settings-sheet aria-hidden={false}>
       <button
         type="button"
-        className="audio-settings-sheet__backdrop"
+        className="media-settings-sheet__backdrop"
         aria-label="Close audio settings"
         onClick={onClose}
       />
-      <div ref={panelRef} className="audio-settings-sheet__panel">
-        <div className="audio-settings-sheet__card">
+      <div ref={panelRef} className="media-settings-sheet__panel">
+        <div className="media-settings-sheet__card">
           <button
             type="button"
-            className="audio-settings-sheet__drag-area"
+            className="media-settings-sheet__drag-area"
             aria-label="Tap or drag down to close"
             onPointerDown={handleDragPointerDown}
             onPointerMove={handleDragPointerMove}
@@ -145,7 +145,7 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
             onPointerCancel={handleDragPointerCancel}
             onClick={handleDragClick}
           >
-            <span className="audio-settings-sheet__drag-bar" />
+            <span className="media-settings-sheet__drag-bar" />
           </button>
 
           {(lessonTitle || lessonImageSrc) && (
@@ -158,7 +158,7 @@ export const AudioSettingsSheet: React.FC<AudioSettingsSheetProps> = ({
             />
           )}
 
-          <div className="audio-settings-sheet__content">
+          <div className="media-settings-sheet__content">
             <Menu label="Audio Mode">
               <MenuItem
                 icon={<StepForward size={16} strokeWidth={ICON_STROKE} aria-hidden />}
