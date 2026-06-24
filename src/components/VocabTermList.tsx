@@ -46,6 +46,9 @@ export interface VocabTermListProps {
    *  Default true. */
   knownVisible?: boolean;
   ignoredVisible?: boolean;
+  /** After adding an untracked word via "+", open its status menu in place (so a level can be
+   *  set immediately) instead of relying on the host to surface it. */
+  openStatusMenuOnAdd?: boolean;
   className?: string;
 }
 
@@ -321,6 +324,7 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
   onMarkIgnored,
   knownVisible = true,
   ignoredVisible = true,
+  openStatusMenuOnAdd = false,
   className,
 }) => {
   const openDetail = onOpenDetail ?? onSelect;
@@ -348,7 +352,12 @@ export const VocabTermList: React.FC<VocabTermListProps> = ({
             onStatusSelect={(s) => onStatusChange?.(w.id, s)}
             onStatusMenuClose={() => setStatusMenuId(null)}
             onOpenDetail={() => openDetail(w.id)}
-            onAdd={() => onAdd?.(w.id)}
+            onAdd={() => {
+              onAdd?.(w.id);
+              // Surface the just-added word's status menu in place (it renders once the word
+              // is tracked on the next paint) so the level can be set without leaving the list.
+              if (openStatusMenuOnAdd) setStatusMenuId(w.id);
+            }}
             onAudio={() => onAudio?.(w.id)}
             knownVisible={knownVisible}
             ignoredVisible={ignoredVisible}

@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
-import { Volume2, Tags, BookOpenText, PanelRight, X } from 'lucide-react';
+import { Volume2, Tags, BookOpenText, PanelRight, X, ArrowLeft } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -23,6 +23,7 @@ import { LynxMessageActions } from './LynxMessageActions';
 import { NoteField } from './NoteField';
 import { DictionaryMenuSheet } from './DictionaryMenuSheet';
 import type { DictionaryMenuItem } from './DictionaryMenuSheet';
+import { DictionaryManageContent } from './DictionaryManageContent';
 import { MeaningListItem } from './MeaningListItem';
 import { MeaningSection } from './MeaningSection';
 import { AddMeaningRow, SavedMeaningRow } from './SavedMeaningRow';
@@ -557,6 +558,11 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     [],
   );
 
+  // On tablet (floating modal or docked panel) the dictionary manager opens inside the widget
+  // as a sub-page (back button → return to the Dictionaries tab); on mobile it's a bottom sheet.
+  const tabletPresentation = presentFloating || !!panelMode;
+  const manageDictionariesInWidget = tabletPresentation && dictMenuOpen;
+
   return (
     <div
       className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''} ${panelMode ? 'is-panel-mode' : ''} ${presentFloating ? 'is-floating' : ''}`}
@@ -609,6 +615,23 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
           </button>
         </div>
 
+        {/* Back button (top-left) — only when the dictionary manager is shown in-widget; returns
+            to the Dictionaries tab (Figma 4735:17292). */}
+        {manageDictionariesInWidget && (
+          <button
+            type="button"
+            className="word-detail-sheet-vol-btn word-detail-sheet-back-btn"
+            aria-label="Back to dictionaries"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDictMenuOpen(false);
+            }}
+          >
+            <ArrowLeft size={16} aria-hidden />
+          </button>
+        )}
+
+        {!manageDictionariesInWidget && (
         <div className="word-detail-sheet-header-block">
           <div className="word-detail-sheet-header-content">
             <div className="word-detail-sheet-original-row">
@@ -713,7 +736,22 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
             </button>
           </div>
         </div>
+        )}
 
+        {manageDictionariesInWidget && (
+          <div className="word-detail-sheet-main">
+            <div className="word-detail-sheet-scroll word-detail-sheet-scroll--manage">
+              <DictionaryManageContent
+                active={activeDictionaries.map((d) => ({ id: d.id, label: d.label }))}
+                more={moreDictionaries}
+                onRemove={handleDictRemove}
+                onAdd={handleDictAdd}
+              />
+            </div>
+          </div>
+        )}
+
+        {!manageDictionariesInWidget && (
         <div
           className="word-detail-sheet-main"
           role="tabpanel"
@@ -922,6 +960,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
           </div>
         </div>
+        )}
 
         <footer className="word-detail-sheet-footer">
           <div className="word-detail-sheet-footer-row">
@@ -949,8 +988,9 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
         </footer>
       </div>
 
+      {/* Mobile: dictionary manager as a bottom sheet. On tablet it renders in-widget instead. */}
       <DictionaryMenuSheet
-        open={dictMenuOpen}
+        open={dictMenuOpen && !tabletPresentation}
         onClose={() => setDictMenuOpen(false)}
         active={activeDictionaries.map((d) => ({ id: d.id, label: d.label }))}
         more={moreDictionaries}

@@ -894,6 +894,17 @@ export const Reader: React.FC = () => {
     setSelectedWordId(wordId);
   }, []);
 
+  /** Side-panel review list "+": add the LingQ but DON'T select the word — the panel must stay
+   *  in its list ("empty") state. The list opens the new word's status menu in place instead. */
+  const handlePanelTermAdd = useCallback((wordId: string) => {
+    setWordStatusMap(prev => ({ ...prev, [wordId]: 'New' }));
+    setClickedWords(prev => {
+      const next = new Set(prev);
+      next.add(wordId);
+      return next;
+    });
+  }, []);
+
   /** Unified status change handler — updates wordStatusMap and shows the snackbar. */
   const handleStatusChange = useCallback(
     (wordId: string, newStatus: LingQStatusType) => {
@@ -1614,7 +1625,7 @@ export const Reader: React.FC = () => {
                     untrackedIds={panelUntrackedIds}
                     onStatusChange={handleStatusChange}
                     onOpenDetail={handleReviewSelect}
-                    onAdd={handleReviewAdd}
+                    onAdd={handlePanelTermAdd}
                     onMarkKnown={wordId => handleStatusChange(wordId, 'Known')}
                     onMarkIgnored={wordId => handleStatusChange(wordId, 'Ignored')}
                     knownVisible={panelReviewFilter.status.includes('known')}

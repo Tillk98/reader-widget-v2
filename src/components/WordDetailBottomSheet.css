@@ -137,6 +137,13 @@
   pointer-events: none;
 }
 
+/* Tablet presentations (docked side panel + floating modal) keep the handle's spacing for the
+   top-right button set but drop the grab bar — these aren't drag-to-dismiss surfaces there. */
+.word-detail-sheet-root.is-panel-mode .word-detail-sheet-handle::after,
+.word-detail-sheet-root.is-floating .word-detail-sheet-handle::after {
+  display: none;
+}
+
 .word-detail-sheet-handle:active {
   cursor: grabbing;
 }
@@ -220,6 +227,14 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
+}
+
+/* Back button (top-left) for the in-widget dictionary manager — mirrors the top-right button set. */
+.word-detail-sheet-back-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
 }
 
 /* Side-panel toggle — circular button reusing the volume-button look; turns blue when docked. */
@@ -708,6 +723,11 @@
 }
 
 /* Dictionaries tab (Figma 2195:5695) — empty body + provider strip in content-anchor */
+/* In-widget dictionary manager: no floating action row below, so drop the tall bottom inset. */
+.word-detail-sheet-scroll--manage {
+  padding-bottom: 16px;
+}
+
 .word-detail-sheet-scroll--dictionary {
   gap: 0;
 }
