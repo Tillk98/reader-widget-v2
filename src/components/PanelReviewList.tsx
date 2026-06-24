@@ -136,6 +136,7 @@ export const PanelReviewList: React.FC<PanelReviewListProps> = ({
             onMarkIgnored={onMarkIgnored}
             knownVisible={knownVisible}
             ignoredVisible={ignoredVisible}
+            openStatusMenuOnAdd
           />
         </div>
       </div>
