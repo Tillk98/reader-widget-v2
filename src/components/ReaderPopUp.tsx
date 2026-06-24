@@ -211,7 +211,6 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
         onLynx={onLynx}
         isTablet={isTablet}
         onTogglePanelMode={onTogglePanelMode}
-        anchorResolver={resolveAnchorElement}
       />
     );
   }

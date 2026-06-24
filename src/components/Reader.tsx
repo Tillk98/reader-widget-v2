@@ -1761,7 +1761,6 @@ export const Reader: React.FC = () => {
                 onLynx={() => setLynxChatOpen(true)}
                 isTablet={panelModeAvailable}
                 onTogglePanelMode={panelModeAvailable ? () => setWordDetailPanelMode(true) : undefined}
-                anchorResolver={() => getWordElement(phraseSelection.ids[0])}
               />
             );
           })()}
@@ -1781,7 +1780,6 @@ export const Reader: React.FC = () => {
                 isTablet={panelModeAvailable}
                 panelMode={panelModeAvailable && wordDetailPanelMode}
                 onTogglePanelMode={panelModeAvailable ? () => setWordDetailPanelMode(prev => !prev) : undefined}
-                anchorResolver={() => getWordElement(wordId)}
               />
             );
           })()}
