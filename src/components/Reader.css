@@ -86,7 +86,7 @@
 .reader-progress-bar-wrap {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 520px;
+  max-width: 640px;
   display: flex;
   align-items: center;
 }

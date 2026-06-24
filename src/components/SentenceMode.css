@@ -37,7 +37,7 @@
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
 }
 
 /* Term-list column — same 520px cap so the vocab cards' left edge lines up with
@@ -46,7 +46,7 @@
    left edge flush with the 520px column. */
 .sentence-mode__term-list {
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
 }
 
 .sentence-mode__sentence {
@@ -174,9 +174,9 @@
   left: 16px;
   right: 16px;
   z-index: 50;
-  /* Match the 520px reading column: cap the box width (520 + 16px padding each
+  /* Match the 640px reading column: cap the box width (640 + 16px padding each
      side) and center it so the sticky sentence stays aligned on tablet. */
-  max-width: 552px;
+  max-width: 672px;
   margin-left: auto;
   margin-right: auto;
   background: #ffffff;

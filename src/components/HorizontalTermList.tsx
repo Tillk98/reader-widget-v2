@@ -7,7 +7,6 @@ import './HorizontalTermList.css';
 
 /** Reserved space at the bottom of the viewport (reader bottom bar + safe area). */
 const BOTTOM_RESERVED_PX = 96;
-const POPOVER_GAP_PX = 8;
 /** Left content inset of the list — the resting x of the first/anchored card. */
 const LIST_INSET_PX = 16;
 /** Hold duration before the status menu pops for the drag-to-select gesture. */
@@ -59,12 +58,13 @@ const StatusPopover: React.FC<StatusPopoverProps> = ({
     const ph = pop.offsetHeight;
     const pw = pop.offsetWidth;
     const bottomLimit = window.innerHeight - BOTTOM_RESERVED_PX;
-    const roomBelow = a.bottom + POPOVER_GAP_PX + ph <= bottomLimit;
-    const roomAbove = a.top - POPOVER_GAP_PX - ph >= 8;
-    const flipUp = !roomBelow && roomAbove;
-    let left = Math.min(a.left, window.innerWidth - pw - 8);
-    left = Math.max(8, left);
-    const top = flipUp ? a.top - POPOVER_GAP_PX - ph : a.bottom + POPOVER_GAP_PX;
+    // Center the menu over the card on both axes, then clamp on-screen. Resting the menu's
+    // midpoint on the card (rather than hanging it below) puts the first/last status pills an
+    // equal, short reach from the finger, so the top and bottom rows are easy to drag to.
+    let left = a.left + a.width / 2 - pw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+    let top = a.top + a.height / 2 - ph / 2;
+    top = Math.max(8, Math.min(top, bottomLimit - ph));
     setStyle({ position: 'fixed', left, top, visibility: 'visible' });
   }, [anchorRef]);
 

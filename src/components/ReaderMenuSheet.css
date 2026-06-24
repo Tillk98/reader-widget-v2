@@ -11,7 +11,7 @@
 /* The card is the floating menu itself: capped at 520, rounded on all corners, soft shadow
    (Figma ReaderMenu 3428:45980). */
 .reader-menu-sheet .bottom-sheet__card {
-  max-width: 520px;
+  max-width: 640px;
   max-height: calc(100dvh - 48px);
   background: var(--backgrounds-page, #ffffff);
   border-radius: 12px;

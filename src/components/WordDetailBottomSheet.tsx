@@ -41,6 +41,11 @@ export type { WordDetailSentenceContextEntry } from './SentenceBlock';
 /** Aligned with media drawers; lower = easier to dismiss by dragging */
 const DRAG_CLOSE_THRESHOLD_PX = 24;
 
+/** Tablet floating popover: preferred (max) card height, and the floor it won't shrink past.
+ *  Actual height is capped to the room available beside the word so it never covers it. */
+const FLOATING_TARGET_HEIGHT_PX = 520;
+const FLOATING_MIN_HEIGHT_PX = 260;
+
 /** Must match `--word-detail-sheet-duration` in WordDetailBottomSheet.css */
 const SHEET_TRANSITION_MS = 380;
 
@@ -189,6 +194,9 @@ export interface WordDetailBottomSheetProps {
   panelMode?: boolean;
   /** Toggle between the bottom sheet and the docked side panel. */
   onTogglePanelMode?: () => void;
+  /** Tablet floating-popover mode: resolves the element the popover anchors to (the tapped
+   *  word). Re-queried on layout/scroll so the card tracks the word. Null → centered fallback. */
+  anchorResolver?: () => HTMLElement | null;
 }
 
 export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
@@ -217,6 +225,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   isTablet,
   panelMode,
   onTogglePanelMode,
+  anchorResolver,
 }) => {
   const handleDragStartYRef = useRef<number | null>(null);
   const onCloseRef = useRef(onClose);
@@ -335,6 +344,88 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
   }, [sheetOpen]);
 
   const panelRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  /* Tablet floating popover: a fixed-width card anchored to the tapped word, with no backdrop
+     (the page behind stays interactive). Positioned in JS off the anchor element, preferring
+     above the word and flipping below when there isn't room; clamped to the viewport. */
+  const presentFloating = !!isTablet && !panelMode;
+  const [floatingStyle, setFloatingStyle] = React.useState<React.CSSProperties>({
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    visibility: 'hidden',
+  });
+
+  const positionFloating = useCallback(() => {
+    if (!presentFloating) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const pw = panel.offsetWidth || 360;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const margin = 8;
+    const gap = 8;
+    const anchor = anchorResolver?.() ?? null;
+    if (!anchor) {
+      // No anchor available (e.g. off-page list term) → center as a fallback.
+      const h = Math.min(FLOATING_TARGET_HEIGHT_PX, vh - 2 * margin);
+      setFloatingStyle({
+        position: 'fixed',
+        left: Math.max(margin, (vw - pw) / 2),
+        top: Math.max(margin, (vh - h) / 2),
+        height: h,
+        visibility: 'visible',
+      });
+      return;
+    }
+    const a = anchor.getBoundingClientRect();
+    let left = a.left + a.width / 2 - pw / 2;
+    left = Math.max(margin, Math.min(left, vw - pw - margin));
+
+    // Pick the side with more room, then cap the card height to what fits there so it never
+    // covers the word. Height varies only with the word's position, not with tab content.
+    const roomBelow = vh - a.bottom - gap - margin;
+    const roomAbove = a.top - gap - margin;
+    const below = roomBelow >= roomAbove;
+    const room = Math.max(below ? roomBelow : roomAbove, 0);
+    const height = Math.max(FLOATING_MIN_HEIGHT_PX, Math.min(FLOATING_TARGET_HEIGHT_PX, room));
+    let top = below ? a.bottom + gap : a.top - gap - height;
+    top = Math.max(margin, Math.min(top, vh - height - margin));
+    setFloatingStyle({ position: 'fixed', left, top, height, visibility: 'visible' });
+  }, [presentFloating, anchorResolver]);
+
+  useLayoutEffect(() => {
+    positionFloating();
+  }, [positionFloating, activeTab, headerCondensed, sheetOpen]);
+
+  useEffect(() => {
+    if (!presentFloating) return;
+    const onReflow = () => positionFloating();
+    window.addEventListener('scroll', onReflow, true);
+    window.addEventListener('resize', onReflow);
+    const panel = panelRef.current;
+    const observer = panel ? new ResizeObserver(() => positionFloating()) : null;
+    if (panel && observer) observer.observe(panel);
+    return () => {
+      window.removeEventListener('scroll', onReflow, true);
+      window.removeEventListener('resize', onReflow);
+      observer?.disconnect();
+    };
+  }, [presentFloating, positionFloating]);
+
+  /* Floating popover has no backdrop to catch outside taps — dismiss on any pointer down that
+     lands outside the popover root subtree (which includes nested sheets like Dictionaries). */
+  useEffect(() => {
+    if (!presentFloating) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node | null;
+      if (t && rootRef.current?.contains(t)) return;
+      requestClose();
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => document.removeEventListener('pointerdown', onDown, true);
+  }, [presentFloating, requestClose]);
 
   useEffect(() => {
     if (sheetOpen || !hasPresentedRef.current) return;
@@ -555,12 +646,17 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
   return (
     <div
-      className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''} ${panelMode ? 'is-panel-mode' : ''}`}
+      ref={rootRef}
+      className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''} ${panelMode ? 'is-panel-mode' : ''} ${presentFloating ? 'is-floating' : ''}`}
       role="dialog"
       aria-label="Word details"
       onClick={(e) => !panelMode && e.target === e.currentTarget && requestClose()}
     >
-      <div ref={panelRef} className="word-detail-sheet-panel">
+      <div
+        ref={panelRef}
+        className="word-detail-sheet-panel"
+        style={presentFloating ? floatingStyle : undefined}
+      >
         <button
           type="button"
           className="word-detail-sheet-handle"

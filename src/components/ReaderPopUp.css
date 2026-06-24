@@ -27,6 +27,11 @@
   cursor: pointer;
 }
 
+/* Panel mode: the panel owns the detail view, so the header is no longer a tap target. */
+.reader-popup-widget--panel .reader-popup-widget-header {
+  cursor: default;
+}
+
 .reader-popup-widget-term {
   display: flex;
   flex-direction: column;

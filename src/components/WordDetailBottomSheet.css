@@ -67,6 +67,52 @@
   padding: 12px 24px;
 }
 
+/* ── Floating popover presentation (tablet ≥768px, not docked) ─────────────────
+   On regular-width screens the widget is a fixed-width popover anchored to the tapped
+   word (positioned by JS). No backdrop and pointer-events:none on the root, so the page
+   behind stays fully visible and interactive; only the card itself is interactive.
+   Mobile keeps the bottom sheet; .is-panel-mode (docked side panel) is unaffected. */
+.word-detail-sheet-root.is-floating {
+  background: transparent;
+  pointer-events: none;
+}
+
+.word-detail-sheet-root.is-floating .word-detail-sheet-panel {
+  pointer-events: auto;
+  position: fixed;
+  inset: auto;
+  /* left/top are set inline by the anchor positioner. */
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  /* Fixed height — the card does NOT grow/shrink with tab content; the body scrolls instead.
+     Clamped to the viewport so it always fits (drives the above/below placement math). */
+  height: min(520px, calc(100dvh - 16px));
+  border-radius: 12px;
+  box-shadow: 0px 12px 40px -8px rgba(0, 0, 0, 0.28), 0px 0px 4px rgba(0, 0, 0, 0.12);
+  transform: scale(0.96);
+  opacity: 0;
+  transform-origin: top center;
+  transition:
+    transform var(--word-detail-sheet-duration) var(--word-detail-sheet-ease),
+    opacity var(--word-detail-sheet-duration) var(--word-detail-sheet-ease);
+}
+
+.word-detail-sheet-root.is-floating.is-open .word-detail-sheet-panel {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Anchored card: drop the full-screen sheet's safe-area top inset on the drag handle. */
+.word-detail-sheet-root.is-floating .word-detail-sheet-handle {
+  padding: 12px 24px;
+}
+
+/* pointer-events inherits, so the root's `none` would disable nested sheets (e.g. the
+   Dictionaries manage sheet). Restore interactivity for them. */
+.word-detail-sheet-root.is-floating .bottom-sheet {
+  pointer-events: auto;
+}
+
 .word-detail-sheet-handle {
   width: 100%;
   min-width: 80px;
@@ -120,11 +166,11 @@
 }
 
 /* ContentHeader — each row carries its own px-12 padding (Figma 4446:87124).
-   max-width 520 keeps the content bounded on tablet/wide screens. */
+   max-width 640 keeps the content bounded on tablet/wide screens. */
 .word-detail-sheet-header-content {
   flex-shrink: 0;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -283,7 +329,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   min-height: 56px;
   box-sizing: border-box;
   padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-xs, 8px) var(--spacing-spacing-lg, 16px);
@@ -422,7 +468,7 @@
   /* Body content bounded to 520 and centered (Pattern #4) — aligns with the
      520-capped header/footer content above and below. */
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   margin-inline: auto;
 }
 
@@ -686,7 +732,7 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   margin-inline: auto;
   min-width: 0;
 }

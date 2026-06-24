@@ -1,0 +1,53 @@
+/* The docked panel's empty-state review list. Chrome (root/panel/handle/button-set) is
+   inherited from WordDetailBottomSheet.css; only the filter header and list area are local. */
+
+.panel-review-list__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-default, #f1f3f4);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Flat filter pill (Funnel + label + chevron), mirrors the Review sheet's pill. */
+.panel-review-list__filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--foreground-default, #0a0a0a);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.panel-review-list__filter-pill:hover {
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
+}
+
+.panel-review-list__filter-label {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--foreground-default, #0a0a0a);
+}
+
+.panel-review-list__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 16px 16px;
+  box-sizing: border-box;
+  font-family: 'DM Sans', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}

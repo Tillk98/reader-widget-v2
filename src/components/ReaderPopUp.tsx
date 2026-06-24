@@ -26,6 +26,10 @@ interface ReaderPopUpProps {
   /** Mount straight into the expanded sheet (page state) instead of the compact bubble —
    *  e.g. when returning from the docked side panel. */
   initialExpanded?: boolean;
+  /** True when the word-detail side panel is already docked open (tablet). The popup then
+   *  shows alongside the panel as a status-only control: tapping the meaning does nothing
+   *  (the panel already shows the detail), and only the status picker remains interactive. */
+  panelOpen?: boolean;
 }
 
 export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
@@ -42,9 +46,12 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   isTablet,
   onTogglePanelMode,
   initialExpanded,
+  panelOpen = false,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
-  const [showBottomSheet, setShowBottomSheet] = useState(() => initialExpanded === true);
+  // When the side panel is already open the popup never expands into the detail sheet — the
+  // panel owns that view; the popup stays a compact status-only control.
+  const [showBottomSheet, setShowBottomSheet] = useState(() => initialExpanded === true && !panelOpen);
   /** Local override after editing meaning in the expanded sheet */
   const [meaningOverride, setMeaningOverride] = useState<string | undefined>(undefined);
   /** Whether the floating status-picker bar is open */
@@ -54,6 +61,20 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
     setMeaningOverride(undefined);
     setShowStatusBar(false);
   }, [wordId, wordTranslation]);
+
+  // Docking the panel (e.g. from the expanded sheet's toggle) hands the detail view to the
+  // panel — collapse the popup back to its compact status-only form so its own sheet doesn't
+  // stay mounted over the newly docked panel.
+  useEffect(() => {
+    if (panelOpen) setShowBottomSheet(false);
+  }, [panelOpen]);
+
+  // Undocking the panel (toggle off while the host keeps the sheet open) hands the detail view
+  // back to the popup — re-expand into the bottom sheet. (The popup stays mounted across the
+  // dock/undock toggle, so initialExpanded alone can't reopen it.)
+  useEffect(() => {
+    if (!panelOpen && initialExpanded) setShowBottomSheet(true);
+  }, [panelOpen, initialExpanded]);
 
   const effectiveTranslation = meaningOverride ?? wordTranslation;
   const meaning = effectiveTranslation ?? '';
@@ -133,6 +154,10 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
       if (hitEl?.closest('[data-media-settings-sheet]')) return false;
       if (hitEl?.closest('[data-media-mini-player]')) return false;
 
+      /* Docked side panel (shown alongside the popup in panel mode): interacting with it
+         must not dismiss the popup. */
+      if (hitEl?.closest('.reader-panel-slot')) return false;
+
       /* Another lesson word: don't close on mousedown so word-to-word selection
          doesn't briefly clear and re-trigger toolbar expand animation. */
       if (hitEl?.closest('.reader .blue-word, .reader .yellow-word, .sentence-mode__word')) return false;
@@ -155,6 +180,8 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
 
   const handleExpandClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
+    // Side panel already shows the detail — tapping the meaning is a no-op in that mode.
+    if (panelOpen) return;
     onWordDetailSheetOpen?.();
     setShowBottomSheet(true);
   };
@@ -167,7 +194,9 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   const handleFloatingStatusChange = (newStatus: LingQStatusType) => {
     onWordStatusChange?.(newStatus);
     setShowStatusBar(false);
-    onClose();
+    // In panel mode the word stays selected (the panel keeps showing it), so leave the popup
+    // open and just collapse the picker; otherwise dismiss as usual.
+    if (!panelOpen) onClose();
   };
 
   if (showBottomSheet) {
@@ -182,6 +211,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
         onLynx={onLynx}
         isTablet={isTablet}
         onTogglePanelMode={onTogglePanelMode}
+        anchorResolver={resolveAnchorElement}
       />
     );
   }
@@ -189,7 +219,7 @@ export const ReaderPopUp: React.FC<ReaderPopUpProps> = ({
   return (
     <div
       ref={popupRef}
-      className={`reader-popup-widget${showStatusBar ? ' reader-popup-widget--status-mode' : ''}`}
+      className={`reader-popup-widget${showStatusBar ? ' reader-popup-widget--status-mode' : ''}${panelOpen ? ' reader-popup-widget--panel' : ''}`}
       role="tooltip"
       onPointerDown={(e) => e.stopPropagation()}
     >

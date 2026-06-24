@@ -47,7 +47,7 @@
 .media-settings-sheet__card {
   pointer-events: auto;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   box-sizing: border-box;
 }
 
