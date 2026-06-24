@@ -336,6 +336,10 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
   const panelRef = useRef<HTMLDivElement>(null);
 
+  /* Tablet: present as a centered floating modal (over a light scrim) instead of a bottom sheet.
+     Layout/dismissal are CSS-driven — the backdrop click handler on the root closes it. */
+  const presentFloating = !!isTablet && !panelMode;
+
   useEffect(() => {
     if (sheetOpen || !hasPresentedRef.current) return;
     const panel = panelRef.current;
@@ -555,7 +559,7 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
 
   return (
     <div
-      className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''} ${panelMode ? 'is-panel-mode' : ''}`}
+      className={`word-detail-sheet-root ${sheetOpen ? 'is-open' : ''} ${panelMode ? 'is-panel-mode' : ''} ${presentFloating ? 'is-floating' : ''}`}
       role="dialog"
       aria-label="Word details"
       onClick={(e) => !panelMode && e.target === e.currentTarget && requestClose()}

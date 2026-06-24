@@ -9,7 +9,7 @@
      item) and center it so rows stay a 520px column on larger tablet screens
      instead of stretching edge-to-edge. Dividers and swipe-reveal panels live
      inside the wrappers, so they stay aligned within the same column. */
-  max-width: 520px;
+  max-width: 640px;
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;

@@ -15,6 +15,7 @@ import { LynxChatMode } from './LynxChatMode';
 import { ReaderBottomBar } from './ReaderBottomBar';
 import { SentenceMode } from './SentenceMode';
 import { ReviewMode } from './ReviewMode';
+import { PanelReviewList } from './PanelReviewList';
 import {
   ReviewFilterSheet,
   DEFAULT_REVIEW_STATUS,
@@ -128,6 +129,14 @@ export const Reader: React.FC = () => {
     scope: 'lesson',
     status: DEFAULT_REVIEW_STATUS,
   });
+  /** Filter for the docked side panel's empty-state review list (independent of Review mode).
+   *  Defaults to the current view's scope; reset when the panel re-enters its empty state. */
+  const [panelReviewFilter, setPanelReviewFilter] = useState<ReviewFilterValue>({
+    method: 'list',
+    scope: 'page',
+    status: DEFAULT_REVIEW_STATUS,
+  });
+  const [panelFilterOpen, setPanelFilterOpen] = useState(false);
   const [mediaBarExpanded, setMediaBarExpanded] = useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const prevMediaModeRef = useRef<MediaMode>(mediaMode);
@@ -322,7 +331,7 @@ export const Reader: React.FC = () => {
     tempContainer.style.position = 'absolute';
     tempContainer.style.top = '-9999px';
     tempContainer.style.left = '-9999px';
-    const contentWidth = Math.min(containerWidth, 520);
+    const contentWidth = Math.min(containerWidth, 640);
     tempContainer.style.width = `${contentWidth}px`;
     tempContainer.style.paddingTop = '6px';
     tempContainer.style.paddingBottom = '6px';
@@ -993,6 +1002,26 @@ export const Reader: React.FC = () => {
     setSelectedWordId(null);
   }, [selectedWordId]);
 
+  /** Close the meaning popup while the side panel is docked: clear the word selection but keep
+   *  the panel open. It then shows its empty-state review list, scoped to the current view
+   *  (page / sentence) with all statuses — the default each time the empty state is entered. */
+  const handleDeselectKeepPanel = useCallback(() => {
+    setPanelReviewFilter(prev => ({
+      ...prev,
+      scope: mediaMode === 'none' && sentenceMode ? 'sentence' : 'page',
+      status: DEFAULT_REVIEW_STATUS,
+    }));
+    setWordDetailSheetOpen(false);
+    if (selectedWordId) {
+      setClickedWords(prev => {
+        const next = new Set(prev);
+        next.delete(selectedWordId);
+        return next;
+      });
+    }
+    setSelectedWordId(null);
+  }, [selectedWordId, mediaMode, sentenceMode]);
+
   /** Tap a vocabulary list item (term): open the full word detail sheet (no status bar / popup). */
   const handleListOpenDetail = useCallback((wordId: string) => {
     setSelectedWordId(wordId);
@@ -1157,6 +1186,45 @@ export const Reader: React.FC = () => {
       DEFAULT_REVIEW_STATUS.every(s => reviewFilter.status.includes(s));
     return `${scopeLabel} • ${isDefaultStatus ? 'All' : 'Custom'}`;
   }, [reviewFilter]);
+
+  /* ── Docked side panel's empty-state review list — same derivations as Review mode, but
+     driven by the independent panelReviewFilter. ── */
+  const panelScopedTerms = React.useMemo(() => {
+    switch (panelReviewFilter.scope) {
+      case 'page':
+        return buildReviewTerms(pages[currentPageIndex]?.words ?? []);
+      case 'sentence':
+        return buildReviewTerms(lesson.sentences[sentenceIndex]?.words ?? []);
+      case 'lesson':
+      default:
+        return reviewTerms;
+    }
+  }, [panelReviewFilter.scope, pages, currentPageIndex, sentenceIndex]);
+
+  const panelVisibleTerms = React.useMemo(() => {
+    const allowed = new Set(panelReviewFilter.status);
+    return panelScopedTerms.filter(t => {
+      const key = reviewStatusKeyForId(t.id);
+      return key === 'untracked' || allowed.has(key);
+    });
+  }, [panelScopedTerms, panelReviewFilter.status, reviewStatusKeyForId]);
+
+  const panelUntrackedIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const term of panelVisibleTerms) {
+      if (!(term.id in wordStatusMap)) ids.add(term.id);
+    }
+    return ids;
+  }, [panelVisibleTerms, wordStatusMap]);
+
+  const panelFilterLabel = React.useMemo(() => {
+    const scopeLabel =
+      panelReviewFilter.scope.charAt(0).toUpperCase() + panelReviewFilter.scope.slice(1);
+    const isDefaultStatus =
+      panelReviewFilter.status.length === DEFAULT_REVIEW_STATUS.length &&
+      DEFAULT_REVIEW_STATUS.every(s => panelReviewFilter.status.includes(s));
+    return `${scopeLabel} • ${isDefaultStatus ? 'All' : 'Custom'}`;
+  }, [panelReviewFilter]);
 
   const totalSentences = lesson.sentences.length;
   const fillProgress = isSentenceView
@@ -1414,7 +1482,7 @@ export const Reader: React.FC = () => {
                     onListWordSelect={handleSentenceListSelect}
                     onListWordOpenDetail={handleListOpenDetail}
                     onListWordStatusChange={(wordId, status) => handleStatusChange(wordId, status)}
-                    onDeselect={handleClosePopup}
+                    onDeselect={panelModeAvailable && wordDetailPanelMode ? handleDeselectKeepPanel : handleClosePopup}
                   />
                 ) : isLessonMediaMode ? (
                   <div className="reader-media-scroll">
@@ -1476,8 +1544,9 @@ export const Reader: React.FC = () => {
             </div>
 
             {/* Tablet side panel: docked beside the lesson text (no overlay), 24px gap.
-                Shows the selected phrase's detail when one is active, otherwise the word's. */}
-            {panelModeAvailable && wordDetailPanelMode && (showPhraseInPanel || (selectedWordId && selectedWordData)) && (
+                Shows the selected phrase's detail, else the selected word's, else an empty-state
+                review list (so closing the popup leaves the panel open, not trained on a word). */}
+            {panelModeAvailable && wordDetailPanelMode && (
               <div
                 className="reader-panel-slot"
                 style={{
@@ -1534,7 +1603,24 @@ export const Reader: React.FC = () => {
                       setWordDetailPanelMode(false);
                     }}
                   />
-                ) : null}
+                ) : (
+                  <PanelReviewList
+                    filterLabel={panelFilterLabel}
+                    onOpenFilter={() => setPanelFilterOpen(true)}
+                    onClose={handleClosePopup}
+                    onTogglePanelMode={() => setWordDetailPanelMode(false)}
+                    terms={panelVisibleTerms}
+                    wordStatusMap={wordStatusMap}
+                    untrackedIds={panelUntrackedIds}
+                    onStatusChange={handleStatusChange}
+                    onOpenDetail={handleReviewSelect}
+                    onAdd={handleReviewAdd}
+                    onMarkKnown={wordId => handleStatusChange(wordId, 'Known')}
+                    onMarkIgnored={wordId => handleStatusChange(wordId, 'Ignored')}
+                    knownVisible={panelReviewFilter.status.includes('known')}
+                    ignoredVisible={panelReviewFilter.status.includes('ignored')}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -1607,11 +1693,24 @@ export const Reader: React.FC = () => {
               window.setTimeout(() => setReviewFilterOpen(false), 320);
             }}
           />
+          <ReviewFilterSheet
+            open={panelFilterOpen}
+            onClose={() => setPanelFilterOpen(false)}
+            value={panelReviewFilter}
+            onApply={setPanelReviewFilter}
+            lessonTitle={lesson.title}
+            lessonSource={lesson.source ?? ''}
+            lessonImageSrc={lessonImage}
+            onLessonClick={() => {
+              setCourseInfoOpen(true);
+              window.setTimeout(() => setPanelFilterOpen(false), 320);
+            }}
+          />
           {/* Compact popup → bottom sheet (anchored to the tapped word).
-              Shown in page reading and sentence mode. Hidden when the widget is docked as a
-              side panel (the panel slot above renders it instead). */}
-          {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen &&
-           !(panelModeAvailable && wordDetailPanelMode) && (
+              Shown in page reading and sentence mode. When the widget is docked as a side
+              panel the popup still appears alongside it, but as a status-only control
+              (tapping the meaning is a no-op — the panel already shows the detail). */}
+          {selectedWordId && selectedWordData && !reviewMode && !listDetailOpen && (
             <ReaderPopUp
               key={selectedWordId}
               wordId={selectedWordId}
@@ -1620,12 +1719,13 @@ export const Reader: React.FC = () => {
               resolveAnchorElement={resolveSelectedWordAnchorElement}
               wordStatus={wordStatusMap[selectedWordId] ?? 'New'}
               onWordStatusChange={status => handleStatusChange(selectedWordId, status)}
-              onClose={handleClosePopup}
+              onClose={panelModeAvailable && wordDetailPanelMode ? handleDeselectKeepPanel : handleClosePopup}
               onWordDetailSheetOpen={() => setWordDetailSheetOpen(true)}
               onLynx={() => setLynxChatOpen(true)}
               isTablet={panelModeAvailable}
               onTogglePanelMode={panelModeAvailable ? () => setWordDetailPanelMode(true) : undefined}
               initialExpanded={wordDetailSheetOpen}
+              panelOpen={panelModeAvailable && wordDetailPanelMode}
             />
           )}
           {phraseSelection && !phraseDetailOpen && !showPhraseInPanel && (

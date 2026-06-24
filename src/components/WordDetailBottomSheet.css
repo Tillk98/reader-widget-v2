@@ -67,6 +67,47 @@
   padding: 12px 24px;
 }
 
+/* ── Floating modal presentation (tablet ≥768px, not docked) ──────────────────
+   On regular-width screens the widget presents as a centered, width-capped floating card
+   over a light scrim instead of a full-width bottom sheet. Backdrop click dismisses it.
+   Mobile keeps the bottom sheet; .is-panel-mode (docked side panel) is unaffected. */
+.word-detail-sheet-root.is-floating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Light scrim (lighter than the bottom sheet's dim) — page stays clearly visible behind. */
+.word-detail-sheet-root.is-floating.is-open {
+  background: rgba(15, 23, 42, 0.18);
+}
+
+.word-detail-sheet-root.is-floating .word-detail-sheet-panel {
+  position: relative;
+  inset: auto;
+  width: min(100%, 480px);
+  height: min(560px, 100%);
+  border-radius: 12px;
+  box-shadow: 0px 12px 40px -8px rgba(0, 0, 0, 0.28), 0px 0px 4px rgba(0, 0, 0, 0.12);
+  transform: scale(0.96);
+  opacity: 0;
+  transition:
+    transform var(--word-detail-sheet-duration) var(--word-detail-sheet-ease),
+    opacity var(--word-detail-sheet-duration) var(--word-detail-sheet-ease);
+}
+
+.word-detail-sheet-root.is-floating.is-open .word-detail-sheet-panel {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Centered card: drop the full-screen sheet's safe-area top inset on the drag handle. */
+.word-detail-sheet-root.is-floating .word-detail-sheet-handle {
+  padding: 12px 24px;
+}
+
 .word-detail-sheet-handle {
   width: 100%;
   min-width: 80px;
@@ -120,11 +161,11 @@
 }
 
 /* ContentHeader — each row carries its own px-12 padding (Figma 4446:87124).
-   max-width 520 keeps the content bounded on tablet/wide screens. */
+   max-width 640 keeps the content bounded on tablet/wide screens. */
 .word-detail-sheet-header-content {
   flex-shrink: 0;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -283,7 +324,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   min-height: 56px;
   box-sizing: border-box;
   padding: var(--spacing-spacing-xs, 8px) var(--spacing-spacing-xs, 8px) var(--spacing-spacing-lg, 16px);
@@ -422,7 +463,7 @@
   /* Body content bounded to 520 and centered (Pattern #4) — aligns with the
      520-capped header/footer content above and below. */
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   margin-inline: auto;
 }
 
@@ -686,7 +727,7 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   margin-inline: auto;
   min-width: 0;
 }

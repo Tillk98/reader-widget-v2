@@ -67,9 +67,9 @@
 
 .lynx-chat__messages {
   width: 100%;
-  /* App-wide reading-column cap: keep the conversation a centered 520px column on
+  /* App-wide reading-column cap: keep the conversation a centered 640px column on
      larger tablet screens (matches sentence/review modes). The header stays full-width. */
-  max-width: 520px;
+  max-width: 640px;
   margin: 0 auto;
   box-sizing: border-box;
   padding: 16px;

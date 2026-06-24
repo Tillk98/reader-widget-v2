@@ -16,6 +16,12 @@ export interface StatusPopoverProps {
   onClose: () => void;
   /** Restrict / reorder the rows. Defaults to all six statuses. */
   statuses?: LingQStatusType[];
+  /**
+   * Horizontal placement. `'beside'` (default) sits the menu 8px to the right of the
+   * anchor (flipping left if it would overflow). `'over'` centers it horizontally on the
+   * anchor so the menu overlays the tapped status badge (used by the review vocab list).
+   */
+  align?: 'beside' | 'over';
 }
 
 /**
@@ -33,6 +39,7 @@ export const StatusPopover: React.FC<StatusPopoverProps> = ({
   onStatusChange,
   onClose,
   statuses,
+  align = 'beside',
 }) => {
   const popRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<React.CSSProperties>({
@@ -52,14 +59,20 @@ export const StatusPopover: React.FC<StatusPopoverProps> = ({
     // Vertically centered on the anchor, clamped within the viewport.
     let top = a.top + a.height / 2 - ph / 2;
     top = Math.max(VIEWPORT_MARGIN_PX, Math.min(top, window.innerHeight - ph - VIEWPORT_MARGIN_PX));
-    // 8px to the right of the anchor; flip to the left if it would overflow.
-    let left = a.right + GAP_PX;
-    if (left + pw + VIEWPORT_MARGIN_PX > window.innerWidth) {
-      left = a.left - GAP_PX - pw;
+    let left: number;
+    if (align === 'over') {
+      // Centered horizontally on the anchor so the menu overlays the tapped status badge.
+      left = a.left + a.width / 2 - pw / 2;
+    } else {
+      // 8px to the right of the anchor; flip to the left if it would overflow.
+      left = a.right + GAP_PX;
+      if (left + pw + VIEWPORT_MARGIN_PX > window.innerWidth) {
+        left = a.left - GAP_PX - pw;
+      }
     }
-    left = Math.max(VIEWPORT_MARGIN_PX, left);
+    left = Math.max(VIEWPORT_MARGIN_PX, Math.min(left, window.innerWidth - pw - VIEWPORT_MARGIN_PX));
     setStyle({ position: 'fixed', left, top, visibility: 'visible' });
-  }, [anchorRef]);
+  }, [anchorRef, align]);
 
   useLayoutEffect(() => {
     recalc();

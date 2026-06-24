@@ -248,6 +248,7 @@ const SwipeableTile: React.FC<SwipeableTileProps> = ({
                 status={status}
                 onStatusChange={onStatusSelect}
                 onClose={onStatusMenuClose}
+                align="over"
               />
             )}
             <button
