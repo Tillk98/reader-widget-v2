@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Undo2, Check, Play, Copy, RotateCw } from 'lucide-react';
+import { Check, Play, Copy, RotateCw } from 'lucide-react';
 import lynxIcon from '../assets/lynx-default.png';
 
 export interface NoteFieldProps {
@@ -96,16 +96,6 @@ export const NoteField: React.FC<NoteFieldProps> = ({
     onRefresh?.();
   };
 
-  /** X clears the note entirely and resets the field to the empty state. */
-  const handleClear = () => {
-    setDraft('');
-    setSavedText('');
-    setUpdatedAt('');
-    setLynxGenerated(false);
-    setEditing(false);
-    onClear?.();
-  };
-
   const handleGenerate = () => {
     setDraft(generatedNote);
     setLynxGenerated(true);
@@ -126,14 +116,6 @@ export const NoteField: React.FC<NoteFieldProps> = ({
             rows={1}
           />
           <div className="note-field__actions">
-            <button
-              type="button"
-              className="note-field__action note-field__action--cancel"
-              aria-label="Clear note"
-              onClick={handleClear}
-            >
-              <Undo2 size={16} aria-hidden />
-            </button>
             <button
               type="button"
               className="note-field__action note-field__action--save"

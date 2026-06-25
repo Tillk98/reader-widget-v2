@@ -1068,15 +1068,6 @@ button.note-field__box {
   outline-offset: 2px;
 }
 
-.note-field__action--cancel {
-  background: transparent;
-  color: #49525b;
-}
-
-.note-field__action--cancel:hover {
-  background: var(--ui-ctrl-surface-hover, #f1f5f9);
-}
-
 .note-field__action--save {
   background: var(--surfaces-secondary-subtle, #f1f7fe);
   color: var(--foreground-secondary, #2e75cd);

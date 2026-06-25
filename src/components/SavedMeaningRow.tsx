@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Plus, Check, Trash2, Undo2, GripVertical } from 'lucide-react';
+import { Plus, Check, Trash2, GripVertical } from 'lucide-react';
 import './SavedMeaningRow.css';
 
 /** Movement under this many px counts as a tap (→ edit), not a swipe. */
@@ -20,7 +20,7 @@ export interface SavedMeaningRowProps {
 /**
  * Saved-meaning menu row (Figma MeaningMenuItem 4031:70509) with two interactions:
  * - swipe left → reveals the red Delete panel (Figma 4032:72154)
- * - tap        → inline edit: single row with [input] [X cancel] [+ save]
+ * - tap        → inline edit: single row with [input] [check save]
  * The trailing grip handle is the reorder affordance shown in the design.
  */
 export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
@@ -204,16 +204,6 @@ export const SavedMeaningRow: React.FC<SavedMeaningRowProps> = ({
           autoComplete="off"
           spellCheck
         />
-        {draft.trim() !== '' && (
-          <button
-            type="button"
-            className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
-            aria-label="Erase text"
-            onClick={() => setDraft('')}
-          >
-            <Undo2 size={16} aria-hidden />
-          </button>
-        )}
         <button
           type="button"
           className="saved-meaning__edit-btn saved-meaning__edit-btn--save"
@@ -338,16 +328,6 @@ export const AddMeaningRow: React.FC<AddMeaningRowProps> = ({ onAdd }) => {
           autoComplete="off"
           spellCheck
         />
-        {draft.trim() !== '' && (
-          <button
-            type="button"
-            className="saved-meaning__edit-btn saved-meaning__edit-btn--cancel"
-            aria-label="Erase text"
-            onClick={() => setDraft('')}
-          >
-            <Undo2 size={16} aria-hidden />
-          </button>
-        )}
         <button
           type="button"
           className="saved-meaning__edit-btn saved-meaning__edit-btn--save"

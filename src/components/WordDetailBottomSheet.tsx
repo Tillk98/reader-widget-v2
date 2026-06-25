@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Volume2, Tags, BookOpenText, PanelRightOpen, X, ArrowLeft } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
@@ -27,6 +28,8 @@ import { DictionaryManageContent } from './DictionaryManageContent';
 import { MeaningListItem } from './MeaningListItem';
 import { MeaningSection } from './MeaningSection';
 import { AddMeaningRow, SavedMeaningRow } from './SavedMeaningRow';
+import { MeaningSnackbar } from './MeaningSnackbar';
+import type { MeaningSnackbarVariant } from './MeaningSnackbar';
 import { HorizontalTermList } from './HorizontalTermList';
 import type { VocabTermItem } from './VocabTermList';
 import {
@@ -446,32 +449,57 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
     [savedStoreKey],
   );
 
-  const addSavedMeaning = useCallback(
-    (text: string) => {
-      const value = text.trim();
-      if (!value) return;
-      setSavedMeanings((prev) => {
-        if (prev.some((m) => m.text === value)) return prev;
-        return commitSavedMeanings([...prev, { id: makeSavedMeaningId(), text: value }]);
+  /**
+   * Confirmation toast for saved-meaning edits. Each action snapshots the prior list so the
+   * snackbar's return button can restore it (covers add / edit / delete uniformly).
+   */
+  const meaningSnackbarKeyRef = useRef(0);
+  const [meaningSnackbar, setMeaningSnackbar] = React.useState<{
+    key: number;
+    variant: MeaningSnackbarVariant;
+    undo: () => void;
+  } | null>(null);
+
+  const showMeaningSnackbar = useCallback(
+    (variant: MeaningSnackbarVariant, prevList: SavedMeaning[]) => {
+      meaningSnackbarKeyRef.current += 1;
+      setMeaningSnackbar({
+        key: meaningSnackbarKeyRef.current,
+        variant,
+        undo: () => setSavedMeanings(commitSavedMeanings(prevList)),
       });
     },
     [commitSavedMeanings],
   );
 
+  const addSavedMeaning = useCallback(
+    (text: string) => {
+      const value = text.trim();
+      if (!value) return;
+      if (savedMeanings.some((m) => m.text === value)) return;
+      const prev = savedMeanings;
+      setSavedMeanings(commitSavedMeanings([...prev, { id: makeSavedMeaningId(), text: value }]));
+      showMeaningSnackbar('saved', prev);
+    },
+    [savedMeanings, commitSavedMeanings, showMeaningSnackbar],
+  );
+
   const editSavedMeaning = useCallback(
     (id: string, text: string) => {
-      setSavedMeanings((prev) =>
-        commitSavedMeanings(prev.map((m) => (m.id === id ? { ...m, text } : m))),
-      );
+      const prev = savedMeanings;
+      setSavedMeanings(commitSavedMeanings(prev.map((m) => (m.id === id ? { ...m, text } : m))));
+      showMeaningSnackbar('saved', prev);
     },
-    [commitSavedMeanings],
+    [savedMeanings, commitSavedMeanings, showMeaningSnackbar],
   );
 
   const deleteSavedMeaning = useCallback(
     (id: string) => {
-      setSavedMeanings((prev) => commitSavedMeanings(prev.filter((m) => m.id !== id)));
+      const prev = savedMeanings;
+      setSavedMeanings(commitSavedMeanings(prev.filter((m) => m.id !== id)));
+      showMeaningSnackbar('deleted', prev);
     },
-    [commitSavedMeanings],
+    [savedMeanings, commitSavedMeanings, showMeaningSnackbar],
   );
 
   /** The master meaning at the top is the amalgamation of the saved meanings. */
@@ -570,6 +598,19 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
       aria-label="Word details"
       onClick={(e) => !panelMode && e.target === e.currentTarget && requestClose()}
     >
+      {meaningSnackbar &&
+        createPortal(
+          <MeaningSnackbar
+            key={meaningSnackbar.key}
+            variant={meaningSnackbar.variant}
+            onUndo={() => {
+              meaningSnackbar.undo();
+              setMeaningSnackbar(null);
+            }}
+            onDismiss={() => setMeaningSnackbar(null)}
+          />,
+          document.body,
+        )}
       <div ref={panelRef} className="word-detail-sheet-panel">
         <button
           type="button"

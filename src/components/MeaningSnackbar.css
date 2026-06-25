@@ -1,0 +1,119 @@
+/* MeaningSnackbar — saved/deleted meaning confirmation pill (Figma MeaningSnackBar 4741:13899) */
+
+.meaning-snackbar {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--backgrounds-page, #ffffff);
+  border: 1px solid var(--border-default, #f1f3f4);
+  box-shadow: 0px 4px 8px -4px rgba(0, 0, 0, 0.15);
+
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+  user-select: none;
+
+  animation: meaning-snackbar-in 0.28s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@keyframes meaning-snackbar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.meaning-snackbar--exiting {
+  animation: meaning-snackbar-out 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes meaning-snackbar-out {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+}
+
+/* Leading circular icon pill — blue-subtle (saved) / red-subtle (deleted). */
+.meaning-snackbar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 8px;
+  border-radius: var(--radius-pill, 999px);
+}
+
+.meaning-snackbar__icon svg {
+  display: block;
+}
+
+.meaning-snackbar--saved .meaning-snackbar__icon {
+  background: var(--surfaces-secondary-subtle, #f1f7fe);
+  color: var(--foreground-secondary, #2e75cd);
+}
+
+.meaning-snackbar--deleted .meaning-snackbar__icon {
+  background: var(--surfaces-destructive-subtle, #fef2f2);
+  color: var(--foreground-destructive, #dd2525);
+}
+
+/* Label */
+.meaning-snackbar__label {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.meaning-snackbar--saved .meaning-snackbar__label {
+  color: var(--foreground-default, #0a0a0a);
+}
+
+.meaning-snackbar--deleted .meaning-snackbar__label {
+  color: var(--foreground-destructive, #dd2525);
+}
+
+/* Trailing undo button */
+.meaning-snackbar__undo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  background: transparent;
+  color: var(--typography-muted, #6d7680);
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.meaning-snackbar__undo:hover {
+  background: var(--ui-ctrl-surface-hover, #f1f5f9);
+  color: var(--typography-default, #000000);
+}
+
+.meaning-snackbar__undo:active {
+  transform: scale(0.88);
+}
+
+.meaning-snackbar__undo:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: 2px;
+}
