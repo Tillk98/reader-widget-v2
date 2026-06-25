@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
-import { Volume2, Tags, BookOpenText, PanelRight, X, ArrowLeft } from 'lucide-react';
+import { Volume2, Tags, BookOpenText, PanelRightOpen, X, ArrowLeft } from 'lucide-react';
 import lynxFooterIcon from '../assets/lynx-default.png';
 import meaningTabActive from '../assets/meaning-active.png';
 import meaningTabInactive from '../assets/meaning-inactive.png';
@@ -586,20 +586,20 @@ export const WordDetailBottomSheet: React.FC<WordDetailBottomSheetProps> = ({
         />
 
         {/* Top-right button set (Figma ButtonSet 4613:17842): the side-panel toggle joins the X
-            close on tablet (≥768px). The toggle is active (blue) while the panel is docked. */}
+            close on tablet (≥768px) so the popup can dock as a side panel. Once docked
+            (panelMode) the toggle is hidden — the panel is closed via the X / handle instead. */}
         <div className="word-detail-sheet-button-set">
-          {(isTablet || panelMode) && (
+          {isTablet && !panelMode && (
             <button
               type="button"
-              className={`word-detail-sheet-vol-btn word-detail-sheet-panel-toggle${panelMode ? ' is-active' : ''}`}
-              aria-label={panelMode ? 'Dock as bottom sheet' : 'Open as side panel'}
-              aria-pressed={panelMode}
+              className="word-detail-sheet-vol-btn word-detail-sheet-panel-toggle"
+              aria-label="Open as side panel"
               onClick={(e) => {
                 e.stopPropagation();
                 onTogglePanelMode?.();
               }}
             >
-              <PanelRight size={16} aria-hidden />
+              <PanelRightOpen size={16} aria-hidden />
             </button>
           )}
           <button

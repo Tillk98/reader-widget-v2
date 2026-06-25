@@ -237,16 +237,6 @@
   z-index: 3;
 }
 
-/* Side-panel toggle — circular button reusing the volume-button look; turns blue when docked. */
-.word-detail-sheet-panel-toggle.is-active {
-  background: var(--surfaces-secondary-subtle, #f1f7fe);
-  color: var(--foreground-secondary, #2e75cd);
-}
-
-.word-detail-sheet-panel-toggle.is-active:hover {
-  background: #e4eefc;
-}
-
 .word-detail-sheet-original-row-left {
   display: flex;
   flex-direction: row;

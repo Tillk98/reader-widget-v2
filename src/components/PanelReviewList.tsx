@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { Funnel, ChevronDown, PanelRight, X } from 'lucide-react';
+import { Funnel, ChevronDown, X } from 'lucide-react';
 import type { Word } from '../data/lesson';
 import type { LingQStatusType } from './LingQStatusBar';
 import { VocabTermList } from './VocabTermList';
@@ -15,8 +15,6 @@ export interface PanelReviewListProps {
   onOpenFilter: () => void;
   /** Close the side panel entirely (X / drag-to-dismiss). */
   onClose: () => void;
-  /** Side-panel toggle (active while docked) — undocks / closes the panel. */
-  onTogglePanelMode: () => void;
 
   terms: Word[];
   wordStatusMap: Record<string, LingQStatusType>;
@@ -40,7 +38,6 @@ export const PanelReviewList: React.FC<PanelReviewListProps> = ({
   filterLabel,
   onOpenFilter,
   onClose,
-  onTogglePanelMode,
   terms,
   wordStatusMap,
   untrackedIds,
@@ -91,15 +88,6 @@ export const PanelReviewList: React.FC<PanelReviewListProps> = ({
         />
 
         <div className="word-detail-sheet-button-set">
-          <button
-            type="button"
-            className="word-detail-sheet-vol-btn word-detail-sheet-panel-toggle is-active"
-            aria-label="Close side panel"
-            aria-pressed
-            onClick={onTogglePanelMode}
-          >
-            <PanelRight size={16} aria-hidden />
-          </button>
           <button
             type="button"
             className="word-detail-sheet-vol-btn word-detail-sheet-close"

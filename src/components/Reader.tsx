@@ -1619,7 +1619,6 @@ export const Reader: React.FC = () => {
                     filterLabel={panelFilterLabel}
                     onOpenFilter={() => setPanelFilterOpen(true)}
                     onClose={handleClosePopup}
-                    onTogglePanelMode={() => setWordDetailPanelMode(false)}
                     terms={panelVisibleTerms}
                     wordStatusMap={wordStatusMap}
                     untrackedIds={panelUntrackedIds}
